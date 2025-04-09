@@ -181,17 +181,6 @@ class BranchPlugin(BasePlugin):
         self.type = "branch"
 
 
-    def set_output(self, success, message="", data={}):
-        self.component.output = {
-            "success": success,
-            "message": message,
-            "data": data
-        }
-        self.component.save()
-        if success:
-            self.on_complete()
-        else:
-            self.on_failure(message)
 
     def on_complete(self):
         output = self.component.output

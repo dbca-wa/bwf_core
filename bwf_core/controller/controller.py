@@ -5,8 +5,8 @@ from bwf_core.models import ComponentInstance, ComponentStepStatusEnum
 from importlib.machinery import SourceFileLoader
 from django.core.cache import cache
 
-BASE_PLUGIN_ROUTE = os.path.join(settings.BASE_DIR, 'bwf_components', 'components', 'plugins')
-FLOW_NODES_ROUTE = os.path.join(settings.BASE_DIR, 'bwf_components', 'components', 'flow_nodes')
+BASE_PLUGIN_ROUTE = os.path.join(settings.BASE_DIR, 'bwf_components', 'plugins')
+FLOW_NODES_ROUTE = os.path.join(settings.BASE_DIR, 'bwf_core', 'core_plugins')
 IGNORE_DIRS = ['__pycache__']
 
 

@@ -90,6 +90,9 @@ def start_pending_component(current_component: ComponentInstance, parent=None):
             logger.error(f"Error while executing component {current_component.id} error: {str(e)}")
             if plugin_wrapper_instance:
                 plugin_wrapper_instance.on_failure(str(e))
+            else:
+                current_component.set_status_error(str(e))
+                workflow_instance.set_status_error(str(e))
     except Exception as e:
         logger.error(f"Error while starting pending component {current_component.id} error: {str(e)}")
         current_component.set_status_error(str(e))
