@@ -1,0 +1,103 @@
+<div
+  class="modal fade"
+  id="workflow-creation-modal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="workflow-creation-modal-label"
+  aria-hidden="true"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="workflow-creation-modal-label">
+          New Workflow
+        </h5>
+        <button
+          type="button"
+          class="btn btn-ghost"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="workflow-form">
+          <div class="mb-3">
+            <label for="input-workflow-name" class="form-label"
+              >Title</label
+            >
+            <input type="text" class="form-control" id="input-workflow-name" placeholder="Workflow name" required />
+          </div>
+          <div class="mb-3">
+            <label for="input-workflow-description" class="form-label"
+              >Description</label
+            >
+            <textarea
+              class="form-control"
+              id="input-workflow-description"
+              rows="3"
+              placeholder="What is this workflow about?"
+            ></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary close-button">
+          Close
+        </button>
+        <button type="button" class="btn btn-primary create-workflow-button">
+          Create Workflow
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  new_workflow_data = {
+    validate: function (data) {
+      const {} = data;
+
+      return true;
+    },
+  };
+  $(() => {
+    $("#workflow-creation-modal").on("shown.bs.modal", function (e) {
+      $("#input-workflow-name").focus();
+    });
+
+    $("#workflow-creation-modal").on("hidden.bs.modal", function (e) {
+      $("#input-workflow-name").val("");
+      $("#input-workflow-description").val("");
+    });
+
+    $("#workflow-creation-modal .close-button").on("click", function () {
+      $("#workflow-creation-modal").modal("hide");
+    });
+    $("#workflow-creation-modal .create-workflow-button").on("click", () => {
+      $("#workflow-form").submit();
+    });
+  });
+
+  $("#workflow-form").on("submit", function (e) {
+    e.preventDefault();
+
+    const _ = bwf_workflow;
+
+    $(".create-workflow-button").prop("disabled", true);
+    const name = $("#input-workflow-name").val();
+    const description = $("#input-workflow-description").val() ?? "";
+    const data = {
+      name,
+      description,
+    };
+    _.api.createWorkflow(data).then((response) => {
+      _.navigate.toVersionEdition(response.workflow.id, response.id);
+      $(".create-workflow-button").prop("disabled", false);
+      $("#workflow-creation-modal").modal("hide");
+    }).catch((error) => {
+      $(".create-workflow-button").prop("disabled", false);
+    });
+  });
+</script>

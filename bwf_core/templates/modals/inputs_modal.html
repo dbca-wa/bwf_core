@@ -1,0 +1,295 @@
+<div
+  class="modal fade"
+  id="inputs-modal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="inputs-modal-label"
+  aria-hidden="true"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="inputs-modal-label"></h5>
+        <button
+          type="button"
+          class="btn btn-ghost"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="inputs-form">
+          <div class="mb-3">
+            <label for="field_label" class="form-label">Label</label>
+            <input
+              type="text"
+              class="form-control"
+              id="field_label"
+              aria-describedby="labelHelp"
+              maxlength="100"
+            />
+            <div id="labelHelp" class="form-text">
+              Key: <span id="key-span"></span>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="field_description" class="form-label"
+              >Description</label
+            >
+            <textarea
+              class="form-control"
+              id="field_description"
+              rows="3"
+              maxlength="100"
+            ></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="field_data_type" class="form-label">Type</label>
+            <select class="form-select" id="field_data_type">
+              <option selected value="string">String</option>
+              <option value="number">Number</option>
+              <option value="boolean">Boolean</option>
+              <option value="date">Date</option>
+              <option value="datetime">Datetime</option>
+              <option value="array">Array</option>
+              <option value="object">Object</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label"
+              >Default value</label
+            >
+            <div class="data_type_container">
+
+            </div>
+          </div>
+          <div class="mb-3 form-check">
+            <input
+              type="checkbox"
+              class="form-check-input"
+              id="field_required"
+            />
+            <label class="form-check-label" for="field_required"
+              >Required</label
+            >
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary close-button">
+          Close
+        </button>
+        <button type="button" class="btn btn-primary save-button">
+          Save changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  inputs_data = {
+    selectedInput: {
+      isNew: true,
+      data: null,
+      originalData: null,
+    },
+    inputTypes: [
+      {
+        type: "string",
+        name: "String",
+        description: "A string value",
+      },
+      {
+        type: "number",
+        name: "Number",
+        description: "A numerical value",
+      },
+      {
+        type: "boolean",
+        name: "Boolean",
+        description: "A boolean value",
+      },
+      {
+        type: "date",
+        name: "Date",
+        description: "A date value",
+      },
+      {
+        type: "datetime",
+        name: "Datetime",
+        description: "A datetime value",
+      },
+      {
+        type: "array",
+        name: "Array",
+        description: "An array of values",
+      },
+      {
+        type: "object",
+        name: "Object",
+        description: "A JSON object",
+      },
+    ],
+    fillUpForm: function (input) {
+      const dataType = input.data_type ?? "string";
+      $("#field_label").val(input.label);
+      $("#key-span").text(input.key);
+      $("#field_description").val(input.description);
+      $("#field_data_type").val(input.data_type);
+      // $("#field_default_value").val(input.default_value?.value ?? "");
+      $("#field_required").prop("checked", input.required);
+    },
+    emptyForm: function () {
+      $("#field_label").val("");
+      $("#key-span").text("");
+      $("#field_description").val("");
+      $("#field_data_type").val("string");
+      inputs_data.renderDefaultValue($(".data_type_container"), "string");
+      $("#field_required").prop("checked", false);
+    },
+    renderDefaultValue: function (container, data_type, value) { 
+      // types : string, boolean, number, object, array, date, datetime
+      const current = container.find("#field_default_value");
+      if (current.length === 0 || current.data("datatype") !== data_type) {
+        current.remove();
+        const types = {
+          string: `<input type="text" class="form-control" id="field_default_value" data-datatype="${data_type}" value="${value ?? ""}">`,
+          boolean: `<select class="form-select" id="field_default_value" data-datatype="${data_type}">
+            <option value="true">True</option>
+            <option value="false">False</option>
+          </select>`,
+          number: `<input type="number" class="form-control" id="field_default_value" data-datatype="${data_type}" value="${value ?? ""}">`,
+          object: `<textarea class="form-control" id="field_default_value" data-datatype="${data_type}" rows="3">${value ?? ""}</textarea>`,
+          array: `<textarea class="form-control" id="field_default_value" data-datatype="${data_type}" rows="3">${value ?? ""}</textarea>`,
+          date: `<input type="date" class="form-control" id="field_default_value" data-datatype="${data_type}" value="${value ?? ""}">`,
+          datetime: `<input type="datetime-local" class="form-control" id="field_default_value" data-datatype="${data_type}" value="${value ?? ""}">`,
+        };
+        container.empty();
+        container.append(types[data_type]);
+      }
+
+      if (value) {
+        if (data_type === "boolean") {
+          container.find("#field_default_value").val(value === "true" ? "true" : "false");
+        } else {
+          container.find("#field_default_value").val(value);
+        }
+      }
+
+    },
+    validate: function (data) {
+      const { label, key, description, data_type, default_value, required } =
+        data;
+      if (!label) {
+        alert("Label is required");
+        return false;
+      }
+      if (!key) {
+        alert("Key is required");
+        return false;
+      }
+      if (!description) {
+        alert("Description is required");
+        return false;
+      }
+
+      if (!default_value?.value && required) {
+        console.log("Validate default value");
+      }
+
+      return true;
+    },
+  };
+  $(() => {
+    $("#inputs-modal").on("show.bs.modal", function (e) {
+      const _ = workflow_inputs;
+      const data = _.selectedInput;
+      inputs_data.selectedInput.isNew = !data;
+      inputs_data.selectedInput.data = data;
+      console.log(data);
+      inputs_data.originalData = Object.assign({}, data);
+      $(".modal-title").text(
+        inputs_data.selectedInput.isNew
+          ? "New input"
+          : "Edit input: " + data.label
+      );
+
+      if (inputs_data.selectedInput.isNew) {
+        inputs_data.emptyForm()
+      } else {
+        inputs_data.fillUpForm(data);
+      }
+    });
+    $("#inputs-modal").on("show.bs.modal", function (e) {
+      $("#field_label").focus();
+    });
+
+    $("#inputs-modal").on("hidden.bs.modal", function (e) {
+      inputs_data.emptyForm();
+    });
+
+    $("#field_label").on("keyup", function () {
+      const label = $(this).val() ?? "";
+      const key = utils.generate_key_value(label);
+      $("#key-span").text(key);
+    });
+    $("#inputs-modal .save-button").on("click", function () {
+      const data = {
+        label: $("#field_label").val(),
+        key: $("#key-span").text(),
+        description: $("#field_description").val(),
+        data_type: $("#field_data_type").val(),
+        default_value: {
+          value: $("#field_default_value").val(),
+        },
+        required: $("#field_required").prop("checked"),
+      };
+
+      if (!inputs_data.validate(data)) {
+        return;
+      }
+
+      const { addInput, updateInput } = workflow_inputs.api;
+      const { isNew } = inputs_data.selectedInput;
+
+      if (isNew) {
+        addInput(
+          data,
+          (data) => {
+            console.log(data);
+            workflow_inputs.var.inputs.push(data);
+            workflow_inputs.appendInput(data);
+          },
+          (err) => {
+            console.log(err);
+          }
+        );
+      } else {
+        updateInput(
+          { ...data, id: inputs_data.selectedInput.data.id },
+          (data) => {
+            console.log(data);
+            const index = workflow_inputs.var.inputs.findIndex(
+              (a) => a.id === data.id
+            );
+            workflow_inputs.var.inputs[index] = data;
+            workflow_inputs.updateInput(data);
+          },
+          (err) => {
+            console.log(err);
+          }
+        );
+      }
+      $("#inputs-modal").modal("hide");
+    });
+    $("#field_data_type").on("change", function () {
+      inputs_data.renderDefaultValue($(".data_type_container"), $(this).val());
+    });
+    $("#inputs-modal .close-button").on("click", function () {
+      $("#inputs-modal").modal("hide");
+    });
+  });
+</script>

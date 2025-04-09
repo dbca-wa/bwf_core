@@ -1,0 +1,54 @@
+/* static/css/admin_custom.css */
+
+.badge {
+    display: inline-block;
+    padding: 0.25em 0.4em;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+}
+
+.badge-pill {
+    padding-right: 0.6em;
+    padding-left: 0.6em;
+    border-radius: 10rem;
+}
+
+.bg-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.bg-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.bg-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.bg-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.bg-info {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.bg-light {
+    background-color: #f8f9fa;
+    color: #212529;
+}
+
+.bg-dark {
+    background-color: #343a40;
+    color: white;
+}

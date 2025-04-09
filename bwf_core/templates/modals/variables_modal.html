@@ -1,0 +1,225 @@
+<div
+  class="modal fade"
+  id="variables-modal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="variables-modal-label"
+  aria-hidden="true"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="variables-modal-label"></h5>
+        <button
+          type="button"
+          class="btn btn-ghost"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="variables-form">
+          <div class="mb-3">
+            <label for="var_field_name" class="form-label">Name</label>
+            <input
+              type="text"
+              class="form-control"
+              id="var_field_name"
+              aria-describedby="labelHelp"
+              maxlength="100"
+            />
+            <div id="labelHelp" class="form-text">
+              Key: <span id="var-key-span"></span>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="var_field_data_type" class="form-label">Type</label>
+            <select class="form-select" id="var_field_data_type">
+              <option selected value="string">String</option>
+              <option value="number">Number</option>
+              <option value="boolean">Boolean</option>
+              <option value="date">Date</option>
+              <option value="datetime">Datetime</option>
+              <option value="array">Array</option>
+              <option value="object">Object</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary close-button">
+          Close
+        </button>
+        <button type="button" class="btn btn-primary save-button">
+          Save changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  variables_data = {
+    selectedVar: {
+      isNew: true,
+      data: null,
+      originalData: null,
+    },
+    varTypes: [
+      {
+        type: "string",
+        name: "String",
+        description: "A string value",
+      },
+      {
+        type: "number",
+        name: "Number",
+        description: "A numerical value",
+      },
+      {
+        type: "boolean",
+        name: "Boolean",
+        description: "A boolean value",
+      },
+      {
+        type: "date",
+        name: "Date",
+        description: "A date value",
+      },
+      {
+        type: "datetime",
+        name: "Datetime",
+        description: "A datetime value",
+      },
+      {
+        type: "array",
+        name: "Array",
+        description: "An array of values",
+      },
+      {
+        type: "object",
+        name: "Object",
+        description: "A JSON object",
+      },
+    ],
+    fillUpForm: function (input) {
+      const dataType = input.data_type ?? "string";
+      $("#var_field_name").val(input.name);
+      $("#var-key-span").text(input.key);
+      $("#var_field_data_type").val(input.data_type);
+    },
+    emptyForm: function () {
+      $("#var_field_name").val("");
+      $("#var-key-span").text("");
+      $("#var_field_data_type").val("string");
+    },
+    validate: function (data) {
+      const { name, key, description, data_type, default_value, required } =
+        data;
+      if (!name) {
+        alert("Name is required");
+        return false;
+      }
+      if (!key) {
+        alert("Key is required");
+        return false;
+      }
+      if (!data_type) {
+        alert("Data type is required");
+        return false;
+      }
+      return true;
+    },
+    submitForm: function () {
+      const data = {
+        name: $("#var_field_name").val(),
+        key: $("#var-key-span").text(),
+        data_type: $("#var_field_data_type").val(),
+      };
+
+      if (!variables_data.validate(data)) {
+        return;
+      }
+      $("#variables-modal .save-button").prop("disabled", true);
+
+      const { addVariable, updateVariable } = workflow_variables.api;
+      const { isNew } = variables_data.selectedVar;
+
+      if (isNew) {
+        addVariable(
+          data,
+          (data) => {
+            $("#variables-modal .save-button").prop("disabled", false);
+            $("#variables-modal").modal("hide");
+          },
+          (err) => {
+            console.log(err);
+            $("#variables-modal .save-button").prop("disabled", false);
+            alert("An error occurred");
+          }
+        );
+      } else {
+        updateVariable(
+          { ...data, id: variables_data.selectedVar.data.id },
+          (data) => {
+            console.log(data);
+            $("#variables-modal .save-button").prop("disabled", false);
+            $("#variables-modal").modal("hide");
+          },
+          (err) => {
+            console.log(err);
+            $("#variables-modal .save-button").prop("disabled", false);
+            alert("An error occurred");
+          }
+        );
+      }
+    },
+  };
+  $(() => {
+    $("#variables-modal").on("show.bs.modal", function (e) {
+      const _ = workflow_variables;
+      const data = _.selectedVariable;
+      
+      variables_data.selectedVar.isNew = !data;
+      variables_data.selectedVar.data = data;
+      console.log(data);
+      variables_data.originalData = Object.assign({}, data);
+      $(".modal-title").text(
+        variables_data.selectedVar.isNew
+          ? "New variable"
+          : "Edit variable: " + data.name
+      );
+
+      if (variables_data.selectedVar.isNew) {
+        variables_data.emptyForm();
+      } else {
+        variables_data.fillUpForm(data);
+      }
+    });
+    $("#variables-modal").on("shown.bs.modal", function (e) {
+      $("#var_field_name").focus();
+    });
+    $("#variables-modal").on("hidden.bs.modal", function (e) {
+      variables_data.emptyForm();
+    });
+
+    $("#var_field_name").on("keyup", function () {
+      const name = $(this).val() ?? "";
+      const key = utils.generate_key_value(name);
+      $("#var-key-span").text(key);
+    });
+    $("#variables-form").on("submit", function (e) {
+      e.preventDefault();
+      variables_data.submitForm();
+    });
+    $("#variables-modal .save-button").on("click", function () {
+      variables_data.submitForm();
+    });
+    $("#variables-modal .close-button").on("click", function () {
+      $("#variables-modal").modal("hide");
+    });
+  });
+</script>

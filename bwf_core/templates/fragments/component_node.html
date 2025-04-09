@@ -1,0 +1,251 @@
+<template id="component-node-template">
+  <div class="card component-node p-0" style="width: 360px">
+    <div style="height: 0px">
+      <div class="component-route component-in"></div>
+    </div>
+
+    <div class="card-header justify-content-between d-flex">
+      <div>
+        <i class="bi bi-gear"></i>
+        <span class="component-label"></span>
+      </div>
+
+      <button
+        class="btn btn-sm btn-dropdown"
+        type="button"
+        data-bs-toggle="dropdown"
+        aria-expanded="false"
+      >
+        <i class="bi bi-three-dots"></i>
+      </button>
+      <ul class="dropdown-menu">
+        <li class="dropdown-item btn add-next-component">Add next node</li>
+        <li class="dropdown-item btn print-component">Print in console</li>
+        <li><hr class="dropdown-divider" /></li>
+        <li class="dropdown-item dropdown-item-danger delete-component">
+          Delete
+        </li>
+      </ul>
+    </div>
+    <div class="card-body">
+      <div class="list-group input"></div>
+      <div class="list-group output" style="display: none">
+        <hr />
+      </div>
+      <div class="list-group on-fail"></div>
+      <div class="end-node"></div>
+      <div class="conditions-btn"></div>
+    </div>
+    <div style="height: 0px">
+      <div class="component-route component-out"></div>
+    </div>
+  </div>
+</template>
+<template id="component-diagram-node-template">
+  <div class="diagram-node-parent">
+    <div class="diagram-node">
+      <div class="component-superior">
+        <div class="component-route component-in"></div>
+      </div>
+      <div class="component-content">
+        <div class="component-icon"></div>
+      </div>
+    </div>
+    <div class="component-label">
+      <span></span>
+      <!-- <button
+        class="btn btn-sm btn-dropdown p-0"
+        type="button"
+        aria-expanded="false"
+      >
+        <i class="bi bi-three-dots-vertical"></i>
+      </button> -->
+    </div>
+    <div style="height: 0px">
+      <div class="component-route component-out">
+        <i class="bi bi-plus" style="opacity: 0"></i>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="component-setting-side-panel-template">
+  <form
+    id="component-settings-form"
+    class="mb-3"
+    submit="return false;"
+    style="display: none"
+  >
+    <div class="card">
+      <div class="card-body">
+        <h5>Basic info</h5>
+        <div class="mb-3">
+          <label class="form-label">Node name</label>
+          <input
+            type="text"
+            class="form-control component-name"
+            placeholder="Component name"
+            aria-label="Component name"
+            aria-describedby="basic-addon1"
+            maxlength="100"
+          />
+        </div>
+        <hr />
+        <div class="mt-3 d-flex">
+          <button type="submit" class="btn btn-sm btn-primary">Save</button>
+          <button
+            type="button"
+            class="btn btn-sm btn-secondary-outline cancel-btn"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
+</template>
+<template id="component-side-panel-template">
+  <div class="card component-side-node p-0">
+    <div class="card-header justify-content-between d-flex">
+      <div>
+        <i class="bi bi-gear"></i>
+        <span class="component-label"></span>
+      </div>
+      <div class="dropdown">
+        <button
+          class="btn btn-sm"
+          type="button"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+        >
+          <i class="bi bi-three-dots"></i>
+        </button>
+        <ul class="dropdown-menu">
+          <li class="dropdown-item btn add-on-fail">Add on fail</li>
+          <li class="dropdown-item btn edit-component">Edit</li>
+          <li class="dropdown-item btn print-component">Print in console</li>
+          <li><hr class="dropdown-divider" /></li>
+          <li class="dropdown-item dropdown-item-danger delete-component">
+            Delete
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="list-group input"></div>
+      <div class="list-group output" style="display: none"></div>
+    <hr />
+      <div class="list-group on-fail pt-1"></div>
+      <div class="end-node"></div>
+      <div class="conditions-btn"></div>
+    </div>
+  </div>
+</template>
+
+<template id="component-branch-template">
+  <div class="branch-border my-5">
+    <div class="d-flex">
+      <div class="branch-true" style="margin-right: 10em; align-content: center;">
+        <div style="height: 2em">
+          <div class="component-route component-out entry-point">
+            <i class="bi bi-plus" style="opacity: 0"></i>
+          </div>
+        </div>
+        <div class="workflow"></div>
+      </div>
+      <div class="branch-false" style="margin-left: 10em">
+        <div style="height: 2em">
+          <div class="component-route component-out entry-point">
+            <i class="bi bi-plus" style="opacity: 0"></i>
+          </div>
+        </div>
+        <div class="workflow"></div>
+      </div>
+    </div>
+  </div>
+</template>
+<template id="component-on-fail-template">
+  <form id="component-on-fail-form" class="mb-3" submit="return false;">
+    <h6>On execution failure</h6>
+    <p class="text-muted">
+      Select the action to be taken when the component fails to execute.
+      <br />
+      <span class="text-muted">
+        The default action is to terminate the execution of the workflow.
+      </span>
+    </p>
+    <div class="row g-2 d-flex justify-content-between mb-3">
+      
+      <div class="col-9">
+        <div class="d-flex">
+          <select
+            class="form-select component-on-fail"
+            aria-label="Default select example"
+            required
+          >
+            <option selected value="retry">Retry</option>
+            <option value="ignore">Ignore</option>
+            <option value="terminate">Terminate</option>
+            <option value="custom">Custom flow</option>
+          </select>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-danger btn-remove ms-2"
+          >
+            <!-- <i class="bi bi-x"></i> -->
+             Remove
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="row mb-1 field-retries"
+      style="display: none"
+    >
+      <div class="col-2">
+        <label class="form-label">Max retries</label>
+      </div>
+      <div class="col-7">
+        <input
+          type="number"
+          class="form-control component-max-retries"
+          placeholder="Max retries"
+          aria-label="Max retries"
+          min="0"
+          max="10"
+        />
+      </div>
+    </div>
+
+    <div
+      class="row mb-1 field-interval"
+      style="display: none"
+    >
+      <div class="col-2">
+        <label class="form-label">Retry interval (ms)</label>
+      </div>
+      <div class="col-7">
+        <input
+          type="number"
+          class="form-control component-interval"
+          placeholder="Retry interval in milliseconds. Max 10000"
+          aria-label="Interval (ms)"
+          min="0"
+          max="10000"
+        />
+      </div>
+    </div>
+    <div class="mt-3 row on-fail-btns">
+      <div class="col-3">
+        <button type="submit" class="btn btn-sm btn-primary btn-save">Save</button>
+      <button
+        type="button"
+        class="btn btn-sm btn-secondary-outline btn-cancel"
+      >
+        Cancel
+      </button>
+      </div>
+    </div>
+  </form>
+</template>

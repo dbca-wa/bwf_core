@@ -1,0 +1,123 @@
+{% extends 'govapp/bwf_base.html' %} {% block content %}
+<div class="container-sm">
+  <h1>BWF Components</h1>
+  <p>Customize your business workflows here.</p>
+  <input type="hidden" id="csrf_token" value="{{ csrf_token }}" />
+  <button class="btn btn-primary" id="add-workflow" type="button">
+    <i class="bi bi-plus"></i>
+    New Workflow
+  </button>
+
+  {% for workflow in workflows %}
+
+  <div class="card mt-3">
+    <div class="card-header">
+      <div class="justify-content-between d-flex">
+        <a href="workflow/{{workflow.id}}/" class="btn btn-link">
+          <h5>{{ workflow.name }}</h5>
+        </a>
+        <span class="text-secondary">Version number: {{workflow.version_number}}</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h6 class="">Description</h6>
+      <p>{{ workflow.description }}</p>
+      <div>
+        <div class="row">
+          <div class="col-8">
+            <div class="row mb-4">
+              <div class="col-9">
+                  <h6 class="">Versions</h6>
+              </div>
+              <div class="col-3">
+                  <button
+                    class="btn btn-outline-primary btn-sm new-version-btn"
+                    data-workflow-id="{{workflow.id}}"
+                    type="button"
+                  >
+                  <i class="bi bi-plus"></i>
+                    New version
+                  </button>
+              </div>
+            </div>
+            {% for version in workflow.versions.all %}
+
+            <div class="row mb-2 pb-2">
+              <div class="col-6">
+                <a href="{% url 'workflow-edition' workflow.id version.id %}">#{{ version.version_number }} - {{ version.version_name }} - {{ version.created_at }}</a>
+              </div>
+              <div class="col-2 d-flex justify-content-end g-2">
+                {{version.updated_at}}
+              </div>
+              <div class="col-2 d-flex justify-content-end g-2">
+              <div>
+                {% if version.is_edition %}
+                  <span class="badge bg-primary">Draft</span>
+                {% endif %}
+                {% if version.is_active %}
+                  <span class="ms-1 badge bg-success">Active</span>
+                {% endif %}
+              </div>
+              </div>
+              <div class="col-6">
+                <!-- <button
+                  class="btn btn-outline-secondary btn-sm edit-version-btn"
+                  data-workflow-id="{{workflow.id}}"
+                  data-version="{{version.id}}"
+                  type="button"
+                >
+                  Edit
+                </button> -->
+              </div>
+            </div>
+            {% endfor %}
+            <!-- if versions empty -->
+            {% if workflow.versions.all|length == 0 %}
+            <div class="row mb-2">
+              <div class="col-6 text-secondary">
+                <p>No versions available</p>
+              </div>
+            {% endif %}
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+<script src="/static/pages/workflow/workflow.js"></script>
+<!-- Modals -->
+{% include 'modals/new_workflow_modal.html' %}
+
+<script>
+  $(() => {
+    $("#add-workflow").on("click", function () {
+      $("#workflow-creation-modal").modal("show");
+    });
+    $(".edit-version-btn").on("click", function () {
+
+    })
+    $(".new-version-btn").on("click", function () {
+      const _ = bwf_workflow;
+      const button = $(this);
+      const workflow_id = $(this).data("workflow-id");
+      button.attr("disabled", true);
+      const data = {
+        name: `Untitled`,
+        workflow_id,
+      };
+      _.api
+        .createWorkflowVersion(data)
+        .then((response) => {
+          button.attr("disabled", false);
+          _.navigate.toVersionEdition(response.workflow.id, response.id);
+        })
+        .catch((error) => {
+          button.attr("disabled", false);
+          console.error(error);
+        });
+    });
+  });
+</script>
+{% endblock %}
