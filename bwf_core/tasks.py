@@ -2,7 +2,7 @@
 from bwf_core.workflow.base_plugin import PluginWrapperFactory
 from bwf_core.controller.controller import BWFPluginController
 from bwf_core.models import Workflow, WorkFlowInstance, WorkflowInstanceFactory, WorkflowComponentInstanceFactory, ComponentInstance, FailureHandleTypesEnum
-from bwf_core.workflow.components.tasks import find_component_in_tree
+from bwf_core.components.tasks import find_component_in_tree
 import logging
 import time
 logger = logging.getLogger(__name__)

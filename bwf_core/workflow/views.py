@@ -16,7 +16,7 @@ from .utils import generate_workflow_definition, set_workflow_active_version
 from bwf_core.models import Workflow, WorkflowVersion
 from bwf_core.workflow.serializers import workflow_serializers
 from bwf_core.tasks import start_workflow
-from bwf_core.workflow.components.tasks import extract_workflow_mapping
+from bwf_core.components.tasks import extract_workflow_mapping
 from django.core.files.base import ContentFile
 
 logger = logging.getLogger(__name__)

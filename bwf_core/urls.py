@@ -20,7 +20,7 @@ from django import conf
 from django import urls
 from . import views
 from .workflow import views as workflow_viewsets
-from .workflow.components import views as component_viewsets
+from .components import views as component_viewsets
 from rest_framework import routers
 
 admin.site.site_header = conf.settings.PROJECT_TITLE

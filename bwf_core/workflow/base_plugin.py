@@ -37,7 +37,7 @@ class BasePlugin:
 
     def call_next_node(self, override_route=None):
         from bwf_core.tasks import register_workflow_step
-        from bwf_core.workflow.components.tasks import find_component_in_tree
+        from bwf_core.components.tasks import find_component_in_tree
 
         workflow_definition = self.workflow_instance.get_json_definition()
         current_definition = find_component_in_tree(workflow_definition, self.component.component_id)
@@ -73,7 +73,7 @@ class BasePlugin:
         self.call_next_node()
     
     def on_failure(self, error=""):
-        from bwf_core.workflow.components.tasks import find_component_in_tree
+        from bwf_core.components.tasks import find_component_in_tree
 
         workflow_definition = self.workflow_instance.get_json_definition()
         current_definition = find_component_in_tree(workflow_definition, self.component.component_id)
@@ -200,7 +200,7 @@ class BranchPlugin(BasePlugin):
 
     def call_next_node(self, override_route=None):
         from bwf_core.tasks import register_workflow_step
-        from bwf_core.workflow.components.tasks import find_component_in_tree
+        from bwf_core.components.tasks import find_component_in_tree
 
         workflow_definition = self.workflow_instance.get_json_definition()
         current_definition = find_component_in_tree(workflow_definition, self.component.component_id)
