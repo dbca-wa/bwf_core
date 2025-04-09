@@ -235,6 +235,7 @@ var workflow_components = {
     if (!_.isEdition) {
       $(`#${elementId}`).find(".delete-component").remove();
       $(`#${elementId}`).find(".add-next-component").remove();
+      $(`#${elementId}`).find(".add-on-fail").remove();
     }
     _.addMenuDiagramNodeFunctionality(elementId, component);
 
@@ -434,7 +435,16 @@ var workflow_components = {
           ? ""
           : markup(
               "div",
-              markup("label", name, { for: key, class: "form-label" }),
+              markup(
+                "div",
+                [
+                  markup("label", name, { for: key, class: "form-label" }),
+                  markup("code", data_type, {class: "data-type" }),
+                ],
+                {
+                  class: "input-label"
+                }
+              ),
               { class: "col-auto" }
             ),
 
@@ -540,9 +550,10 @@ var workflow_components = {
     );
 
     $(_.sidePanel).on("click", function (event) {
-      if ($(event.target).hasClass("slide-out-panel")) component_utils.closePopovers();
+      if ($(event.target).hasClass("slide-out-panel"))
+        component_utils.closePopovers();
     });
-  
+
     $(`#${elementId}`).find(".component-label").html(name);
     $(`#${elementId}`)
       .find(".card-header i")
@@ -581,6 +592,7 @@ var workflow_components = {
     if (!isEdition) {
       $(`#${elementId}`).find(".delete-component").remove();
       $(`#${elementId}`).find(".edit-component").remove();
+      $(`#${elementId}`).find(".add-on-fail").remove();
     }
 
     _.addMenuButtonsFunctionality(elementId, component);
@@ -661,7 +673,7 @@ var workflow_components = {
               }
             }
             _.updateLines();
-            $(`#node_${data.id}`).find(".btn-dropdown").trigger("click");
+            $(`#node_${data.id}`).find(".diagram-node").trigger("click");
             resolve(data);
           },
           error: function (error) {

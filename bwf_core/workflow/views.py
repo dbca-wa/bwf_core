@@ -15,6 +15,7 @@ from django.shortcuts import render, get_object_or_404
 from .utils import generate_workflow_definition, set_workflow_active_version
 from bwf_core.models import Workflow, WorkflowVersion
 from bwf_core.workflow.serializers import workflow_serializers
+from bwf_core.workflow.tasks import validate_workflow_required_fields
 from bwf_core.tasks import start_workflow
 from bwf_core.components.tasks import extract_workflow_mapping
 from django.core.files.base import ContentFile
@@ -132,6 +133,9 @@ class WorkflowVersionViewset(ModelViewSet):
         workflow_id = request.query_params.get("workflow_id", None)
         version = get_object_or_404(WorkflowVersion, id=version_id, workflow__id=workflow_id)
         try:
+            errors = validate_workflow_required_fields(version.get_json_definition().get('workflow', {}))
+            if len(errors):
+                return JsonResponse({"success": False, "message": "The Workflow has missing values.", "errors": errors})
             set_workflow_active_version(version)
         except Exception as e:
             logger.error(f"Error setting active version: {str(e)}")
