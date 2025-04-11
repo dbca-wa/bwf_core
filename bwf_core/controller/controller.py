@@ -72,7 +72,16 @@ class BWFPluginController:
                       'icon_class': plugin_definition.get('icon_class'),
                       'icon_image_src': plugin_definition.get('icon_image_src'),
                     }
-        cache.set(f'plugin.ui.{new_plugin.get("id")}', value=plugin_ui_definition, timeout=60*60*24)
+        plugin_info = {
+                "plugin_info": {
+                    "id": plugin_definition.get('id'),
+                    "version": plugin_definition.get('version'),
+                    "name": plugin_definition.get('name'),
+                    "description": plugin_definition.get('description'),
+                },
+                "ui": plugin_ui_definition,
+        }
+        cache.set(f'plugin.info.{new_plugin.get("id")}', value=plugin_info, timeout=60*60*24)
         # TODO: Validate it has all required fields
               
         return new_plugin
@@ -123,10 +132,10 @@ class BWFPluginController:
             return component_module
         return None
     
-    def get_plugin_ui_definition(self, plugin_id):
+    def get_plugin_definition_info(self, plugin_id):
         plugin = self.plugins.get(plugin_id, None)
         if plugin:
-            ui_definition = cache.get(f'plugin.ui.{plugin_id}')
+            ui_definition = cache.get(f'plugin.info.{plugin_id}')
             if ui_definition:
                 return ui_definition
             
@@ -140,9 +149,19 @@ class BWFPluginController:
                     'icon_class': plugin_definition.get('icon_class'),
                     'icon_image_src': plugin_definition.get('icon_image_src'),
             }
+
+            plugin_info = {
+                "plugin_info": {
+                    "id": plugin_definition.get('id'),
+                    "version": plugin_definition.get('version'),
+                    "name": plugin_definition.get('name'),
+                    "description": plugin_definition.get('description'),
+                },
+                "ui": ui_definition,
+            }
             
-            cache.set(f'plugin.ui.{plugin_id}', value=ui_definition, timeout=60*60*24)
-            return ui_definition
+            cache.set(f'plugin.info.{plugin_id}', value=plugin_info, timeout=60*60*24)
+            return plugin_info
             
 
 

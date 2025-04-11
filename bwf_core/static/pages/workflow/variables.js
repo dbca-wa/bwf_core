@@ -74,11 +74,14 @@ var workflow_variables = {
     const variableMarkup = `
           <label id="${elementId}" class="list-group-item d-flex gap-2">
             <div class="d-flex gap-2 justify-content-between w-100">
-            <div>
-              <span class='var-name'>
+            <div style="line-height: 15px">
+              <span>
                 ${variable.name}
+              </span></br>
+              <span style="font-size: 10px; color: #6c757d">
+                ${variable.key}
               </span>
-              <small class="d-block text-body-secondary var-type">${variable.data_type}</small>
+              <code style="font-size: 10px">${variable.data_type}</code>
             </div>
             <div class="form-check form-switch">
               <button class="btn btn-ghost edit-variable" data-variable-id="${variable.id}">

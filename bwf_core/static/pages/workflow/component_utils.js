@@ -203,7 +203,7 @@ var component_utils = {
           path: "True",
           start: start,
           end: $(`#${branchElementId} .branch-true .component-out i`),
-          color: "#6cb0be",
+          color: "#4076c6",
           label: "True",
           startSocket: "left",
           endSocket: "top",
@@ -212,7 +212,7 @@ var component_utils = {
           path: "False",
           start: start,
           end: $(`#${branchElementId} .branch-false .component-out i`),
-          color: "#6cb0be",
+          color: "#4076c6",
           label: "False",
           startSocket: "right",
           endSocket: "top",
@@ -256,7 +256,7 @@ var component_utils = {
           start: $(
             `#${component.diagram.branchElementId} .branch-true:first .component-out:last`
           ),
-          color: "#6cb0be",
+          color: "#4076c6",
           startSocket: "bottom",
           endSocket: "left",
           lineRef: "left",
@@ -267,7 +267,7 @@ var component_utils = {
           start: $(
             `#${component.diagram.branchElementId} .branch-false:first .component-out:last`
           ),
-          color: "#6cb0be",
+          color: "#4076c6",
           startSocket: "bottom",
           endSocket: "right",
           lineRef: "right",

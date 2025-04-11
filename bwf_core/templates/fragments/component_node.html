@@ -104,11 +104,19 @@
     </div>
   </form>
 </template>
+<template id="plugin-info-template">
+  <div id="panel-plugin-info">
+    <i class="bi bi-gear"></i>
+    <div>
+      <h6 class="plugin-name"></h6>
+      <p class="text-muted plugin-description"></p>
+    </div>
+  </div>
+</template>
 <template id="component-side-panel-template">
   <div class="card component-side-node p-0">
     <div class="card-header justify-content-between d-flex">
       <div>
-        <i class="bi bi-gear"></i>
         <span class="component-label"></span>
       </div>
       <div class="dropdown">
@@ -134,7 +142,7 @@
     <div class="card-body">
       <div class="list-group input"></div>
       <div class="list-group output" style="display: none"></div>
-    <hr />
+      <hr />
       <div class="list-group on-fail pt-1"></div>
       <div class="end-node"></div>
       <div class="conditions-btn"></div>
@@ -145,7 +153,10 @@
 <template id="component-branch-template">
   <div class="branch-border my-5">
     <div class="d-flex">
-      <div class="branch-true" style="margin-right: 10em; align-content: center;">
+      <div
+        class="branch-true"
+        style="margin-right: 10em; align-content: center"
+      >
         <div style="height: 2em">
           <div class="component-route component-out entry-point">
             <i class="bi bi-plus" style="opacity: 0"></i>
@@ -175,7 +186,6 @@
       </span>
     </p>
     <div class="row g-2 d-flex justify-content-between mb-3">
-      
       <div class="col-9">
         <div class="d-flex">
           <select
@@ -193,16 +203,13 @@
             class="btn btn-sm btn-outline-danger btn-remove ms-2"
           >
             <!-- <i class="bi bi-x"></i> -->
-             Remove
+            Remove
           </button>
         </div>
       </div>
     </div>
 
-    <div
-      class="row mb-1 field-retries"
-      style="display: none"
-    >
+    <div class="row mb-1 field-retries" style="display: none">
       <div class="col-2">
         <label class="form-label">Max retries</label>
       </div>
@@ -218,10 +225,7 @@
       </div>
     </div>
 
-    <div
-      class="row mb-1 field-interval"
-      style="display: none"
-    >
+    <div class="row mb-1 field-interval" style="display: none">
       <div class="col-2">
         <label class="form-label">Retry interval (ms)</label>
       </div>
@@ -238,13 +242,15 @@
     </div>
     <div class="mt-3 row on-fail-btns">
       <div class="col-3">
-        <button type="submit" class="btn btn-sm btn-primary btn-save">Save</button>
-      <button
-        type="button"
-        class="btn btn-sm btn-secondary-outline btn-cancel"
-      >
-        Cancel
-      </button>
+        <button type="submit" class="btn btn-sm btn-primary btn-save">
+          Save
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm btn-secondary-outline btn-cancel"
+        >
+          Cancel
+        </button>
       </div>
     </div>
   </form>

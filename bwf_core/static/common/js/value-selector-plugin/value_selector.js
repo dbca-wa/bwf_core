@@ -584,9 +584,7 @@ class ValueSelector {
     _.editor = CodeMirror.fromTextArea(element, {
       doc: "Start document",
       value: "",
-      mode: {name: "python",
-        version: 3,
-        singleLineStringErrors: false},
+      mode: { name: "python", version: 3, singleLineStringErrors: false },
       theme: "default",
       lineNumbers: true,
       indentUnit: 4,
@@ -814,7 +812,7 @@ class ValueSelector {
     const isDisabled = !_.isEdition;
     const options = {};
     if (type === "boolean") {
-      return markup('div', [
+      return markup("div", [
         markup("input", "", {
           type: "checkbox",
           class: "btn-check",

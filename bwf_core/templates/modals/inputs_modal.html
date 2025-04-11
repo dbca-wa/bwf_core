@@ -58,12 +58,8 @@
             </select>
           </div>
           <div class="mb-3">
-            <label class="form-label"
-              >Default value</label
-            >
-            <div class="data_type_container">
-
-            </div>
+            <label class="form-label">Default value</label>
+            <div class="data_type_container"></div>
           </div>
           <div class="mb-3 form-check">
             <input
@@ -91,6 +87,7 @@
 
 <script>
   inputs_data = {
+    editor: null,
     selectedInput: {
       isNew: true,
       data: null,
@@ -140,45 +137,104 @@
       $("#field_description").val(input.description);
       $("#field_data_type").val(input.data_type);
       // $("#field_default_value").val(input.default_value?.value ?? "");
+      inputs_data.renderDefaultValue(
+        $(".data_type_container"),
+        dataType,
+        input.default_value?.value
+      );
       $("#field_required").prop("checked", input.required);
     },
+    renderEditor: function (dataType, value) {
+      const _ = inputs_data;
+      const dataContainer = $(".data_type_container");
+      const element = dataContainer.find("textarea")[0];
+      if (!element) {
+        return;
+      }
+      _.editor = CodeMirror.fromTextArea(element, {
+        doc: "Start document",
+        value: "",
+        mode: { name: "python", version: 3, singleLineStringErrors: false },
+        theme: "default",
+        lineNumbers: true,
+        indentUnit: 4,
+        styleActiveLine: true,
+        matchBrackets: true,
+        autoCloseBrackets: true,
+        lineWrapping: true,
+        lint: true,
+      });
+      _.editor.setValue(value ? value : dataType === "array" ? "[]" : "{}");
+    },
     emptyForm: function () {
+      const _ = inputs_data;
+      const dataType = "string";
       $("#field_label").val("");
       $("#key-span").text("");
       $("#field_description").val("");
-      $("#field_data_type").val("string");
-      inputs_data.renderDefaultValue($(".data_type_container"), "string");
+      $("#field_data_type").val(dataType);
+      if (_.editor) {
+        _.editor.toTextArea();
+        _.editor = null;
+      }
+      _.renderDefaultValue($(".data_type_container"), dataType);
       $("#field_required").prop("checked", false);
     },
-    renderDefaultValue: function (container, data_type, value) { 
+    renderDefaultValue: function (container, data_type, value) {
       // types : string, boolean, number, object, array, date, datetime
+      const _ = inputs_data;
       const current = container.find("#field_default_value");
+      const dataContainer = $(".data_type_container");
       if (current.length === 0 || current.data("datatype") !== data_type) {
+        if (_.editor) {
+        _.editor.toTextArea();
+        _.editor = null;
+      }
         current.remove();
         const types = {
-          string: `<input type="text" class="form-control" id="field_default_value" data-datatype="${data_type}" value="${value ?? ""}">`,
+          string: `<input type="text" class="form-control" id="field_default_value" data-datatype="${data_type}" value="${
+            value ?? ""
+          }">`,
           boolean: `<select class="form-select" id="field_default_value" data-datatype="${data_type}">
             <option value="true">True</option>
             <option value="false">False</option>
           </select>`,
-          number: `<input type="number" class="form-control" id="field_default_value" data-datatype="${data_type}" value="${value ?? ""}">`,
-          object: `<textarea class="form-control" id="field_default_value" data-datatype="${data_type}" rows="3">${value ?? ""}</textarea>`,
-          array: `<textarea class="form-control" id="field_default_value" data-datatype="${data_type}" rows="3">${value ?? ""}</textarea>`,
-          date: `<input type="date" class="form-control" id="field_default_value" data-datatype="${data_type}" value="${value ?? ""}">`,
-          datetime: `<input type="datetime-local" class="form-control" id="field_default_value" data-datatype="${data_type}" value="${value ?? ""}">`,
+          number: `<input type="number" class="form-control" id="field_default_value" data-datatype="${data_type}" value="${
+            value ?? ""
+          }">`,
+          object: `<textarea class="form-control" id="field_default_value" data-datatype="${data_type}" rows="3">${
+            value ?? ""
+          }</textarea>`,
+          array: `<textarea class="form-control" id="field_default_value" data-datatype="${data_type}" rows="3">${
+            value ?? ""
+          }</textarea>`,
+          date: `<input type="date" class="form-control" id="field_default_value" data-datatype="${data_type}" value="${
+            value ?? ""
+          }">`,
+          datetime: `<input type="datetime-local" class="form-control" id="field_default_value" data-datatype="${data_type}" value="${
+            value ?? ""
+          }">`,
+        };
+        const descriptions = {
+          array: "Enter a python array to use as the default value.",
+          object: "Enter a python dict object to use as the default value.",
         };
         container.empty();
         container.append(types[data_type]);
-      }
-
-      if (value) {
-        if (data_type === "boolean") {
-          container.find("#field_default_value").val(value === "true" ? "true" : "false");
-        } else {
-          container.find("#field_default_value").val(value);
+        if (descriptions[data_type]) {
+          container.append(
+            `<div class="form-text">${descriptions[data_type]}</div>`
+          );
         }
       }
 
+      if (data_type === "boolean") {
+        container
+          .find("#field_default_value")
+          .val(value === "true" ? "true" : "false");
+      } else {
+        container.find("#field_default_value").val(value);
+      }
     },
     validate: function (data) {
       const { label, key, description, data_type, default_value, required } =
@@ -218,7 +274,7 @@
       );
 
       if (inputs_data.selectedInput.isNew) {
-        inputs_data.emptyForm()
+        inputs_data.emptyForm();
       } else {
         inputs_data.fillUpForm(data);
       }
@@ -286,7 +342,9 @@
       $("#inputs-modal").modal("hide");
     });
     $("#field_data_type").on("change", function () {
-      inputs_data.renderDefaultValue($(".data_type_container"), $(this).val());
+      const dataType = $(this).val();
+      inputs_data.renderDefaultValue($(".data_type_container"), dataType);
+      inputs_data.renderEditor(dataType, inputs_data.selectedInput.data?.value);
     });
     $("#inputs-modal .close-button").on("click", function () {
       $("#inputs-modal").modal("hide");

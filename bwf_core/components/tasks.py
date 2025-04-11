@@ -236,15 +236,16 @@ def node_type_definitions(node_type):
 
 # END: Creation Tasks
 def to_ui_workflow_node(component, parent_info={}):
-    ui_definition = BWFPluginController().get_instance().get_plugin_ui_definition(component.get("plugin_id"))
+    definition_info = BWFPluginController().get_instance().get_plugin_definition_info(component.get("plugin_id"))
     
     workflow_node = {
             "id": component.get("id", None),
             "name": component.get("name", "Node"),
             "plugin_id": component.get("plugin_id"),
+            "plugin_info": definition_info.get("plugin_info", {}),
             "version_number": component.get("version_number", "1"),
             "config": component.get("config", {}),
-            "ui": ui_definition,
+            "ui": definition_info.get("ui", {}),
             "node_type": component.get("node_type", "node"),
             "conditions": component.get("conditions", {}),
             "parent_info": parent_info,

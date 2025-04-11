@@ -127,7 +127,7 @@ var workflow_components = {
       $(`#flow-start-node`)[0],
       $(`.component-node, .diagram-node`)[0],
       {
-        color: "#6cb0be",
+        color: "#4076c6",
         size: 2,
       }
     );
@@ -154,7 +154,7 @@ var workflow_components = {
         } catch (error) {}
 
         const line = new LeaderLine(start[0], end[0], {
-          color: "#6cb0be",
+          color: "#4076c6",
           size: 2,
           // middleLabel: `${component.name} -> ${destination.name}`,
         });
@@ -518,6 +518,7 @@ var workflow_components = {
     const templateSettings = document.querySelector(
       "#component-setting-side-panel-template"
     );
+    const templatePluginInfo = document.querySelector("#plugin-info-template");
     const clone = template.content.cloneNode(true);
     const cloneSettings = templateSettings.content.cloneNode(true);
     const elementId = `node_panel_${id}`;
@@ -526,6 +527,7 @@ var workflow_components = {
       .querySelector(".component-side-node")
       .setAttribute("data-component-id", id);
 
+    body.append(templatePluginInfo.content.cloneNode(true));
     body.append(cloneSettings);
     // Settings setup
     $(`#component-settings-form`).find(".component-name").val(name);
@@ -548,6 +550,9 @@ var workflow_components = {
         { class: "panel-value-edition" }
       )
     );
+    body.find(".plugin-name").html(component?.plugin_info?.name);
+    body.find(".plugin-description").html(component?.plugin_info?.description);
+    body.find("i").first().attr("class", component.ui?.icon_class ?? "bi bi-gear");
 
     $(_.sidePanel).on("click", function (event) {
       if ($(event.target).hasClass("slide-out-panel"))
@@ -555,10 +560,6 @@ var workflow_components = {
     });
 
     $(`#${elementId}`).find(".component-label").html(name);
-    $(`#${elementId}`)
-      .find(".card-header i")
-      .first()
-      ?.attr("class", component.ui?.icon_class ?? "bi bi-gear");
     for (let i = 0; i < inputArray.length; i++) {
       const input = inputArray[i];
       const divElementId = `${elementId}_${input.key}`;

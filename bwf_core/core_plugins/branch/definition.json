@@ -6,7 +6,7 @@
   "category": "flow",
   "author": "BWF Components",
   "editable": false,
-  "icon_class": "bi bi-chevron-double-right",
+  "icon_class": "bi bi-bezier",
   "icon_image_src": "icon.png",
   "node_type": "branch",
   "base_input": [

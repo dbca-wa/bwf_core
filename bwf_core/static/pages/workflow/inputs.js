@@ -73,10 +73,16 @@ var workflow_inputs = {
     const inputMarkup = `
           <label id="${elementId}" class="list-group-item d-flex gap-1">
             <div class="d-flex gap-2 justify-content-between w-100">
-            <span>
-              ${input.label}
-              <small class="d-block text-body-secondary">${input.description}</small>
-            </span>
+            <div style="line-height: 15px">
+              <span>
+                ${input.label}
+              </span></br>
+              <span style="font-size: 10px; color: #6c757d">
+                ${input.key}
+              </span>
+              <code style="font-size: 10px">${input.data_type}</code>
+              
+            </div>
             <div class="form-check form-switch">
               <button class="btn btn-ghost add-input"data-input-id="${input.id}">
                 <i class="bi bi-gear"></i>

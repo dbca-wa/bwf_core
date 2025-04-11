@@ -61,7 +61,7 @@ class CreateVariableValueSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255)
     key = serializers.CharField(max_length=255)
     data_type = serializers.CharField(max_length=255)
-    value = serializers.CharField(max_length=255, required=False)
+    value = serializers.CharField(max_length=255, required=False, allow_blank=True)
     context = serializers.CharField(max_length=255, required=False)
 
 
