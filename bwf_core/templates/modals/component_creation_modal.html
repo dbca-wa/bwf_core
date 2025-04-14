@@ -1,0 +1,297 @@
+<div
+  class="modal fade"
+  id="component-creation-modal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="component-creation-modal-label"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-xl" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="component-creation-modal-label">
+          Insert Component
+        </h5>
+        <button
+          type="button"
+          class="btn btn-ghost"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="components-form">
+          <p class="my-2">
+            Select a component definition to create a new component.
+          </p>
+          <div class="row" id="definitions"></div>
+          <div
+            id="component-route"
+            class="mt-2"
+            style="display: none; border-top: 1px solid #ccc"
+          >
+            <label class="form-label">Insert after</label>
+            <div id="components-list"></div>
+          </div>
+          <hr class="my-2" />
+          <div class="mb-3">
+            <label for="component-name" class="form-label">Node Name</label>
+            <input type="text" class="form-control" id="component-name" />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary close-button">
+          Close
+        </button>
+        <button type="button" class="btn btn-primary create-component-button">
+          Create Component
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  new_component_data = {
+    selectedComponent: {
+      data: null,
+      path: null,
+      parentId: null,
+      isEntry: false,
+    },
+
+    validate: function (data) {
+      const {} = data;
+
+      return true;
+    },
+  };
+  $(() => {
+    $("#component-creation-modal").on("show.bs.modal", function (e) {
+      const _ = workflow_components;
+      $(`#components-list`).empty();
+      $("#definitions").empty();
+
+      _.fetchPluginDefinitions().then((data) => {
+        const { markup } = utils;
+        const _ = workflow_components;
+        _.var.definitions = data;
+        data.forEach((d, index) => {
+          $("#definitions").append(
+            markup(
+              "div",
+              [
+                {
+                  tag: "input",
+                  class: "list-group-item-check pe-none",
+                  type: "radio",
+                  name: "definition-radio",
+                  id: `listGroupCheckableRadios${index}`,
+                  value: d.id,
+                },
+
+                {
+                  tag: "label",
+                  content: [
+                    {
+                      tag: "i",
+                      class: [d.icon_class ?? "bi bi-gear", "me-2"].join(" "),
+                    },
+                    d.name,
+                    {
+                      tag: "span",
+                      content: d.description,
+                      class: "d-block small text-muted",
+                    },
+                  ],
+                  class: "list-group-item rounded-3 py-1 my-1",
+                  for: `listGroupCheckableRadios${index}`,
+                },
+              ],
+              { class: "col-6" }
+            )
+          );
+          $("#definitions input[type='radio']").on("change", function (event) {
+            const componentId = $("#definitions input:checked").val();
+            const component = workflow_components.var.definitions.find(
+              (definition) => definition.id == componentId
+            );
+            if (component) {
+              $("#component-name").val(component.name);
+            }
+          });
+        });
+      });
+      const { markup } = utils;
+      const hasComponents = _.var.components.length > 0;
+      if (hasComponents) {
+        // $("#component-route").show();
+        const selectComponents = markup(
+          "select",
+          [
+            {
+              tag: "option",
+              value: "",
+              content: "Select a component",
+              disabled: true,
+              selected: true,
+            },
+            ..._.var.components.map((c) => {
+              return { tag: "option", value: c.id, content: c.name };
+            }),
+          ],
+          { class: "form-select" }
+        );
+        $(`#components-list`).append(selectComponents);
+        if (new_component_data.selectedComponent.data) {
+          console.log(
+            "new_component_data.selectedComponent.data",
+            new_component_data.selectedComponent.data
+          );
+          $(`#components-list select`).val(
+            new_component_data.selectedComponent.data.id
+          );
+        }
+      } else {
+        $("#component-route").hide();
+      }
+    });
+
+    $("#component-creation-modal").on("hidden.bs.modal", function (e) {
+      $("#definitions input[type='radio']").prop("checked", false);
+      $("#component-name").val("");
+      new_component_data.selectedComponent.data = null;
+      new_component_data.selectedComponent.path = null;
+      new_component_data.selectedComponent.parentId = null;
+      new_component_data.selectedComponent.isEntry = false;
+    });
+
+    $("#component-creation-modal .close-button").on("click", function () {
+      $("#component-creation-modal").modal("hide");
+    });
+    $("#component-creation-modal .create-component-button").on("click", () => {
+      $("#components-form").submit();
+    });
+  });
+
+  $("#components-form").on("submit", function (e) {
+    e.preventDefault();
+
+    const _ = workflow_components;
+    const value = $("#definitions input:checked").val();
+    const hasComponents = _.var.components.length > 0;
+    const {
+        data: component,
+        path,
+        parentId,
+        isEntry,
+      } = new_component_data.selectedComponent;
+
+    if (hasComponents && !component && !isEntry) {
+      alert("Please select a component to insert after.");
+      return;
+    }
+    if (value) {
+      $(".create-component-button").prop("disabled", true);
+      const definition = _.pluginDefinitions.find((d) => d.id == value);
+      const name = $("#component-name").val() ?? definition.name;
+
+      const data = {
+        plugin_id: definition.id,
+        index: 0,
+        name: name,
+        route: component?.id
+          ? component.id
+          : null,
+        parent_id: parentId,
+        path: path,
+        is_entry: isEntry,
+      };
+      _.api
+        .addComponent(data)
+        .then((data) => {
+          $(".create-component-button").prop("disabled", false);
+          $("#component-creation-modal").modal("hide");
+        })
+        .catch((error) => {
+          $(".create-component-button").prop("disabled", false);
+          alert("An error occurred while creating the component.");
+        });
+    } else {
+      alert("Please select a component definition.");
+    }
+  });
+</script>
+
+<style>
+  #definitions .list-group {
+    width: 100%;
+    max-width: 460px;
+    margin-inline: 1.5rem;
+  }
+
+  #definitions .form-check-input:checked + .form-checked-content {
+    opacity: 0.5;
+  }
+
+  #definitions .form-check-input-placeholder {
+    border-style: dashed;
+  }
+  [contenteditable]:focus {
+    outline: 0;
+  }
+
+  #definitions .list-group-item {
+    cursor: pointer;
+  }
+  #definitions .list-group-item-check {
+    position: absolute;
+    clip: rect(0, 0, 0, 0);
+  }
+  #definitions .list-group-item-check:hover + .list-group-item {
+    background-color: var(--bs-secondary-bg);
+  }
+  #definitions .list-group-item-check:checked + .list-group-item {
+    color: #fff;
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+    font-weight: 600;
+  }
+  #definitions .list-group-item-check:checked + .list-group-item span {
+    color: #e3e3e3 !important;
+  }
+  #definitions .list-group-item-check[disabled] + .list-group-item,
+  #definitions .list-group-item-check:disabled + .list-group-item {
+    pointer-events: none;
+    filter: none;
+    opacity: 0.5;
+  }
+
+  #definitions .list-group-radio .list-group-item {
+    cursor: pointer;
+    border-radius: 0.5rem;
+  }
+  #definitions .list-group-radio .form-check-input {
+    z-index: 2;
+    margin-top: -0.5em;
+  }
+  #definitions .list-group-radio .list-group-item:hover,
+  #definitions .list-group-radio .list-group-item:focus {
+    background-color: var(--bs-secondary-bg);
+  }
+
+  #definitions .list-group-radio .form-check-input:checked + .list-group-item {
+    background-color: var(--bs-body);
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 2px var(--bs-primary);
+  }
+  #definitions .list-group-radio .form-check-input[disabled] + .list-group-item,
+  #definitions .list-group-radio .form-check-input:disabled + .list-group-item {
+    pointer-events: none;
+    filter: none;
+    opacity: 0.5;
+  }
+</style>

@@ -1,0 +1,440 @@
+/* 
+Definitions
+*/
+#component-creation-modal label.list-group-item:hover {
+  border: 3px solid #0d6efd;
+}
+
+/*  */
+.workflow-center {
+  justify-items: center;
+  display: block;
+}
+
+.component-node {
+  margin-top: 70px;
+}
+.component-node .form-label {
+  font-size: 13px;
+  font-weight: bold;
+  color: #61728c;
+}
+
+.component-dot-add {
+  height: 16px;
+  width: 16px;
+  background: transparent;
+  border: 1px solid #0d6efd;
+  border-radius: 10px;
+  margin: auto;
+  cursor: pointer;
+}
+.component-dot-add:hover {
+  border-color: #004ec4;
+}
+/* background: #000f2b;
+border: 2px solid #0d6efd; */
+
+#flow-start-node {
+  height: 2em;
+  width: 7em;
+  background: transparent;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 1em;
+  margin: 3em 0px;
+  align-content: center;
+  text-align: center;
+}
+#flow-start-node span {
+  font-size: 16px;
+  color: #4076c6;
+}
+
+.diagram-node {
+  width: max-content;
+  max-width: 330px;
+  padding: 10px;
+  margin-bottom: 3em;
+  border-radius: 15px;
+  text-align: center;
+  border: 2px solid #0dcaf0;
+  cursor: pointer;
+}
+
+.diagram-node-parent {
+  display: inline-block;
+  justify-items: center;
+  margin-bottom: 5em;
+  width: 100%;
+}
+.diagram-node-parent > .diagram-node {
+  width: 6em;
+  height: 6em;
+  max-width: 330px;
+  padding: 0px;
+  margin-bottom: 0px;
+  border-radius: 3em;
+  text-align: center;
+  border: 5px solid #1d91e82e;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.diagram-node-parent .component-label {
+  display: flex;
+  font-size: 12px;
+  text-align: center;
+  background: #ffffff;
+  padding: 2px 5px;
+  top: 3px;
+  position: relative;
+  /* border: 1px solid #4076c6; */
+  font-weight: 600;
+  letter-spacing: 1px;
+  border-radius: 6px;
+  color: #4076c6;
+  justify-content: space-around;
+  align-items: center;
+  max-width: 20em;
+  cursor: pointer;
+}
+.diagram-node-parent .component-label button {
+  color: #4076c6;
+}
+
+.diagram-node-parent .diagram-node .component-icon {
+  font-size: 3em;
+  color: #3971c4;
+  align-self: center;
+  margin-right: 0px;
+}
+#flow-start-node,
+.diagram-node,
+.component-in,
+.component-out {
+  border-color: #fff;
+  background-color: #bebebf24;
+}
+
+.diagram-node .btn-dropdown,
+.diagram-node {
+  color: #2a2a2b;
+}
+.diagram-node .component-label {
+  align-self: center;
+  font-size: 12px;
+}
+.diagram-node .component-icon {
+  font-size: 1em;
+  /* color: #0dcaf0; */
+  color: #4076c6;
+  align-self: center;
+  margin-right: 8px;
+}
+.diagram-node-parent > .diagram-node:hover {
+  border-color: #4076c6;
+  transition: ease-in 0.2s;
+}
+.diagram-node-parent .component-label:hover {
+  border-width: 2px;
+}
+
+.component-superior,
+.component-inferior {
+  height: 0px;
+}
+
+.component-in {
+}
+.component-out {
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 10px;
+  margin: auto;
+  cursor: pointer;
+  bottom: -6px;
+  position: relative;
+  border-color: #4076c6;
+  font-size: 12px;
+  line-height: 0px;
+}
+.component-out i {
+  color: #067187;
+  transition: ease-in 0.1s;
+}
+.component-out i:hover {
+  opacity: 1 !important;
+  font-size: 1.5em;
+}
+.component-out:hover {
+  border-color: #067187;
+}
+.component-node .component-in {
+}
+.component-node .component-out {
+  height: 12px;
+  width: 12px;
+  border-bottom-width: 6px;
+  border-bottom-style: solid;
+  border-radius: 10px;
+  margin: auto;
+  cursor: pointer;
+  bottom: -5px;
+  position: relative;
+  border-color: #4076c6;
+}
+
+/* popover */
+.popover.show {
+  max-width: 800px !important;
+}
+
+.popover.small-popover {
+  width: 300px;
+}
+
+.popover.big-popover {
+  width: 700px;
+}
+
+.popover-value-selector {
+  padding: 0px;
+}
+
+.popover-value-selector .popover-body {
+  background: #fff;
+  padding: 14px 16px 11px;
+  box-shadow: 0px 5px 9px 0px #b1b1b1;
+  border-radius: 10px;
+  width: 250px;
+}
+
+.popover-value-selector .popover-arrow {
+  display: none !important;
+}
+
+.in-edition .value-selector-content {
+  opacity: 0.5;
+}
+
+.value-in-edition {
+  opacity: 1 !important;
+  border: 2px solid #0d6efd;
+}
+
+/* end popover */
+
+.btn.value-selector-edit,
+.btn.value-selector-reset,
+.btn.value-item-remove {
+  height: 25px;
+  width: 25px;
+  padding: 0px;
+}
+
+.btn.value-selector-edit i,
+.btn.value-selector-reset i,
+.btn.value-item-remove i {
+  font-size: 11px;
+}
+
+#cm-complete-0 {
+  z-index: 10000;
+}
+.value-selector {
+  height: 2em;
+  width: 13em;
+  display: flex;
+  align-items: center;
+  background: #fbfbfb;
+  border-radius: 5px;
+  border: 1px solid #0d6efd91;
+  cursor: pointer;
+  padding: 2px 11px;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.value-selector.boolean-value {
+  background: white;
+  border: none;
+  padding: 5px !important;
+}
+
+.value-selector.is-invalid,
+.value-selector-content.is-invalid select {
+  border: 2px solid #fbc732;
+}
+.value-selector.is-invalid-type,
+.value-selector-content.is-invalid-type select {
+  border-color: #fb5a32;
+}
+
+.value-selector code {
+  color: #292a2b;
+  text-align: center;
+  margin: auto;
+  font-weight: bold;
+}
+
+.value-selector input.form-control {
+  background: #f7f7f7;
+  font-size: 11px;
+  border: none;
+  color: #242931;
+  padding: 4px;
+}
+
+.input-value,
+.value-selector-content {
+  display: inline-flex;
+  width: 100%;
+  justify-content: start;
+  padding: 0px;
+}
+.variables-select {
+  border-color: #0d6efd91;
+}
+
+.context-menu.ui-menu.ui-widget.ui-widget-content {
+  border: none;
+  background: transparent;
+}
+.context-menu .ui-menu.ui-widget.ui-widget-content {
+  border: none;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0px 5px 9px 0px #b1b1b1;
+}
+
+.context-menu.ui-menu.ui-widget.ui-widget-content ul {
+  padding: 2px;
+}
+.context-menu.ui-menu > li.ui-menu-item {
+}
+
+.context-menu.ui-menu > li.ui-menu-item > div {
+  padding: 10px;
+  width: 100%;
+}
+
+.context-menu.ui-menu
+   li.ui-menu-item
+   div.ui-menu-item-wrapper.ui-state-active {
+  background-color: #4076c6;
+  border: none;
+  font-weight: bold;
+  border-radius: 10px;
+}
+
+.context-menu.ui-menu > li.ui-menu-item ul li {
+  background-color: #fff;
+  border: none;
+  padding: 8px;
+  min-width: 150px;
+
+}
+.context-menu.ui-menu > li.ui-menu-item ul li.ui-menu-item:hover {
+  background-color: #4076c6;
+  border: none;
+  font-weight: bold;
+  border-radius: 10px;
+  color: #fff;
+}
+.context-menu.ui-menu .add-input,
+.context-menu.ui-menu .add-variable {
+  background-color: #616161 !important;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 12px;
+  border-top: 1px solid #4076c6 !important;
+}
+.context-menu.ui-menu .add-input:hover,
+.context-menu.ui-menu .add-variable:hover {
+  background-color: #4076c6 !important;
+}
+
+.output-value .output-value {
+  padding-left: 16px;
+}
+
+.output-value .tag {
+  background-color: #0d6efd;
+  color: #fff;
+  padding: 2px 5px;
+  border-radius: 5px;
+  margin-right: 5px;
+  font-size: 12px;
+}
+
+.component-side-node {
+  transition: visibility 0s, opacity 0.5s linear;
+}
+
+/* side panel */
+
+#panel-plugin-info {
+  display: flex;
+  padding: 2px 10px;
+  margin-bottom: 12px;
+}
+#panel-plugin-info .plugin-description {
+  font-size: 12px;
+  color: #6e6e6e;
+}
+#panel-plugin-info i {
+  margin-right: 10px;
+  font-size: 1.5em;
+}
+#panel-plugin-info * {
+  margin-bottom: 0px;
+}
+
+#component-side-panel .value-selector-content,
+#component-side-panel .value-selector {
+  height: 35px;
+}
+#component-side-panel .value-selector {
+  height: 35px;
+  padding: 10px;
+}
+
+#component-side-panel .value-selector-content.multi-value-selector {
+  height: fit-content;
+}
+
+#component-side-panel .btn.value-selector-edit,
+#component-side-panel .btn.value-selector-reset,
+#component-side-panel .btn.value-item-remove {
+  height: 33px;
+  width: 33px;
+  padding: 0px;
+}
+
+#component-side-panel .btn.value-selector-edit i,
+#component-side-panel .btn.value-selector-reset i,
+#component-side-panel .btn.value-item-remove i {
+  font-size: 13px;
+}
+
+#component-side-panel .value-selector input.form-control {
+  font-size: 14px;
+}
+
+
+.component-route.component-out.entry-point {
+  width: max-content;
+}
+code.data-type{
+  font-size: 10px;
+  color: #6e6e6e;
+  font-weight: bold;
+}
+.input-label code.data-type{
+  font-size: 9px;
+  margin-left: 4px;
+  color: #0d6efd;
+}

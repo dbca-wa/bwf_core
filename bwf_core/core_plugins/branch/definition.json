@@ -1,0 +1,21 @@
+{
+  "id": "flow_node_branch",
+  "name": "Branch",
+  "description": "Add a conditional branch to the flow.",
+  "version": "1.0.0",
+  "category": "flow",
+  "author": "BWF Components",
+  "editable": false,
+  "icon_class": "bi bi-bezier",
+  "icon_image_src": "icon.png",
+  "node_type": "branch",
+  "base_input": [
+    {
+      "key": "condition",
+      "label": "Condition",
+      "type": "boolean",
+      "value": ""
+    }
+  ],
+  "base_output": null
+}

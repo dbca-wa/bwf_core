@@ -1,0 +1,4 @@
+{% if request.user.is_authenticated is True %}
+<li class="nav-item"><a class="nav-link" href="/dashboard" id="primary-menu-item-thermal-files">Dashboard</a></li>
+<li class="nav-item"><a class="nav-link" href="/add-records" id="primary-menu-item-thermal-files">Add Spatial Info</a></li>
+{% endif %}

@@ -1,0 +1,55 @@
+<div hidden>
+  <div data-name="popover-content">
+    <div style="justify-content: flex-end" class="w-100 d-flex py-1">
+      <button
+        type="button"
+        class="btn-close m-2"
+        aria-label="Close"
+        style="position: absolute; top: 2px; right: 3px"
+      ></button>
+    </div>
+    <div class="mt-2 context-menu"></div>
+    <div class="editor-controls"></div>
+  </div>
+</div>
+
+<div hidden>
+  <div data-name="editor-content">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6>Value edition -&nbsp;
+              <code class="label"></code>
+              <code class="data-type"></code>
+            </h6>
+            <div class="context-menu"></div>
+          </div>
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-2">
+            <div>
+              <button class="btn btn-primary btn-save" type="button">
+                <i class="bi bi-save"></i>
+                Save
+              </button>
+              <button
+                type="button"
+                class="btn-close m-2"
+                aria-label="Close"
+              ></button>
+            </div>
+          </div>
+        </div>
+        <div class="editor-controls"></div>
+        <textarea class="editor" name="editor" style="display: none"></textarea>
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-2">
+          <button
+            class="btn btn-outline-danger btn-sm btn-clear me-md-2"
+            type="button"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

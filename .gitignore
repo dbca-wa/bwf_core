@@ -1,0 +1,8 @@
+*.pyc
+config*.cfg
+venv
+pending_imports/
+data_storage/
+logs/
+
+venv/
