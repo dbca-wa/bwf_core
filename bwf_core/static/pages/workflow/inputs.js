@@ -74,13 +74,13 @@ var workflow_inputs = {
           <label id="${elementId}" class="list-group-item d-flex gap-1">
             <div class="d-flex gap-2 justify-content-between w-100">
             <div style="line-height: 15px">
-              <span>
+              <span class='input-label'>
                 ${input.label}
               </span></br>
-              <span style="font-size: 10px; color: #6c757d">
+              <span style="font-size: 10px; color: #6c757d" class="input-key">
                 ${input.key}
               </span>
-              <code style="font-size: 10px">${input.data_type}</code>
+              <code style="font-size: 10px" class='input-type'>${input.data_type}</code>
               
             </div>
             <div class="form-check form-switch">
@@ -111,10 +111,35 @@ var workflow_inputs = {
     $(`#${elementId}`)
       .find(`button.remove-input`)
       ?.on("click", function () {
+        $(`#${elementId}`)
+      .find(`button.remove-input`).prop("disabled", true);
         const _ = workflow_inputs;
         _.selectedInput = input;
-        console.log("remove", input);
+        workflow_inputs.api.deleteInput(
+          input,
+          function (data) {
+            $(`#${elementId} button.remove-input`).prop("disabled", false);
+            $(`#${elementId}`).remove();
+            _.var.inputs = _.var.inputs.filter((i) => i.id != input.id);
+            const errors = data.errors || [];
+            component_utils.markupErrors(errors)
+          },
+          function (error) {
+            $(`#${elementId} button.remove-input`).prop("disabled", false);
+            console.error(error);
+            alert(
+              "Error deleting input. Please try again later."
+            );
+          }
+        );
       });
+  },
+  updateInput: function (input) {
+    const element =  $(`#input_${input.id}`)
+    
+    element.find(`.input-label`).text(input.label);
+    element.find(`.input-key`).text(input.key);
+    element.find(`.input-type`).text(input.data_type);
   },
   api: {
     addInput: function (input, success_callback, error_callback) {
@@ -157,7 +182,7 @@ var workflow_inputs = {
       };
       const queryParams = utils.make_query_params(_params);
       $.ajax({
-        url: _.var.base_url + input.id + "?" + queryParams,
+        url: _.var.base_url + input.id + "/?" + queryParams,
         type: "DELETE",
         headers: { "X-CSRFToken": $("#csrf_token").val() },
         contentType: "application/json",

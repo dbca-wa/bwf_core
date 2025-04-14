@@ -1,4 +1,20 @@
 var component_utils = {
+  markupErrors: function (errors) {
+    const notifContainer = $("#notifications-container");
+    if (errors.length > 0) {
+      errors.forEach((error) => {
+        notifContainer.append(
+          `<div class="alert alert-danger" role="alert">${
+            error?.error || ""
+          }</div>`
+        );
+      });
+    } else {
+      notifContainer.append(
+        `<div class="alert alert-success" role="alert">Input deleted successfully</div>`
+      );
+    }
+  },
   getComponentPrependSelector: function (parentComponent, path) {
     if (parentComponent.node_type === "branch") {
       if (path === "True") {

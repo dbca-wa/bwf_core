@@ -268,3 +268,37 @@ def list_workflow_nodes(workflow_components, parent_info={}):
         list_item = to_ui_workflow_node(component, parent_info)
         components_list.append(list_item)
     return components_list
+
+def apply_workflow_entry_removal(workflow_components, is_input, input_key, input_id):
+    context = "inputs" if is_input else "variables"
+    text = "input" if is_input else "variable"
+    name_field = "name"
+    errors = []
+    for key, component in workflow_components.items():
+        inputs = component.get("config", {}).get("inputs", [])
+        
+        for input_item in inputs:
+            value = input_item.get("value", None)
+            if value == "" or not value:
+                continue
+            if value.get("value_ref", None) is not None:
+                if value.get("value_ref", {}).get("key", None) == input_key and value.get("value_ref", {}).get("context", None) == context:
+                    input_item["value"] = ""
+                    continue
+            elif value.get("is_expression", False):
+                expression = value.get("expression", "")
+                alternatives = [f"{context}['{input_key}']", f"{context}[\"{input_key}\"]"]
+                for alternative in alternatives:
+                    if alternative in expression:
+                        errors.append({
+                            "component_id": component.get("id"),
+                            "error": f"Field {input_item.get(name_field)} references the {text} [{input_key}] inside {component.get('name')}.",
+                        })
+                        break
+
+        node_type = component.get("node_type", "node")
+        if node_type in ['branch','switch', 'loop']:
+            flows = component['config'][node_type].keys()
+            for flow in flows:
+                errors += apply_workflow_entry_removal(component['config'][node_type][flow], is_input, input_key, input_id)
+    return errors

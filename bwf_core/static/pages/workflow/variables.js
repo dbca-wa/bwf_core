@@ -75,13 +75,13 @@ var workflow_variables = {
           <label id="${elementId}" class="list-group-item d-flex gap-2">
             <div class="d-flex gap-2 justify-content-between w-100">
             <div style="line-height: 15px">
-              <span>
+              <span class='var-name'>
                 ${variable.name}
               </span></br>
-              <span style="font-size: 10px; color: #6c757d">
+              <span class="var-key" style="font-size: 10px; color: #6c757d">
                 ${variable.key}
               </span>
-              <code style="font-size: 10px">${variable.data_type}</code>
+              <code class="var-type" style="font-size: 10px">${variable.data_type}</code>
             </div>
             <div class="form-check form-switch">
               <button class="btn btn-ghost edit-variable" data-variable-id="${variable.id}">
@@ -103,15 +103,39 @@ var workflow_variables = {
         _.selectedVariable = variable;
         $("#variables-modal").modal("show");
       });
+
       $(`#${elementId} button.remove-variable`).on("click", function () {
         const _ = workflow_variables;
         _.selectedVariable = variable;
-        console.log("remove", variable);
+        _.api.deleteVariable(
+          variable,
+          function (data) {
+            workflow_variables.var.variables =
+              workflow_variables.var.variables.filter(
+                (a) => a.id !== variable.id
+              );
+            $(`#variable_${variable.id}`).remove();
+            document.dispatchEvent(new Event(EVENT_VARIABLES_CHANGE));
+            const errors = data.errors || [];
+            component_utils.markupErrors(errors);
+            workflow_components.reset()
+          },
+          function (error) {
+            console.error(error);
+          }
+        );
       });
     } else {
       $(`#${elementId} button.edit-variable`).remove();
       $(`#${elementId} button.remove-variable`).remove();
     }
+  },
+  updateVariable: function (variable) {
+    const element = $(`#variable_${variable.id}`);
+
+    element.find(`.var-label`).text(variable.label);
+    element.find(`.var-key`).text(variable.key);
+    element.find(`.var-type`).text(variable.data_type);
   },
   api: {
     addVariable: function (variable, success_callback, error_callback) {
@@ -149,12 +173,11 @@ var workflow_variables = {
           workflow_id: _.workflow_id,
           version_id: _.version_id,
         }),
-        success: function(response) {
-          $(`#variable_${response.id}`).find(".var-name").text(response.name);
-          $(`#variable_${response.id}`).find(".var-type").text(response.data_type);
+        success: function (response) {
+          _.updateVariable(response);
           success_callback(response);
         },
-        error: function(error) {
+        error: function (error) {
           error_callback(error);
         },
       });
@@ -173,14 +196,6 @@ var workflow_variables = {
         headers: { "X-CSRFToken": $("#csrf_token").val() },
         contentType: "application/json",
         success: (data) => {
-          const index = workflow_variables.var.variables.findIndex(
-            (a) => a.id === data.id
-          );
-          workflow_variables.var.variables[index] = data;
-          workflow_variables.updateVariable(data);
-          document.dispatchEvent(new Event(EVENT_VARIABLES_CHANGE));
-          // Update GUI
-          $(`#variable_${data.id}`).remove();
           success_callback(data);
         },
         error: error_callback,

@@ -17,7 +17,7 @@ from bwf_core.models import Workflow, WorkflowVersion
 from bwf_core.workflow.serializers import workflow_serializers
 from bwf_core.workflow.tasks import validate_workflow_required_fields
 from bwf_core.tasks import start_workflow
-from bwf_core.components.tasks import extract_workflow_mapping
+from bwf_core.components.tasks import extract_workflow_mapping, apply_workflow_entry_removal
 from django.core.files.base import ContentFile
 
 logger = logging.getLogger(__name__)
@@ -201,8 +201,11 @@ class WorkflowInputsViewset(ViewSet):
         workflow_inputs = workflow_definition.get("inputs", {})
         key = serializer.validated_data.get("key")
         id = str(uuid.uuid4())
-        if key in workflow_inputs:
-            key = f"{key}_{id[0:8]}"
+        for k, input in workflow_inputs.items():
+            if input.get("key") == key:
+                key = f"{key}_{id[0:8]}"
+                break
+
         new_input = {
             "label": serializer.validated_data.get("label"),
             "id": id,
@@ -292,8 +295,13 @@ class WorkflowInputsViewset(ViewSet):
             raise Exception("Input not found")
         
         workflow_inputs.pop(kwargs.get("pk"), None)
-        workflow.set_json_definition(workflow_definition)
-        return Response("Input removed")
+
+        is_input = True
+        key = instance.get("key", None)
+        id = instance.get("id", None)
+        errors = apply_workflow_entry_removal(workflow_definition.get('workflow', {}), is_input, key, id)
+        # workflow.set_json_definition(workflow_definition)
+        return JsonResponse({"success": True, "message": "Input removed", "errors": errors})
 
 
 class WorkflowVariablesViewset(ViewSet):
@@ -396,8 +404,13 @@ class WorkflowVariablesViewset(ViewSet):
         if not variable:
             raise Exception("Variable not found")
         
-        workflow_variables.pop(kwargs.get("pk"), None)
+        instance = workflow_variables.pop(kwargs.get("pk"), None)
+        
+        is_input = False
+        key = instance.get("key", None)
+        id = instance.get("id", None)
+        errors = apply_workflow_entry_removal(workflow_definition.get('workflow', {}), is_input, key, id)
         workflow.set_json_definition(workflow_definition)
-        return Response("Variable removed")
+        return JsonResponse({"success": True, "message": "Variable removed", "errors": errors})
 
 

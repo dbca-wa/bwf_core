@@ -44,11 +44,12 @@ class BasePlugin:
         if not current_definition:
             raise Exception(f"Component {self.component.component_id} not found in workflow definition")
         next_component_id = override_route if override_route else current_definition.get("conditions", {}).get("route", None)
+        output = self.component.output if self.component.output else {}
         if next_component_id:
             register_workflow_step(self.workflow_instance,
                                    step=next_component_id,
                                    parent_node_instance=self.component.parent_node,
-                                   output_prev_component=self.component.output.get("data", {}))
+                                   output_prev_component=output.get("data", {}))
         else:
             # if there is no next component, we check if the parent node has a next node
             if self.component.parent_node:
@@ -60,7 +61,7 @@ class BasePlugin:
                         register_workflow_step(self.workflow_instance, 
                                                step=parent_next_node, 
                                                parent_node_instance=self.component.parent_node.parent_node,
-                                               output_prev_component=self.component.output.get("data", {}))
+                                               output_prev_component=output.get("data", {}))
                     else:
                         self.workflow_instance.set_status_completed()
                 else:
@@ -196,11 +197,12 @@ class BranchPlugin(BasePlugin):
         if not current_definition:
             raise Exception(f"Component {self.component.component_id} not found in workflow definition")
         next_component_id = override_route if override_route else current_definition.get("conditions", {}).get("route", None)
+        output = self.component.output if self.component.output else {}
         if next_component_id:
             register_workflow_step(self.workflow_instance, 
                                    step=next_component_id, 
                                    parent_node_instance=self.component, 
-                                   output_prev_component=self.component.output.get("data", {}))
+                                   output_prev_component=output.get("data", {}))
         else:
             self.workflow_instance.set_status_completed()
 

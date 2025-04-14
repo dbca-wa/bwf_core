@@ -19,6 +19,31 @@ var workflow_components = {
   },
   pluginDefinitions: [],
 
+  reset: function () {
+    const _ = workflow_components;
+    // _.container.empty()
+    // _.var.components.forEach((component) => {
+    //   if (component.diagram?.line_out) {
+    //     try {
+    //       component.diagram.line_out.remove();
+    //     } catch (error) {
+          
+    //     }
+    //   }
+    //   if (component.config.branch) {
+    //     try {
+    //       component_utils.render.removeBranchLines(component);
+    //     } catch (error) {
+          
+    //     }
+    //   }
+    //   $(`#node_${component.id}`).remove();
+    //   workflow_components.removeComponent(component.id);
+    // }
+    // );
+    window.location.reload();
+  },
+
   init: function (options, containerId) {
     const { workflow_id, version_id, is_edition, is_diagram, sidePanel } =
       options;

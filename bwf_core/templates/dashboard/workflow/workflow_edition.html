@@ -24,8 +24,6 @@
             <div><span class="badge bg-success">Active Version</span></div>
             {% endif %} {% if version.is_edition %}
             <div><span class="badge bg-primary">In edition</span></div>
-            {% endif %} {% if version.parent_version %}
-            <div><span class="badge bg-info">Has parent definition</span></div>
             {% endif %}
             <br />
           </div>
@@ -119,6 +117,13 @@
             </button>
           </label>
         </div>
+      </div>
+      
+      <div
+        id="notifications-container"
+        class="row align-items-center justify-content-center"
+      >
+
       </div>
     </div>
     <div class="col-9">

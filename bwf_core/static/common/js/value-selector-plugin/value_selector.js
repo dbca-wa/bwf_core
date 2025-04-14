@@ -742,6 +742,8 @@ class ValueSelector {
     }
 
     if ((value_rules && value_rules.variable_only) || options) {
+      if (!value.value) _.$content.addClass(invalidClassName);
+      
       _.$resetButton.hide();
       _.$editButton.hide();
       return;
