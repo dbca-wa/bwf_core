@@ -35,6 +35,7 @@ def start_workflow(workflow_id, payload={}):
     except Exception as e:
         if instance:
             instance.set_status_error(str(e))
+            return instance
         raise e
 
 

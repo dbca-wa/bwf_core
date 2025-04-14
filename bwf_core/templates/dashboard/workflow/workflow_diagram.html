@@ -1,0 +1,251 @@
+<div class="container-sm">
+  <input type="hidden" id="csrf_token" value="{{ csrf_token }}" />
+  <div class="card workflow-info-card">
+    <div class="card-body">
+        <div class="d-flex justify-content-between">
+            <div>
+                <a href="{% url 'workflow' workflow.id %}">
+                    <h5 class="card-title">{{workflow.name}}
+                        <i class="bi bi-link"></i>
+                    </h5>
+                </a>
+          <div class="d-flex">
+            {% if version.is_active %}
+            <div><span class="badge bg-success">Active Version</span></div>
+            {% endif %} {% if version.is_edition %}
+            <div><span class="badge bg-primary">In edition</span></div>
+            {% endif %}
+            <br />
+          </div>
+          <span class="text-secondary"
+            >Current version: {{workflow.version_number}}</span
+          >
+        </div>
+        <div>
+          <div class="btn-group">
+            <button
+              type="button"
+              class="btn btn-primary dropdown-toggle"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              Actions
+            </button>
+            <ul class="dropdown-menu">
+              {% if not version.is_active %}
+              <li id="btn-mark-active-version" class="dropdown-item">
+                Mark as Workflow's active version
+              </li>
+              {% else %}
+              <li id="btn-create-version" class="dropdown-item">
+                Create editable version
+              </li>
+              {% endif %}
+              <li class="dropdown-item" id="btn-view-definition">
+                <i class="bi bi-filetype-json"></i>
+                View definition document
+              </li>
+              <!-- <li><hr class="dropdown-divider"></li>
+                <li class="btn ">Remove</li> -->
+            </ul>
+          </div>
+        </div>
+      </div>
+      <hr />
+      <h6 class="card-subtitle mb-2 text-body-secondary">Description</h6>
+      <p class="card-text">{{workflow.description}}</p>
+      <h6 class="card-subtitle mb-2 text-body-secondary">Version Data</h6>
+      <p class="card-text">
+        <span class="text-bold">Version name:&nbsp;</span
+        >{{version.version_name}}
+        <br />
+        <span class="font-weight-bold">Version number:&nbsp;</span
+        >{{version.version_number}}
+      </p>
+      <!-- <a href="#" class="card-link">Card link</a> -->
+      <!-- <a href="#" class="card-link">Another link</a> -->
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-3">
+      <div
+        id="variables-container"
+        class="row gap-1 py-md-2 align-items-center justify-content-center width-md-30"
+      >
+        <div class="card p-0">
+          <div class="card-header">
+            <i class="bi bi-clipboard2-pulse-fill"></i>
+            Workflow variables
+          </div>
+          <div id="variables"></div>
+          <label class="d-grid mt-2">
+            <button class="btn btn-outline-primary add-variable">
+              <i class="bi bi-plus me-2"></i>
+              Add Variable
+            </button>
+          </label>
+        </div>
+      </div>
+      <div
+        id="inputs-node"
+        class="row gap-4 py-md-2 align-items-center justify-content-center"
+      >
+        <div class="card p-0">
+          <div class="card-header">
+            <i class="bi bi-gear"></i>
+            Workflow input values
+          </div>
+
+          <div class="card-body p-1">
+            <div class="list-group" id="inputs"></div>
+          </div>
+          <label class="d-grid mt-2">
+            <button class="btn btn-outline-primary add-input">
+              <i class="bi bi-plus me-2"></i>
+              Add Input
+            </button>
+          </label>
+        </div>
+      </div>
+
+      <div
+        id="notifications-container"
+        class="row align-items-center justify-content-center"
+      ></div>
+    </div>
+    <div class="col-9">
+      <div id="components-flow" class="workflow-center">
+        <div id="flow-start-node">
+          <span>Start</span>
+        </div>
+      </div>
+      <div
+        class="d-flex flex-column flex-md-row p-4 gap-4 py-md-5 justify-content-center"
+      >
+        <button
+          class="btn btn-outline-primary main-add-component"
+          style="display: none"
+        >
+          <i class="bi bi-plus me-2"></i>
+          Add Component
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="component-side-panel">
+  <header></header>
+  <section></section>
+  <footer>
+    <!-- Modals -->
+    {% include 'modals/inputs_modal.html' %} 
+    {% include 'modals/variables_modal.html' %}
+    <!-- END: Modals -->
+  </footer>
+</div>
+
+<script src="/static/pages/workflow/workflow.js"></script>
+<script src="/static/pages/workflow/inputs.js"></script>
+<script src="/static/pages/workflow/variables.js"></script>
+<script src="/static/pages/workflow/components.js"></script>
+<script src="/static/pages/workflow/component_utils.js"></script>
+<script src="/static/pages/workflow/component_on_fail.js"></script>
+
+<!-- Fragments -->
+{% include 'fragments/component_node.html' %} 
+{% include 'fragments/value_popover.html' %}
+<!-- END: Fragments -->
+<!-- Modals -->
+{% include 'modals/component_creation_modal.html' %}
+<!-- END: Modals -->
+
+<script>
+  $(() => {
+    const workflow_id = $("#workflow_id").val();
+    const version_id = $("#version_id").val();
+    const is_edition = $("#is_edition").val() === "true";
+    const versionFile = $("#version_data").data("version-file");
+    const isEditable = $("#version_data").data("is-editable");
+    const options = {
+      workflow_id,
+      version_id,
+      is_edition: isEditable === "True" && is_edition,
+      is_diagram: true,
+      sidePanel: $("#component-side-panel").SlideOutPanel({
+        width: "760px",
+      }),
+    };
+
+    if (!is_edition) {
+        $('.workflow-info-card').remove();
+    }
+    workflow_inputs.init(options, "inputs-node");
+    workflow_variables.init(options, "variables-container");
+    document.addEventListener("variables:change", () => {
+      if (!workflow_components.has_init) {
+        workflow_components.init(options, "components-flow");
+      }
+    });
+
+    $("button.main-add-component").on("click", function () {
+      if (isEditable) $("#component-creation-modal").modal("show");
+    });
+    $("#btn-view-definition").on("click", function () {
+      const versionFile = $("#version_data").data("version-file");
+      const url = `${window.location.origin}/${versionFile}`;
+      window.open(url, "_blank").focus();
+    });
+    $("#btn-mark-active-version").on("click", function () {
+      if ($(this).attr("disabled")) return;
+      $(this).attr("disabled", true);
+      bwf_workflow.api
+        .markVersionAsCurrent(version_id, workflow_id)
+        .then((response) => {
+          $(this).attr("disabled", false);
+          if (response) {
+            if (response.success) {
+              window.location.reload();
+            } else {
+              alert(
+                (response.message ||
+                  "An error occurred while marking the version as active.") +
+                  "\n" +
+                  "Errors: \n" +
+                  (response.errors || []).join("\n")
+              );
+            }
+          } else {
+            alert("An error occurred while marking the version as active");
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+          alert("An error occurred while marking the version as active");
+          $(this).attr("disabled", false);
+        });
+    });
+    $("#btn-create-version").on("click", function () {
+      if ($(this).attr("disabled")) return;
+      $(this).attr("disabled", true);
+      const api_data = {
+        version_id,
+        workflow_id,
+        name: `Untitled`,
+      };
+      bwf_workflow.api
+        .createWorkflowVersion(api_data)
+        .then((response) => {
+          $(this).attr("disabled", false);
+          bwf_workflow.navigate.toVersionEdition(
+            response.workflow.id,
+            response.id
+          );
+        })
+        .catch((error) => {
+          console.error(error);
+          $(this).attr("disabled", false);
+        });
+    });
+  });
+</script>
