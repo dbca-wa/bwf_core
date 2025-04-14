@@ -10,9 +10,6 @@ dependencies = [
     "decouple>=0.0.7",
     "dj-database-url",
     "djangorestframework",
-    "bwf_core.workflow",
-    "bwf_core.components",
-    "bwf_core.action_log",
 ]
 description = "A Django app to create flexible, reusable Business Workflows."
 readme = "README.rst"
