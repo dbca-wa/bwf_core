@@ -27,6 +27,8 @@ class BWFPluginController:
     def load_plugins(self):
         PLUGIN_ROUTES = [BASE_PLUGIN_ROUTE, FLOW_NODES_ROUTE]
         for route in PLUGIN_ROUTES:
+            if not os.path.exists(route) or not os.path.isdir(route):
+                continue
             for plugin in os.listdir(route):
                 plugin_path = os.path.join(route, plugin)
                 dir_name = plugin_path.split(os.sep)[-1]
