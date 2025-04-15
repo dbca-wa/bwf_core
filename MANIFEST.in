@@ -1,4 +1,8 @@
 include LICENSE
 include README.md
+recursive-include bwf_core/api *
+recursive-include bwf_core/controller *
+recursive-include bwf_core/management *
+recursive-include bwf_core/core_plugins *
 recursive-include bwf_core/static *
 recursive-include bwf_core/templates *
