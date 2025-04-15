@@ -27,7 +27,7 @@ TEMPLATES = [
 
   
 3. Include the bwf_core URLconf in your project urls.py like this::
-``path("bwf_core/", include("bwf_core.urls")),``
+``path("bwf/", include("bwf_core.urls")),``
 
 4. Run ``python manage.py migrate`` to create the models.
 5. Start the development server and visit the admin to create a workflow.
