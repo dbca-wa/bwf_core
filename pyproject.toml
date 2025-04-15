@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "bwf_core"
 version = "0.1"
 dependencies = [
-    "django>=5.1",
+    "django>=5.2",
     "python-decouple>=3.8",
     "dj-database-url",
     "djangorestframework",

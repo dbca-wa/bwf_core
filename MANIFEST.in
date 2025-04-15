@@ -1,2 +1,4 @@
 include LICENSE
-recursive-include bwf_core/templates *.html *.txt
+include README.md
+recursive-include bwf_core/static *
+recursive-include bwf_core/templates *
