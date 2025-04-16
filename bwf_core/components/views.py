@@ -12,6 +12,7 @@ from bwf_core.models import  WorkflowVersion
 from bwf_core.controller.controller import BWFPluginController
 from . import serializers
 from .tasks import (create_component_definition_instance,
+                    update_mapping_from_deleted_component,
                     insert_node_to_workflow,
                     to_ui_workflow_node,
                     list_workflow_nodes,
@@ -177,7 +178,7 @@ class WorkflowComponentViewset(ViewSet):
 
             instance = workflow_components.pop(component_id, None)
             workflow_definition['mapping'].pop(component_id, None)
-
+            update_mapping_from_deleted_component(workflow_definition, component_id)
             if not instance:
                 return Response("Component not found")
             

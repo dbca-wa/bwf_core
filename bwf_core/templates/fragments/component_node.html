@@ -175,6 +175,23 @@
     </div>
   </div>
 </template>
+<template id="component-loop-template">
+  <div class="loop-border mt-5">
+    <div class="d-flex">
+      <div
+        class="loop-flow"
+        style="align-content: center"
+      >
+        <div style="height: 0em">
+          <div class="component-route component-out entry-point">
+            <i class="bi bi-plus" style="opacity: 0"></i>
+          </div>
+        </div>
+        <div class="workflow loop-workflow"></div>
+      </div>
+    </div>
+  </div>
+</template>
 <template id="component-on-fail-template">
   <form id="component-on-fail-form" class="mb-3" submit="return false;">
     <h6>On execution failure</h6>

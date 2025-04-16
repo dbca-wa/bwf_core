@@ -21,26 +21,6 @@ var workflow_components = {
 
   reset: function () {
     const _ = workflow_components;
-    // _.container.empty()
-    // _.var.components.forEach((component) => {
-    //   if (component.diagram?.line_out) {
-    //     try {
-    //       component.diagram.line_out.remove();
-    //     } catch (error) {
-          
-    //     }
-    //   }
-    //   if (component.config.branch) {
-    //     try {
-    //       component_utils.render.removeBranchLines(component);
-    //     } catch (error) {
-          
-    //     }
-    //   }
-    //   $(`#node_${component.id}`).remove();
-    //   workflow_components.removeComponent(component.id);
-    // }
-    // );
     window.location.reload();
   },
 
@@ -266,6 +246,10 @@ var workflow_components = {
 
     if (component.config.branch) {
       component_utils.render.renderBranch(elementId, component);
+    }
+    
+    if (component.config.loop) {
+      component_loop.render.renderLoop(elementId, component);
     }
   },
 
@@ -826,16 +810,7 @@ var workflow_components = {
       console.error("Component not found", id);
       return;
     }
-    if (component && component.diagram) {
-      try {
-        component.diagram.line_out?.remove();
-        component.diagram.line_out = null;
-        component.diagram.line_in = null;
-      } catch (error) {}
-      if (component.config.branch) {
-        component_utils.render.removeBranchLines(component);
-      }
-    }
+    component_utils.removeComponentDiagram(component);
     $(`#node_${component.id}`).off("drag.line_out");
     $(`#node_${component.id}`).off("drag.line_in");
     const nextComponent = component_utils.findSingleComponentInTree(

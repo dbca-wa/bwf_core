@@ -164,12 +164,10 @@ class LoopPlugin(BasePlugin):
     def __init__(self, component_instance:ComponentInstance, workflow_instance: WorkFlowInstance, context={}):
         super().__init__(component_instance, workflow_instance, context)
         self.type = "loop"
-        self.loop = self.component['config'].get("loop", {})
-        self.loop_variable = self.loop.get("variable")
-        self.loop_range = self.loop.get("range")
-        self.loop_step = self.loop.get("step")
-        self.loop_condition = self.loop.get("condition")
+        self.loop_flow = self.component['config'].get("loop", {})
+        self.items = self.loop.get("items", [])
         self.loop_index = 0
+        
 
     def execute(self):
 

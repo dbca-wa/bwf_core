@@ -37,6 +37,20 @@ def find_component_in_tree(workflow_definition, component_id):
             raise Exception(f"Component {component_id} not found in mapping")
     return component
 
+def update_mapping_from_deleted_component(workflow_definition, component_id):
+    mapping = workflow_definition.get('mapping', {})
+    items_to_delete = []
+    for key, value in mapping.items():
+        if key == component_id:
+            del mapping[key]
+            break
+        path = value.get('path', "")
+        path_list = path.split('.')
+        if component_id in path_list:
+            items_to_delete.append(key)
+    for item in items_to_delete:
+        del mapping[item]
+
 def is_workflow_node(node):
     if not node:
         return False
@@ -179,6 +193,7 @@ def insert_node_to_workflow(workflow_definition, node, data={}):
         node['conditions']['is_entry'] = is_entry
         parent_node['config'][parent_type][node_path][node_id] = node
         node['config']['path'] = f"{parent_node['config']['path']}.config.{parent_type}.{node_path}.{node_id}"
+        node['config']['local'] = get_parent_context_variables(parent_type)
         adjust_workflow_routing(flow, node_id, route)                    
     else:
         is_entry = is_entry or len(workflow_components.keys()) == 0
@@ -224,7 +239,7 @@ def node_type_definitions(node_type):
     elif node_type == 'loop':
         return {
             node_type: {
-                
+                'flow': {}
             }
         }
     elif node_type == 'node':
@@ -233,6 +248,25 @@ def node_type_definitions(node_type):
                 
             }
         }
+
+def get_parent_context_variables(parent_node_type):
+    if parent_node_type == 'loop':
+        return {
+            "item": {
+                "label": "Item",
+                "key": "item",
+                "data_type": "object",
+                "data": {},
+            },
+            "index": {
+                "label": "Index",
+                "key": "index",
+                "data_type": "integer",
+                "data": {},
+            }
+        }
+
+    return {}
 
 # END: Creation Tasks
 def to_ui_workflow_node(component, parent_info={}):

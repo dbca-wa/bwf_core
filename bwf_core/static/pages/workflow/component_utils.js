@@ -1,4 +1,19 @@
 var component_utils = {
+  removeComponentDiagram: function (component) {
+    if (component && component.diagram) {
+      try {
+        component.diagram.line_out?.remove();
+        component.diagram.line_out = null;
+        component.diagram.line_in = null;
+      } catch (error) {}
+      if (component.config.branch) {
+        component_utils.render.removeBranchLines(component);
+      }
+      if (component.config.loop) {
+        component_loop.render.removeLoopLines(component);
+      }
+    }
+  },
   markupErrors: function (errors) {
     const notifContainer = $("#notifications-container");
     if (errors.length > 0) {
@@ -18,11 +33,14 @@ var component_utils = {
   getComponentPrependSelector: function (parentComponent, path) {
     if (parentComponent.node_type === "branch") {
       if (path === "True") {
-        return `#node_${parentComponent.id} .branch-true .workflow`;
+        return `#node_${parentComponent.id} .branch-true .workflow:first`;
       }
       if (path === "False") {
-        return `#node_${parentComponent.id} .branch-false .workflow`;
+        return `#node_${parentComponent.id} .branch-false .workflow:first`;
       }
+    }
+    if (parentComponent.node_type === "loop") {
+      return `#node_${parentComponent.id} .loop-workflow:first`;
     }
   },
   closePopovers: function (value_selector) {
@@ -317,6 +335,12 @@ var component_utils = {
           line?.remove();
         });
       }
+
+      Object.values(component.config.branch).forEach((path) => {
+        path.forEach((component) => {
+          component_utils.removeComponentDiagram(component);
+        });
+      });
     },
   },
 };
