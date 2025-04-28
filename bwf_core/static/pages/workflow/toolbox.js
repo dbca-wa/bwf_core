@@ -56,12 +56,29 @@ var workflow_toolbox = {
       body,
       originComponent,
       destinationComponent,
-      (data) => {},
-      (data) => {},
-      () => {
-        const wf = workflow_components;
-      wf.sidePanel.close();
+      (data) => {
+        // on save
+        const form = $("#routing-form");
+        form.prop("disabled", false);
+        wf.sidePanel.close();
+
+        const _component = component_utils.findSingleComponentInTree(
+          originComponent.id
+        );
+        _component.routing = data.routing || [];
+        workflow_components.renderRoutingLine(_component, destinationComponent.id)
       },
+      (data) => {}, // on delete
+      () => { // cancel
+        const wf = workflow_components;
+        wf.sidePanel.close();
+      },
+      (error) => {
+        const form = $("#routing-form");
+        form.prop("disabled", false);
+        console.error(error);
+        wf.sidePanel.close();
+      }
     );
   },
 
@@ -69,9 +86,10 @@ var workflow_toolbox = {
     body,
     originComponent,
     destinationComponent,
-    onSave=()=> {},
-    onDelete=()=> {},
-    onCancel=()=> {}
+    onSave = (data) => {},
+    onDelete = () => {},
+    onCancel = () => {},
+    onError = (error) => {}
   ) {
     const { markup } = utils;
     const wf = workflow_components;
@@ -91,7 +109,11 @@ var workflow_toolbox = {
 
     const clone = template.content.cloneNode(true);
     body.append(clone);
-    body.find(".route-names").append(markup("span", `${originComponent.name} → ${destinationComponent.name}`));
+    body
+      .find(".route-names")
+      .append(
+        markup("span", `${originComponent.name} → ${destinationComponent.name}`)
+      );
     body.append(
       markup(
         "div",
@@ -106,6 +128,56 @@ var workflow_toolbox = {
         { class: "panel-value-edition" }
       )
     );
+
+    if (!isNewLine) {
+      body.find(".delete-btn").show();
+      body.find(".delete-btn").on("click", function (event) {
+        event.preventDefault();
+        $(this).prop("disabled", true);
+        const data = {
+          id: originComponent.id,
+          plugin_id: originComponent.plugin_id,
+          route: destinationComponent.id,
+          is_remove: true,
+        };
+
+        wf.api.updateRouting(
+          data,
+          function (response) {
+            $(this).prop("disabled", true);
+            wf.newLine.line?.remove();
+            originComponent.routing = originComponent.routing.filter(
+              (r) => r.route !== destinationComponent.id
+            );
+            const oIndex = originComponent.diagram.lines.findIndex(
+              (l) => l.destination === destinationComponent.id
+            );
+            if (oIndex !== -1) {
+              const line = originComponent.diagram.lines[oIndex];
+              try {
+                line.line.remove();
+              } catch (error) {}
+              originComponent.diagram.lines.splice(oIndex, 1);
+            }
+            const dIndex = destinationComponent.diagram.lines.findIndex(
+              (l) => l.source === originComponent.id
+            );
+            if (dIndex !== -1) {
+              destinationComponent.diagram.lines.splice(dIndex, 1);
+            }
+            onDelete(response);
+          },
+          function (error) {
+            form.prop("disabled", false);
+            console.error(error);
+            onError(error);
+          }
+        );
+      });
+    } else {
+      body.find(".delete-btn").hide();
+    }
+
     $(`#routing-form`).find(".routing-label").val(label);
     const conditionElement = $(`#routing-form`).find(".routing-condition");
     conditionElement.valueSelector({
@@ -158,12 +230,17 @@ var workflow_toolbox = {
         data,
         function (response) {
           form.prop("disabled", false);
-          wf.sidePanel.close();
+          originComponent.routing = response.routing;
+          const _component = component_utils.findSingleComponentInTree(
+            originComponent.id
+          );
+          _component.routing = data.routing || [];
           onSave(response);
         },
         function (error) {
           form.prop("disabled", false);
           console.error(error);
+          onError(error);
         }
       );
     });

@@ -154,7 +154,7 @@ var workflow_components = {
       _.firstLine.position();
     });
   },
-  renderRoutingLine: function (component) {
+  renderRoutingLine: function (component, routeID) {
     const _ = workflow_components;
     if (component.routing) {
       const start = $(
@@ -162,6 +162,9 @@ var workflow_components = {
       );
       for (let i = 0; i < component.routing.length; i++) {
         const route = component.routing[i];
+        if(routeID && routeID !== route.route) {
+          continue;
+        }
         const { route: routePath, conditions, label, action } = route;
         const end = $(`#node_${routePath} .diagram-node`);
         if (start.length > 0 && end.length > 0) {
@@ -539,41 +542,80 @@ var workflow_components = {
       const route = routing[i];
       const clone = route_template.content.cloneNode(true);
       const { route: routePath, conditions, label, action } = route;
-      
-      const destinationComponent = component_utils.findSingleComponentInTree(routePath)      
-      
-      const elementId = `route_${id}_${routePath}`;
-      
+
+      const destinationComponent =
+        component_utils.findSingleComponentInTree(routePath);
+
+      const elementId = `route_${routePath}`;
+
       clone.querySelector("div").setAttribute("id", elementId);
       $(`.list-group.routes`).append(clone);
       // clone.querySelector(".route-action").innerHTML = action;
-      $(`#${elementId} .route-label .value`).html(label ?? ' -- ');
-      $(`#${elementId} .route-conditions .value`).html(conditions ?? ' -- ');
-      $(`#${elementId} .route-components`).html(`${component.name} → ${destinationComponent.name}`);
+      $(`#${elementId} .route-label .value`).html(label ?? " -- ");
+      $(`#${elementId} .route-conditions .value`).html(conditions ?? " -- ");
+      $(`#${elementId} .route-components`).html(
+        `${component.name} → ${destinationComponent.name}`
+      );
 
-      $(`#${elementId} button`).on("click", {originComponent: component, destinationComponent: destinationComponent}, function (event) {
-        const _ = workflow_components;
-        const { originComponent, destinationComponent } = event.data;
-        const body = $('.component-route-edition')
-        $('.list-group.routes .route-list-item').hide();
-        workflow_toolbox.setupRoutingEditionContainer(body, originComponent, destinationComponent,
-          function(data) { // ON UPDATE
-            body.empty()
-            $('.list-group.routes .route-list-item').show();
-            
-          },
-          function(error) { // ON Error
-            // body.empty()
-            // $('.list-group.routes .route-list-item').show();
-            
-          },
-            function() { // ON CANCEL
+      $(`#${elementId} button`).on(
+        "click",
+        {
+          originComponent: component,
+          destinationComponent: destinationComponent,
+        },
+        function (event) {
+          const _ = workflow_components;
+          const { originComponent, destinationComponent } = event.data;
+          const body = $(".component-route-edition");
+          $(".list-group.routes .route-list-item").hide();
+          workflow_toolbox.setupRoutingEditionContainer(
+            body,
+            originComponent,
+            destinationComponent,
+            function (data) {
+              // ON UPDATE
+              body.empty();
+              $(".list-group.routes .route-list-item").show();
+              const elementId = `route_${destinationComponent.id}`;
+
+              const _component = component_utils.findSingleComponentInTree(
+                originComponent.id
+              );
+              _component.routing = data.routing || [];
+              const route = _component.routing.find(
+                (r) => r.route === destinationComponent.id
+              );
+              const line = _component.diagram.lines.find(l=> l.destination === destinationComponent.id).line
+              if(line) {
+                line.setOptions({
+                  middleLabel: route.label,
+                })
+              }
+              $(`#${elementId} .route-label .value`).html(
+                route.label ?? " -- "
+              );
+              $(`#${elementId} .route-conditions .value`).html(
+                route.conditions ?? " -- "
+              );
+            },
+            function (data) {
+              // ON Delete
               body.empty()
-              $('.list-group.routes .route-list-item').show();
-          },
-            
-        )
-      });
+              $(".list-group.routes .route-list-item").show();
+              const elementId = `route_${destinationComponent.id}`;
+              $(`#${elementId}`).remove();
+              // $('.list-group.routes .route-list-item').show();
+
+            },
+            function () {
+              // ON CANCEL
+              body.empty();
+              $(".list-group.routes .route-list-item").show();
+            },
+            function (error) {} //
+          );
+        }
+      );
     }
   },
   addMenuButtonsFunctionality: function (elementId, component) {
@@ -969,7 +1011,9 @@ var workflow_components = {
           workflow_id: _.workflow_id,
           version_id: _.version_id,
         }),
-        success: success_callback,
+        success: (response) => {
+          success_callback(response);
+        },
         error: error_callback,
       });
     },
