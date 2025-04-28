@@ -35,11 +35,23 @@ def adjust_workflow_routing(workflow_components, instance_id, route):
         node_before = workflow_components[route]
         oririginal_route = node_before['conditions']['route']
         node_before['conditions']['route'] = instance_id
+        node_before['routing'] = [{
+                    'condition': None,
+                    'action': 'route',
+                    'label': "next",
+                    'route': instance_id,
+                    }]
         instance['config']['incoming'] = get_incoming_values(node_before['config']['outputs'])
 
         if oririginal_route and oririginal_route in workflow_components:
             node_next = workflow_components[oririginal_route]
             instance['conditions']['route'] = oririginal_route
+            instance['routing'] = [{
+                    'condition': None,
+                    'action': 'route',
+                    'label': "next",
+                    'route': oririginal_route,
+                    }]
             node_next['config']['incoming'] = get_incoming_values(instance['config']['outputs'])
 
 def get_incoming_values(config_outputs):

@@ -160,6 +160,7 @@ def create_component_definition_instance(plugin_id, name, route=None, version_nu
             "route": None,
             "on_fail": {}
         },
+        "routing": []
     }
 
     node_definition = node_type_definitions(definition.get("node_type", "node"))
@@ -271,7 +272,7 @@ def get_parent_context_variables(parent_node_type):
 # END: Creation Tasks
 def to_ui_workflow_node(component, parent_info={}):
     definition_info = BWFPluginController().get_instance().get_plugin_definition_info(component.get("plugin_id"))
-    
+
     workflow_node = {
             "id": component.get("id", None),
             "name": component.get("name", "Node"),
@@ -279,9 +280,10 @@ def to_ui_workflow_node(component, parent_info={}):
             "plugin_info": definition_info.get("plugin_info", {}),
             "version_number": component.get("version_number", "1"),
             "config": component.get("config", {}),
-            "ui": definition_info.get("ui", {}),
+            "ui": component.get("ui", {}) | definition_info.get("ui", {}),
             "node_type": component.get("node_type", "node"),
             "conditions": component.get("conditions", {}),
+            "routing": component.get("routing", []),
             "parent_info": parent_info,
         }
     node_type = component.get("node_type", "node")

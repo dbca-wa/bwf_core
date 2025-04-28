@@ -10,7 +10,7 @@ class ValueSelector {
       theme: "default",
     };
 
-    const { input, parent, component, portal, isEdition } = settings;
+    const { input, parent, component, portal, isEdition, onSave, onCancel } = settings;
 
     if (!input || !component) {
       return;
@@ -25,7 +25,7 @@ class ValueSelector {
     _.parentInput = parent;
     _.isEdition = isEdition;
     _.portal = portal;
-    _.parentComponentElement = $(`#node_panel_${component.id}`);
+    _.parentComponentElement = $(`#node_panel_${component.id}, #routing-form`);
 
     _.initials = {
       present: true,
@@ -36,6 +36,8 @@ class ValueSelector {
       value_rules: value_rules,
       is_expression: !!is_expression,
       showEditor: !!is_expression,
+      onSave: onSave,
+      onCancel: onCancel,
     };
     const elementSettings = {
       type,
@@ -53,9 +55,11 @@ class ValueSelector {
     });
     const resetButton = markup("button", [{ tag: "i", class: "bi bi-trash" }], {
       class: "btn btn-sm btn-outline-secondary value-selector-reset",
+      type: "button",
     });
     const editButton = markup("button", [{ tag: "i", class: "bi bi-pencil" }], {
       class: "btn btn-sm btn-primary value-selector-edit me-1",
+      type: "button",
     });
     _.$element.append(content);
     _.$element.append(editButton);
@@ -213,6 +217,11 @@ class ValueSelector {
     }
   }
 
+  widget() {
+    console.warn("widget method is deprecated");
+    return this;
+  }
+
   renderMultiValueInput(inputValue) {
     const { markup } = utils;
     const selector = this;
@@ -322,13 +331,9 @@ class ValueSelector {
   }
   renderValueEditorBlock() {
     const _ = this;
-    const { input, component, isEdition } = _;
-    const { markup } = utils;
-    const $vars = workflow_variables;
-    const $inputs = workflow_inputs;
+    const { input, isEdition } = _;
 
-    const { type, options, value_rules } = _.input?.json_value ?? {};
-    const { value, value_ref, is_expression } = input.value ?? {};
+    const { value } = input.value ?? {};
 
     if (value) {
       _.$resetButton.show();
@@ -577,9 +582,8 @@ class ValueSelector {
 
   setUpEditor(element) {
     const _ = this;
-    const { input, component } = _;
-    const { value, value_ref, is_expression } = input.value ?? {};
-    const { type, options, value_rules } = _.input?.json_value ?? {};
+    const { input } = _;
+    const { value, value_ref } = input.value ?? {};
 
     _.editor = CodeMirror.fromTextArea(element, {
       doc: "Start document",
@@ -653,10 +657,13 @@ class ValueSelector {
   }
 
   saveValue(value) {
-    const { input, component, parentInput, $element, popover, isEdition } =
+    const { input, component, parentInput, $element, popover, isEdition, initials } =
       this;
+    const { onSave:overrideSaveValue } = initials
     if (!isEdition) return;
-
+    if(overrideSaveValue) {
+      return overrideSaveValue(value);
+    }
     if (parentInput && parentInput.input.json_value) {
       const { input: parentInputObj } = parentInput;
 
@@ -693,6 +700,9 @@ class ValueSelector {
       key: input.key,
       value: value,
     };
+    if (initials.onSave) {
+      return initials.onSave(body, this);
+    }
     return workflow_components.api
       .updateComponentInputValue(body)
       .then((data) => {
@@ -852,6 +862,9 @@ class ValueSelector {
       value: value?.value || "",
       disabled: isDisabled,
     });
+  }
+  getSelector() {
+    return this;
   }
 }
 

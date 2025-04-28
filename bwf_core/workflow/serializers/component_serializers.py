@@ -14,6 +14,7 @@ class WorkflowComponentSerializer(serializers.Serializer):
     conditions = serializers.JSONField()
     parent_info = serializers.JSONField(default={})
     node_type = serializers.CharField(default="node")
+    routing = serializers.JSONField(default=[])
     # children = serializers.JSONField()
 
 class CreateComponentSerializer(serializers.Serializer):
@@ -55,6 +56,18 @@ class UpdateComponentSerializer(serializers.Serializer):
     index = serializers.IntegerField(default=1)
     name = serializers.CharField(max_length=100, required=False, allow_null=True)
     on_fail = OnFailConfigSerializer(required=False)
+    position = serializers.JSONField(required=False)
+
+
+class UpdateRoutingSerializer(serializers.Serializer):
+    workflow_id = serializers.IntegerField()
+    version_id = serializers.IntegerField()
+    plugin_id = serializers.CharField(max_length=500)
+    label = serializers.CharField(max_length=100, required=False, allow_null=True, allow_blank=True)
+    action = serializers.ChoiceField(choices=["route", "terminate", "repeat"], required=False)
+    is_remove = serializers.BooleanField(default=False, required=False)
+    condition = serializers.JSONField(required=False, allow_null=True)   
+    route = serializers.CharField(max_length=50)
 
 
 class UpdateComponentInputSerializer(serializers.Serializer):

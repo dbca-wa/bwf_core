@@ -1,4 +1,8 @@
 var component_utils = {
+  const: {
+    routeLineColour: "#4076c6",
+    routeActiveLineColour: "red",
+  },
   removeComponentDiagram: function (component) {
     if (component && component.diagram) {
       try {
@@ -74,6 +78,29 @@ var component_utils = {
         const paths = Object.values(component["config"][node_type]);
         for (let path in paths) {
           const foundComponent = this.findPreviousNode(id, paths[path]);
+          if (foundComponent) {
+            return foundComponent;
+          }
+        }
+      }
+    }
+  },
+  findNodeInTree: function (id, tree) {
+    const _ = workflow_components;
+    if (!tree) {
+      tree = _.var.components;
+    }
+    for (let i = 0; i < tree.length; i++) {
+      const component = tree[i];
+      const { node_type } = component;
+      if (!node_type) throw new Error("node_type is not defined");
+      if (component.id === id) {
+        return component;
+      }
+      if (node_type !== "node") {
+        const paths = Object.values(component["config"][node_type]);
+        for (let path in paths) {
+          const foundComponent = this.findNodeInTree(id, paths[path]);
           if (foundComponent) {
             return foundComponent;
           }
@@ -237,7 +264,7 @@ var component_utils = {
           path: "True",
           start: start,
           end: $(`#${branchElementId} .branch-true .component-out i`),
-          color: "#4076c6",
+          color: component_utils.const.routeLineColour,
           label: "True",
           startSocket: "left",
           endSocket: "top",
@@ -246,7 +273,7 @@ var component_utils = {
           path: "False",
           start: start,
           end: $(`#${branchElementId} .branch-false .component-out i`),
-          color: "#4076c6",
+          color: component_utils.const.routeLineColour,
           label: "False",
           startSocket: "right",
           endSocket: "top",
@@ -290,7 +317,7 @@ var component_utils = {
           start: $(
             `#${component.diagram.branchElementId} .branch-true:first .component-out:last`
           ),
-          color: "#4076c6",
+          color: component_utils.const.routeLineColour,
           startSocket: "bottom",
           endSocket: "left",
           lineRef: "left",
@@ -301,7 +328,7 @@ var component_utils = {
           start: $(
             `#${component.diagram.branchElementId} .branch-false:first .component-out:last`
           ),
-          color: "#4076c6",
+          color: component_utils.const.routeLineColour,
           startSocket: "bottom",
           endSocket: "right",
           lineRef: "right",

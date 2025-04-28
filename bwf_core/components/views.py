@@ -118,7 +118,68 @@ class WorkflowComponentViewset(ViewSet):
                 component['conditions']['on_fail'] = {}
             else:
                 component['conditions']['on_fail'] = serializer.validated_data.get("on_fail", component['conditions'].get("on_fail", {})) 
+            if serializer.validated_data.get("position", None):
+                x = serializer.validated_data.get("position", {}).get("x", None)
+                y = serializer.validated_data.get("position", {}).get("y", None)
+                component['ui']['x'] = x if x else component['ui']['x'] 
+                component['ui']['y'] = y if y else component['ui']['y']
+            workflow.set_json_definition(workflow_definition)
+            return JsonResponse(component_serializers.WorkflowComponentSerializer(to_ui_workflow_node(component)).data)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['PUT'])
+    def update_routing(self, request, *args, **kwargs):
+        try:
+            serializer = component_serializers.UpdateRoutingSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            component_id = kwargs.get("pk", None)
+            workflow_id = serializer.validated_data.get("workflow_id")
+            version_id = serializer.validated_data.get("version_id")
+            plugin_id = serializer.validated_data.get("plugin_id")
+            key = serializer.validated_data.get("key")
+            plugin_version = serializer.validated_data.get("plugin_version", None)
+            condition = serializer.validated_data.get("value", {'value': None, 'is_expression': False, 'value_ref': None})
 
+            workflow = get_object_or_404(WorkflowVersion, id=version_id, workflow__id=workflow_id)
+
+            if not workflow.is_editable:
+                return Response({"error": "Workflow version cannot be edited"}, status=status.HTTP_400_BAD_REQUEST)
+           
+            workflow_definition = workflow.get_json_definition()
+            component = find_component_in_tree(workflow_definition, component_id)
+            if not component:
+                raise Exception("Component not found")
+            if component.get("plugin_id") != plugin_id:
+                raise Exception("Plugin ID does not match")
+            # TODO: Check plugin version
+            
+            route = serializer.validated_data.get("route")
+            index = -1
+            routing = component.get("routing",[])
+            for i in range(len(routing)):
+                if routing[i]['route'] == route:
+                    index = i
+                    break
+
+            if serializer.validated_data.pop("is_remove", False):
+                if index == -1:
+                    raise Exception("Route not found")
+                component['routing'].pop(index)
+            else:
+                if index == -1:
+                    component['routing'].append({
+                        'route': route,
+                        'label': serializer.validated_data.get("label", None),
+                        'action': serializer.validated_data.get("action", None),
+                        'condition': serializer.validated_data.get("condition", None)
+                    })
+                else:
+                    component['routing'][index]['label'] = serializer.validated_data.get("label", component['routing'][index]['label'])
+                    component['routing'][index]['action'] = serializer.validated_data.get("action", component['routing'][index]['action'])
+                    component['routing'][index]['condition'] = serializer.validated_data.get("condition", component['routing'][index]['condition'])
+                
+            
             workflow.set_json_definition(workflow_definition)
             return JsonResponse(component_serializers.WorkflowComponentSerializer(to_ui_workflow_node(component)).data)
         except Exception as e:
