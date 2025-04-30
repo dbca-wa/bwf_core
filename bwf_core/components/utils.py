@@ -1,3 +1,7 @@
+
+import logging
+logger = logging.getLogger(__name__)
+
 def process_base_input_definition(input_item, input_index):
     new_input = {
         'name': input_item.get("label"),
@@ -67,4 +71,56 @@ def get_incoming_values(config_outputs):
         })
 
    return incoming_values
-        
+
+def is_default_route(routing):
+    if not routing:
+        return False
+    condition = routing.get('condition', None)
+    if not condition:
+        return True
+    
+    if not condition.get('is_expression', False) and not condition.get('value', None):
+        return True
+    if not condition.get('value_ref', None):
+        return True
+    return False
+
+''' 
+    Calculates the next route for a component based on the routing array conditions.
+'''
+def calculate_next_node(node, workflow_context):
+    routing = node.get('routing', None)
+    name = node.get('name', None)
+    logger.info(f"Evaluating next route for component {name}.")
+    if not routing:
+        raise Exception("Routing not defined")
+
+    for i in range(len(routing)):
+        route = routing[i]
+        logger.info(f"Route #{i+1} {route['label']} with conditions {route.get('condition', {})}")
+        if not route.get('condition', None):
+            logger.info(f"Route #{i+1} {route['route']} has no conditions, using it as default")
+            return route.get('route')
+        condition = route.get('condition', {})
+        if condition.get('is_expression', False):                
+            expression = condition.get('value', "")
+            logger.info(f"Evaluating expression {expression}")
+            result = eval(expression, None, workflow_context)
+            if result:
+                logger.info(f"Route #{i+1} {route['route']} evaluated to True")
+                return route.get('route')
+        elif condition.get('value_ref', None):
+            value_ref = condition.get('value_ref', {})
+            id = value_ref.get('id', None)
+            key = value_ref.get('key', None)
+            param = id if id else key if key else None
+            if not param:
+                raise Exception("Invalid value reference")
+            if workflow_context[value_ref['context']].get(param, None) == True:
+                logger.info(f"Route #{i+1} {route['route']} evaluated to True")
+                return route.get('route')
+        else:
+            logger.info(f"Route #{i+1} {route['route']} has no conditions, using it as default")
+            return route.get('route')
+    logger.info(f"No route found for component {name}.")
+    return None

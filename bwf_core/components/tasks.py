@@ -207,7 +207,7 @@ def insert_node_to_workflow(workflow_definition, node, data={}):
         for key, value in flow.items():
             if value['conditions']['is_entry'] and key != node_id:
                 next_node = value
-                node['conditions']['route'] = key
+                # node['conditions']['route'] = key
                 next_node['conditions']['is_entry'] = False
                 next_node['config']['incoming'] = get_incoming_values(node['config']['outputs'])
                 break

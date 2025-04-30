@@ -10,7 +10,7 @@ class ValueSelector {
       theme: "default",
     };
 
-    const { input, parent, component, portal, isEdition, onSave, onCancel } = settings;
+    const { input, parent, component, portal, isEdition, useOutputFields, onSave, onCancel } = settings;
 
     if (!input || !component) {
       return;
@@ -24,6 +24,7 @@ class ValueSelector {
     _.input = input;
     _.parentInput = parent;
     _.isEdition = isEdition;
+    _.useOutputFields = useOutputFields || false;
     _.portal = portal;
     _.parentComponentElement = $(`#node_panel_${component.id}, #routing-form`);
 
@@ -388,7 +389,7 @@ class ValueSelector {
   }
   onContentEditionRendered() {
     const _ = this;
-    const { input, component, isEdition } = _;
+    const { input, component, isEdition, useOutputFields } = _;
     const { value, value_ref, is_expression } = input.value ?? {};
     _.parentComponentElement.hide();
     _.parentComponentElement.addClass("in-edition");
@@ -468,6 +469,7 @@ class ValueSelector {
       component,
       isEdition,
       showInPopover: !!is_expression || _.initials.showEditor,
+      useOutputFields,
       onCancel: () => {
         _.popover?.hide();
       },
@@ -506,7 +508,7 @@ class ValueSelector {
   }
   renderVariablesMenuPopover() {
     const _ = this;
-    const { input, component, isEdition } = _;
+    const { input, component, isEdition, useOutputFields } = _;
     const popoverContent = $('[data-name="popover-content"]').clone();
     popoverContent.find(".btn-save").hide();
 
@@ -543,6 +545,7 @@ class ValueSelector {
         input,
         component,
         isEdition,
+        useOutputFields,
         showInPopover: !!is_expression || _.initials.showEditor,
         onSelectValue: (selectedValue) => {
           if (!isEdition) return;

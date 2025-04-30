@@ -5,11 +5,24 @@ var component_utils = {
   },
   removeComponentDiagram: function (component) {
     if (component && component.diagram) {
-      try {
-        component.diagram.line_out?.remove();
-        component.diagram.line_out = null;
-        component.diagram.line_in = null;
-      } catch (error) {}
+      component.diagram.lines?.forEach((route) => {
+        try {
+          route.line?.remove();
+          if (route.destination) {
+            const destinationNode = component_utils.findSingleComponentInTree(
+              route.destination
+            );
+            if (destinationNode) {
+              destinationNode.diagram.lines =
+                destinationNode.diagram.lines.filter(
+                  (route) =>
+                    (route.source && route.source !== component.id) ||
+                    (route.destination && route.destination !== component.id)
+                );
+            }
+          }
+        } catch (error) {}
+      });
       if (component.config.branch) {
         component_utils.render.removeBranchLines(component);
       }

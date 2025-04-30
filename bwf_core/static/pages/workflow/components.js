@@ -129,7 +129,7 @@ var workflow_components = {
       _.renderRoutingLine(component);
     }
     // $("#toolbox .new-line button").trigger("click")
-    $(`#node_${components[0].id}`).find(".options")?.trigger("click");
+    $(`#node_${components[2].id}`).find(".options")?.trigger("click");
     // $(`#node_${components[0].id}`).find(".diagram-node")?.trigger("click")
     // $(`#node_${components[2].id}`).find(".diagram-node")?.trigger("click")
     const _container = $("body");
@@ -147,6 +147,7 @@ var workflow_components = {
       {
         color: component_utils.const.routeLineColour,
         size: 2,
+        path: "grid",
       }
     );
     $(`#node_${component.id}`).on("drag.first_line", _, (event) => {
@@ -162,7 +163,7 @@ var workflow_components = {
       );
       for (let i = 0; i < component.routing.length; i++) {
         const route = component.routing[i];
-        if(routeID && routeID !== route.route) {
+        if (routeID && routeID !== route.route) {
           continue;
         }
         const { route: routePath, conditions, label, action } = route;
@@ -180,6 +181,7 @@ var workflow_components = {
             color: component_utils.const.routeLineColour,
             size: 2,
             middleLabel: label,
+            path: "grid",
           });
 
           component.diagram = component.diagram || {};
@@ -300,7 +302,11 @@ var workflow_components = {
       component_utils.findSingleComponentInTree(componentId));
 
     component?.diagram.lines.forEach((route) => {
-      route?.line?.position();
+      try {
+        route?.line?.position();
+      } catch (error) {
+        console.log('should delete this line from ' + component.name);
+      }
     });
     if (isSource) {
       try {
@@ -533,15 +539,13 @@ var workflow_components = {
     const route_template = document.querySelector(
       "#component-routing-item-template"
     );
-    const { markup } = utils;
     const _ = workflow_components;
-    const { id, name } = component;
     const { routing } = component;
     // clone.attribute("id", `id`);
     for (let i = 0; i < routing.length; i++) {
       const route = routing[i];
       const clone = route_template.content.cloneNode(true);
-      const { route: routePath, conditions, label, action } = route;
+      const { route: routePath, label } = route;
 
       const destinationComponent =
         component_utils.findSingleComponentInTree(routePath);
@@ -552,7 +556,11 @@ var workflow_components = {
       $(`.list-group.routes`).append(clone);
       // clone.querySelector(".route-action").innerHTML = action;
       $(`#${elementId} .route-label .value`).html(label ?? " -- ");
-      $(`#${elementId} .route-conditions .value`).html(conditions ?? " -- ");
+
+      workflow_toolbox.renderRoutingCondition(
+        $(`#${elementId} .route-conditions .value`),
+        route
+      );
       $(`#${elementId} .route-components`).html(
         `${component.name} → ${destinationComponent.name}`
       );
@@ -585,27 +593,29 @@ var workflow_components = {
               const route = _component.routing.find(
                 (r) => r.route === destinationComponent.id
               );
-              const line = _component.diagram.lines.find(l=> l.destination === destinationComponent.id).line
-              if(line) {
+              const line = _component.diagram.lines.find(
+                (l) => l.destination === destinationComponent.id
+              ).line;
+              if (line) {
                 line.setOptions({
                   middleLabel: route.label,
-                })
+                });
               }
               $(`#${elementId} .route-label .value`).html(
                 route.label ?? " -- "
               );
-              $(`#${elementId} .route-conditions .value`).html(
-                route.conditions ?? " -- "
+              workflow_toolbox.renderRoutingCondition(
+                $(`#${elementId} .route-conditions .value`),
+                route
               );
             },
             function (data) {
               // ON Delete
-              body.empty()
+              body.empty();
               $(".list-group.routes .route-list-item").show();
               const elementId = `route_${destinationComponent.id}`;
               $(`#${elementId}`).remove();
               // $('.list-group.routes .route-list-item').show();
-
             },
             function () {
               // ON CANCEL
@@ -633,7 +643,8 @@ var workflow_components = {
         _.api.deleteComponent(data, function (data) {
           $(`#node_${component.id}`).remove();
           $(`#${elementId}`).remove();
-          workflow_components.removeComponent(id);
+          // data: components_affected
+          workflow_components.removeComponent(id, data);
           _.sidePanel?.close();
         });
       });
@@ -1091,7 +1102,7 @@ var workflow_components = {
       }
     }
   },
-  removeComponent: function (id) {
+  removeComponent: function (id, nodes_affected=[]) {
     const _ = workflow_components;
     const component = component_utils.findSingleComponentInTree(id);
     if (!component) {
@@ -1101,7 +1112,24 @@ var workflow_components = {
     component_utils.removeComponentDiagram(component);
     $(`#node_${component.id}`).off("drag.line_out");
     $(`#node_${component.id}`).off("drag.line_in");
-    const nextComponent = component_utils.findSingleComponentInTree(
+
+    for (let i = 0; i < nodes_affected.length; i++) {
+      const node_affected = component_utils.findSingleComponentInTree(
+        nodes_affected[i].id
+      );
+      node_affected.routing = nodes_affected[i].routing;
+      node_affected.diagram.lines.filter(route=> route.destination).forEach((route) => {
+        try {
+          route.line?.remove();
+        } catch (error) {}
+      })
+      node_affected.diagram.lines = node_affected.diagram.lines.filter(route=> route.source)
+      _.renderRoutingLine(node_affected);
+
+      
+      console.log("node_affected", node_affected['name']);
+    }    
+/* const nextComponent = component_utils.findSingleComponentInTree(
       component.conditions.route
     );
     const prevComponent = component_utils.findPreviousNode(component.id);
@@ -1120,7 +1148,7 @@ var workflow_components = {
         }
       }
       if (prevComponent.conditions.route) {
-        _.renderRouteLine(prevComponent);
+        _.renderRoutingLine(prevComponent);
       }
     }
     if (nextComponent) {
@@ -1135,7 +1163,7 @@ var workflow_components = {
           );
         }
       }
-    }
+    } */
 
     component_utils.removeNodeFromTree(id);
     _.updateLines();
@@ -1159,20 +1187,13 @@ var workflow_components = {
           _.updateLines(paths[path]);
         }
       }
-      if (component.diagram?.line_in) {
+      component.diagram?.lines?.forEach((route) => {
         try {
-          component.diagram.line_in.position();
+         route?.line?.position();
         } catch (error) {
-          component.diagram.line_in = null;
+          console.error("Error updating line position", error);
         }
-      }
-      if (component.diagram?.line_out) {
-        try {
-          component.diagram.line_out.position();
-        } catch (error) {
-          component.diagram.line_out = null;
-        }
-      }
+      });
       if (component.config.branch) {
         component.diagram?.position && component.diagram.position(component);
       }

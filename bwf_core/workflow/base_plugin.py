@@ -1,5 +1,6 @@
 from time import sleep
 from bwf_core.models import WorkFlowInstance, ComponentInstance
+from bwf_core.components.utils import calculate_next_node
 import logging
 
 logger = logging.getLogger(__name__)
@@ -43,8 +44,11 @@ class BasePlugin:
         current_definition = find_component_in_tree(workflow_definition, self.component.component_id)
         if not current_definition:
             raise Exception(f"Component {self.component.component_id} not found in workflow definition")
-        next_component_id = override_route if override_route else current_definition.get("conditions", {}).get("route", None)
+        
         output = self.component.output if self.component.output else {}
+        input_params = self.workflow_instance.variables
+        input_params['output'] = output.get("data", {})
+        next_component_id = override_route if override_route else calculate_next_node(current_definition, input_params)
         if next_component_id:
             register_workflow_step(self.workflow_instance,
                                    step=next_component_id,
@@ -56,7 +60,7 @@ class BasePlugin:
                 parent_id = self.component.parent_node.component_id
                 parent_definition = find_component_in_tree(workflow_definition, parent_id)
                 if parent_definition:
-                    parent_next_node = parent_definition.get("conditions", {}).get("route", None)
+                    parent_next_node = calculate_next_node(parent_definition, input_params)
                     if parent_next_node:
                         register_workflow_step(self.workflow_instance, 
                                                step=parent_next_node, 
@@ -194,7 +198,11 @@ class BranchPlugin(BasePlugin):
         current_definition = find_component_in_tree(workflow_definition, self.component.component_id)
         if not current_definition:
             raise Exception(f"Component {self.component.component_id} not found in workflow definition")
-        next_component_id = override_route if override_route else current_definition.get("conditions", {}).get("route", None)
+        
+        output = self.component.output if self.component.output else {}
+        input_params = self.workflow_instance.variables
+        input_params['output'] = output.get("data", {})
+        next_component_id = override_route if override_route else calculate_next_node(current_definition, input_params)
         output = self.component.output if self.component.output else {}
         if next_component_id:
             register_workflow_step(self.workflow_instance, 

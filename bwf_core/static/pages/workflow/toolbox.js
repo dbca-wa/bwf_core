@@ -188,6 +188,7 @@ var workflow_toolbox = {
       },
       component: originComponent,
       isEdition: wf.isEdition,
+      useOutputFields: true,
       portal: $(body).find(".panel-value-edition"),
       onSave: function (data) {
         _.var.condition = data;
@@ -245,4 +246,26 @@ var workflow_toolbox = {
       );
     });
   },
+  renderRoutingCondition: function (element, route) {
+    if(!element || !route) return;
+    const { markup } = utils;
+    const { value, is_expression, value_ref  } = (route.condition || {});
+
+    if (value_ref) {
+      element.empty();
+      const { context: ref_context, key: ref_key } = value_ref;
+      element.html(markup("code", `${ref_context} - ${ref_key}`));
+    } else {
+      element.empty();
+      element.html(
+        is_expression
+          ? markup(
+              "code",
+              [{ tag: "i", class: "bi bi-braces" }, " Expression"],
+              { class: "text-center" }
+            )
+          : value || ""
+      );
+    }
+  }
 };

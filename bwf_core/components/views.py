@@ -19,6 +19,7 @@ from .tasks import (create_component_definition_instance,
                     find_component_in_tree,
                     get_encasing_flow,
                     get_parent_node)
+from .utils import (is_default_route,)
 
 # Create your views here.
 
@@ -243,25 +244,38 @@ class WorkflowComponentViewset(ViewSet):
             if not instance:
                 return Response("Component not found")
             
-            node_prev = None
             for key, component in workflow_components.items():
-                if component['conditions']['route'] == component_id:
-                    component['conditions']['route'] = None
-                    node_prev = component
+                if component['id'] == component_id:
+                    continue
+                paths = [r['route'] for r in component['routing']]
+                if not component_id in paths:
+                    continue
+                was_modified = False
+                new_routing = []
+                for route in component['routing']:
+                    if not route.get('route', None):
+                        # clean invalid routes
+                        was_modified = True
+                        continue
+                    if route['route'] != component_id:
+                        new_routing.append(route)
+                    else:
+                        if is_default_route(route):
+                            for after_route in instance['routing']:
+                                if after_route['route'] in paths:
+                                    # already exists
+                                    continue
+                                if after_route['route'] == component['id']:
+                                    # skips self
+                                    continue
+                                if not is_default_route(after_route):
+                                    # skips non default routes
+                                    continue
+                                was_modified = True
+                                new_routing.append(after_route)
+                if was_modified:
+                    component['routing'] = new_routing
                     components_affected.append(component)
-                    break
-            
-            route = instance['conditions']['route']
-            if route:
-                node_next = workflow_components.get(route, None)
-                if node_next:
-                    components_affected.append(node_next)
-                    node_next['conditions']['is_entry'] = instance['conditions']['is_entry']
-                    if node_prev:
-                        node_prev['conditions']['route'] = node_next['id']
-                        node_next['config']['incoming'] = get_incoming_values(node_prev['config']['outputs'])
-            elif node_prev:
-                node_prev['conditions']['route'] = None
 
             # workflow_definition['workflow'] = workflow_components
             workflow.set_json_definition(workflow_definition)
