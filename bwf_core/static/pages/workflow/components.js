@@ -94,7 +94,7 @@ var workflow_components = {
     components.forEach((component) => {
       nodeIds[component.id] = component;
     });
-    _.renderComponentTree(container,component, nodeIds, components);
+    _.renderComponentTree(container, component, nodeIds, components);
 
     for (let i = 0; i < components.length; i++) {
       const component = components[i];
@@ -104,7 +104,7 @@ var workflow_components = {
       _.renderRoutingLine(component);
     }
     // $("#toolbox .new-line button").trigger("click")
-    // $(`#node_${components[2].id}`).find(".options")?.trigger("click");
+    // $(`#node_${components[3].id}`).find(".component-out")?.trigger("click");
     // $(`#node_${components[0].id}`).find(".diagram-node")?.trigger("click")
     // $(`#node_${components[2].id}`).find(".diagram-node")?.trigger("click")
     const _container = $("body");
@@ -117,37 +117,36 @@ var workflow_components = {
 
   renderComponentTree: function (container, component, nodeIds, components) {
     const _ = workflow_components;
-      if (Object.keys(nodeIds).length === 0) {
-        return;
-      }
-      if (!component) {
-        console.log('Orphan component');
-      }
+    if (Object.keys(nodeIds).length === 0) {
+      return;
+    }
+    if (!component) {
+      console.log("Orphan component");
+    }
 
-      if (nodeIds[component.id]) {
-        _.appendComponent(component, container);
-        $(".component-node, .diagram-node-parent").draggable({});
+    if (nodeIds[component.id]) {
+      _.appendComponent(component, container);
+      $(".component-node, .diagram-node-parent").draggable({});
 
-        delete nodeIds[component.id];
-      }
-      if (component.routing) {
-        for (let i = 0; i < component.routing.length; i++) {
-          const route = component.routing[i];
-          const next_component = components.find(
-            (component) => component.id === route.route
-          );
-          if (!next_component) {
-            console.error("Route not found", route);
-            continue;
-          }
-          if( !Object.keys(nodeIds).includes(next_component.id) ) {
-            console.log('Component has already been added');
-            continue
-          }
-          _.renderComponentTree(container, next_component, nodeIds, components);
+      delete nodeIds[component.id];
+    }
+    if (component.routing) {
+      for (let i = 0; i < component.routing.length; i++) {
+        const route = component.routing[i];
+        const next_component = components.find(
+          (component) => component.id === route.route
+        );
+        if (!next_component) {
+          console.error("Route not found", route);
+          continue;
         }
-        
-      } 
+        if (!Object.keys(nodeIds).includes(next_component.id)) {
+          console.log("Component has already been added");
+          continue;
+        }
+        _.renderComponentTree(container, next_component, nodeIds, components);
+      }
+    }
   },
   renderFirstLine: function (component) {
     const _ = workflow_components;
@@ -315,7 +314,7 @@ var workflow_components = {
       try {
         route?.line?.position();
       } catch (error) {
-        console.log('should delete this line from ' + component.name);
+        console.log("should delete this line from " + component.name);
       }
     });
     if (isSource) {
@@ -953,7 +952,7 @@ var workflow_components = {
                 )
               );
             }
-
+            // renders component in diagram
             _.appendComponent(data, _.container, appendPosition);
             $(".component-node, .diagram-node-parent").draggable({});
             if (_.var.components.length === 1) {
@@ -964,13 +963,47 @@ var workflow_components = {
                 component_utils.render.renderOuterBranchLines(parentNode);
               }
             }
-            _.renderRouteLine(data);
+            _.renderRoutingLine(data);
+            let existingRouteID = null;
+            if (data.routing && data.routing.length > 0) {
+              const newNextNode = component_utils.findSingleComponentInTree(
+                data.routing[0].route
+              );
+              if (
+                newNextNode &&
+                newNextNode.diagram.lines.find(
+                  (line) => line.source === component_route
+                )
+              ) {
+                existingRouteID = newNextNode.id;
+                const existingRoute = newNextNode.diagram.lines.find(
+                  (line) => line.source === component_route
+                );
+                existingRoute.line?.remove();
+                newNextNode.diagram.lines = newNextNode.diagram.lines.filter(
+                  (line) => line.source !== component_route
+                );
+              }
+              
+            }
+
             if (component_route) {
               const source_component =
                 component_utils.findSingleComponentInTree(component_route);
               if (source_component) {
-                source_component.conditions.route = data.id;
-                _.renderRouteLine(source_component);
+                source_component.routing.push({
+                  route: data.id,
+                  conditions: {},
+                  label: "",
+                  action: "route",
+                });
+                if (existingRouteID) {
+                  source_component.diagram.lines =
+                    source_component.diagram.lines.filter(
+                      (r) => r.destination !== existingRouteID
+                    );
+                }
+                _.renderRoutingLine(source_component, data.id);
               }
             }
             _.updateLines();
@@ -1112,7 +1145,7 @@ var workflow_components = {
       }
     }
   },
-  removeComponent: function (id, nodes_affected=[]) {
+  removeComponent: function (id, nodes_affected = []) {
     const _ = workflow_components;
     const component = component_utils.findSingleComponentInTree(id);
     if (!component) {
@@ -1128,52 +1161,20 @@ var workflow_components = {
         nodes_affected[i].id
       );
       node_affected.routing = nodes_affected[i].routing;
-      node_affected.diagram.lines.filter(route=> route.destination).forEach((route) => {
-        try {
-          route.line?.remove();
-        } catch (error) {}
-      })
-      node_affected.diagram.lines = node_affected.diagram.lines.filter(route=> route.source)
+      node_affected.diagram.lines
+        .filter((route) => route.destination)
+        .forEach((route) => {
+          try {
+            route.line?.remove();
+          } catch (error) {}
+        });
+      node_affected.diagram.lines = node_affected.diagram.lines.filter(
+        (route) => route.source
+      );
       _.renderRoutingLine(node_affected);
 
-      
-      console.log("node_affected", node_affected['name']);
-    }    
-/* const nextComponent = component_utils.findSingleComponentInTree(
-      component.conditions.route
-    );
-    const prevComponent = component_utils.findPreviousNode(component.id);
-    if (prevComponent) {
-      prevComponent.conditions.route = nextComponent ? nextComponent.id : null;
-      if (prevComponent.diagram?.line_out) {
-        prevComponent.diagram.line_out?.remove();
-        prevComponent.diagram.line_out = null;
-        $(`#node_${prevComponent.id}`).off("drag.line_out");
-        if (prevComponent.diagram.line_in) {
-          $(`#node_${prevComponent.id}`).on(
-            "drag.line_in",
-            { isSource: false, id: prevComponent.id },
-            _.handleLineDrag
-          );
-        }
-      }
-      if (prevComponent.conditions.route) {
-        _.renderRoutingLine(prevComponent);
-      }
+      console.log("node_affected", node_affected["name"]);
     }
-    if (nextComponent) {
-      if (nextComponent.diagram?.line_out) {
-        // nextComponent.diagram.line_out = null;
-        $(`#node_${nextComponent.id}`).off("drag.line_out");
-        if (nextComponent.diagram.line_out) {
-          $(`#node_${nextComponent.id}`).on(
-            "drag.line_out",
-            { isSource: true, id: nextComponent.id },
-            _.handleLineDrag
-          );
-        }
-      }
-    } */
 
     component_utils.removeNodeFromTree(id);
     _.updateLines();
@@ -1199,7 +1200,7 @@ var workflow_components = {
       }
       component.diagram?.lines?.forEach((route) => {
         try {
-         route?.line?.position();
+          route?.line?.position();
         } catch (error) {
           console.error("Error updating line position", error);
         }

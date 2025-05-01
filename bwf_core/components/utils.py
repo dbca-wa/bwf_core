@@ -108,10 +108,14 @@ def calculate_next_node(node, workflow_context):
         if condition.get('is_expression', False):                
             expression = condition.get('value', "")
             logger.info(f"Evaluating expression {expression}")
-            result = eval(expression, None, workflow_context)
-            if result:
-                logger.info(f"Route #{i+1} {route['route']} evaluated to True")
-                return route.get('route')
+            try:
+                result = evaluate_boolean_expression(expression, workflow_context)
+                if result:
+                    logger.info(f"Route #{i+1} {route['route']} evaluated to True")
+                    return route.get('route')
+            except Exception as e:
+                logger.error(f"Error evaluating expression {expression}: {e}")
+                raise Exception(f"Error evaluating expression {expression}: {e}")
         elif condition.get('value_ref', None):
             value_ref = condition.get('value_ref', {})
             id = value_ref.get('id', None)
@@ -127,3 +131,13 @@ def calculate_next_node(node, workflow_context):
             return route.get('route')
     logger.info(f"No route found for component {name}.")
     return None
+
+def evaluate_boolean_expression(expression, workflow_context):
+    """
+    Evaluates a boolean expression in the context of the workflow.
+    """
+    try:
+        result = eval(expression, {}, workflow_context)
+        return result
+    except Exception as e:
+        return False
