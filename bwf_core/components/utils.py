@@ -33,27 +33,30 @@ def process_base_input_definition(input_item, input_index):
     return new_input
 
 
-def adjust_workflow_routing(workflow_components, instance_id, route):
+def adjust_workflow_routing(workflow_components, instance_id, route, insert_before=None):
     instance = workflow_components[instance_id]
     if route and route in workflow_components:
         node_before = workflow_components[route]
-        oririginal_route = node_before['conditions']['route']
-        node_before['conditions']['route'] = instance_id
-        node_before['routing'] = [{
+        oririginal_route = insert_before
+        
+        new_route = {
                     'condition': None,
                     'action': 'route',
-                    'label': "next",
+                    'label': "",
                     'route': instance_id,
-                    }]
+                    }
+        node_before['routing'].append(new_route)
         instance['config']['incoming'] = get_incoming_values(node_before['config']['outputs'])
 
         if oririginal_route and oririginal_route in workflow_components:
             node_next = workflow_components[oririginal_route]
-            instance['conditions']['route'] = oririginal_route
+            # remove the next route from the node_before routing
+            node_before['routing'] = [node for node in node_before['routing'] if node['route'] != insert_before] 
+            
             instance['routing'] = [{
                     'condition': None,
                     'action': 'route',
-                    'label': "next",
+                    'label': "",
                     'route': oririginal_route,
                     }]
             node_next['config']['incoming'] = get_incoming_values(instance['config']['outputs'])

@@ -28,6 +28,7 @@ class CreateComponentSerializer(serializers.Serializer):
     # conditions = 
     path = serializers.CharField(max_length=500, required=False, allow_null=True)
     parent_id = serializers.CharField(max_length=500, required=False, allow_null=True)
+    insert_before = serializers.CharField(max_length=500, required=False, allow_null=True, allow_blank=True)
     is_entry = serializers.BooleanField(default=False)
 
 

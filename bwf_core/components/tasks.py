@@ -180,6 +180,7 @@ def insert_node_to_workflow(workflow_definition, node, data={}):
     node_id = node.get('id', None)
     node_path = data.get('node_path', None)
     parent_id = data.get('parent_id', None)
+    insert_before = data.get('insert_before', None)
     
     is_entry = data.get('is_entry', False)
     flow = workflow_components
@@ -195,13 +196,13 @@ def insert_node_to_workflow(workflow_definition, node, data={}):
         parent_node['config'][parent_type][node_path][node_id] = node
         node['config']['path'] = f"{parent_node['config']['path']}.config.{parent_type}.{node_path}.{node_id}"
         node['config']['local'] = get_parent_context_variables(parent_type)
-        adjust_workflow_routing(flow, node_id, route)                    
+        adjust_workflow_routing(flow, node_id, route, insert_before)                    
     else:
         is_entry = is_entry or len(workflow_components.keys()) == 0
         node['conditions']['is_entry'] = is_entry
         workflow_components[node_id] = node
         node['config']['path'] = f"{node_id}"
-        adjust_workflow_routing(workflow_components, node_id, route)
+        adjust_workflow_routing(workflow_components, node_id, route, insert_before)
     
     if is_entry:
         for key, value in flow.items():

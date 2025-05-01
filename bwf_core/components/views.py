@@ -71,12 +71,14 @@ class WorkflowComponentViewset(ViewSet):
 
         parent_id = serializer.validated_data.get("parent_id", None)
         node_path = serializer.validated_data.get("path", None)
+        insert_before = serializer.validated_data.get("insert_before", None)
         
         insert_node_to_workflow(workflow_definition, instance, data={
             'route': route,
             'is_entry': is_entry,
             'node_path': node_path,
             'parent_id': parent_id,
+            'insert_before': insert_before,
         })
 
         workflow_definition['workflow'] = workflow_components
@@ -271,11 +273,9 @@ class WorkflowComponentViewset(ViewSet):
                                 if not is_default_route(after_route):
                                     # skips non default routes
                                     continue
-                                was_modified = True
                                 new_routing.append(after_route)
-                if was_modified:
-                    component['routing'] = new_routing
-                    components_affected.append(component)
+                component['routing'] = new_routing
+                components_affected.append(component)
 
             # workflow_definition['workflow'] = workflow_components
             workflow.set_json_definition(workflow_definition)

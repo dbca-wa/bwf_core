@@ -94,32 +94,7 @@ var workflow_components = {
     components.forEach((component) => {
       nodeIds[component.id] = component;
     });
-    do {
-      if (Object.keys(nodeIds).length === 0 || !component) {
-        break;
-      }
-      if (nodeIds[component.id]) {
-        _.appendComponent(component, container);
-        $(".component-node, .diagram-node-parent").draggable({});
-
-        delete nodeIds[component.id];
-      }
-      if (component.conditions.route) {
-        const route = component.conditions.route;
-        const next_component = components.find(
-          (component) => component.id === route
-        );
-        if (!next_component) {
-          console.error("Route not found", route);
-          component = nodeIds[Object.keys(nodeIds)[0]];
-          continue;
-          // break;
-        }
-        component = next_component;
-      } else {
-        component = null;
-      }
-    } while (component);
+    _.renderComponentTree(container,component, nodeIds, components);
 
     for (let i = 0; i < components.length; i++) {
       const component = components[i];
@@ -129,7 +104,7 @@ var workflow_components = {
       _.renderRoutingLine(component);
     }
     // $("#toolbox .new-line button").trigger("click")
-    $(`#node_${components[2].id}`).find(".options")?.trigger("click");
+    // $(`#node_${components[2].id}`).find(".options")?.trigger("click");
     // $(`#node_${components[0].id}`).find(".diagram-node")?.trigger("click")
     // $(`#node_${components[2].id}`).find(".diagram-node")?.trigger("click")
     const _container = $("body");
@@ -138,6 +113,41 @@ var workflow_components = {
     var position =
       scrollTo.offset().top - _container.offset().top + _container.scrollTop();
     _container.scrollTop(position);
+  },
+
+  renderComponentTree: function (container, component, nodeIds, components) {
+    const _ = workflow_components;
+      if (Object.keys(nodeIds).length === 0) {
+        return;
+      }
+      if (!component) {
+        console.log('Orphan component');
+      }
+
+      if (nodeIds[component.id]) {
+        _.appendComponent(component, container);
+        $(".component-node, .diagram-node-parent").draggable({});
+
+        delete nodeIds[component.id];
+      }
+      if (component.routing) {
+        for (let i = 0; i < component.routing.length; i++) {
+          const route = component.routing[i];
+          const next_component = components.find(
+            (component) => component.id === route.route
+          );
+          if (!next_component) {
+            console.error("Route not found", route);
+            continue;
+          }
+          if( !Object.keys(nodeIds).includes(next_component.id) ) {
+            console.log('Component has already been added');
+            continue
+          }
+          _.renderComponentTree(container, next_component, nodeIds, components);
+        }
+        
+      } 
   },
   renderFirstLine: function (component) {
     const _ = workflow_components;
