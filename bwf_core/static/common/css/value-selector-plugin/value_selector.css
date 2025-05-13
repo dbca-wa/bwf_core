@@ -266,9 +266,11 @@ border: 2px solid #0d6efd; */
 }
 
 .value-selector.is-invalid,
-.value-selector-content.is-invalid select {
+.value-selector-content.is-invalid select,
+.value-selector-content.is-invalid span.select2-selection  {
   border: 2px solid #fbc732;
 }
+
 .value-selector.is-invalid-type,
 .value-selector-content.is-invalid-type select {
   border-color: #fb5a32;
@@ -295,6 +297,23 @@ border: 2px solid #0d6efd; */
   width: 100%;
   justify-content: start;
   padding: 0px;
+}
+.value-selector-content .select2-container {
+    width: 100% !important;
+}
+.value-selector-content .select2-container .select2-selection {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    background: #fbfbfb;
+    border-radius: 5px;
+    border: 1px solid #0d6efd91;
+    cursor: pointer;
+    padding: 2px 11px;
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .variables-select {
   border-color: #0d6efd91;

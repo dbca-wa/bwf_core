@@ -13,6 +13,7 @@ var workflow_components = {
   selectedComponent: null,
   var: {
     base_url: "/bwf/api/workflow-components/",
+    base_plugin_url: "/bwf_components/",
     components: [],
     definitions: [],
     incoming: [],
@@ -105,7 +106,7 @@ var workflow_components = {
     }
     // $("#toolbox .new-line button").trigger("click")
     // $(`#node_${components[3].id}`).find(".component-out")?.trigger("click");
-    // $(`#node_${components[0].id}`).find(".diagram-node")?.trigger("click")
+    // $(`#node_${components[0].id}`).find(".options")?.trigger("click")
     // $(`#node_${components[2].id}`).find(".diagram-node")?.trigger("click")
     const _container = $("body");
 
@@ -740,7 +741,7 @@ var workflow_components = {
                   class: "input-label",
                 }
               ),
-              { class: "col-auto" }
+              { class: "col-3" }
             ),
 
         markup("div", element, { class: multi ? "col-12" : "col-9" }),
