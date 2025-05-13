@@ -180,39 +180,6 @@ class ValueSelector {
           value_ref: null,
         });
       });
-    } else if (ajax) {
-      _.$resetButton.off("click").on("click", _, function (event) {
-        const selector = event.data;
-        selector.select2?.select2("destroy");
-        selector.select2 = null;
-
-        selector.saveValue({
-          value: null,
-          is_expression: false,
-          value_ref: null,
-        });
-      });
-      if (value) {
-        _.$content.addClass("value-selector");
-        _.$resetButton.show();
-        _.$editButton.show();
-        _.$editButton.off("click").on("click", _, function (event) {
-          const selector = event.data;
-          selector.renderAjaxSelect();
-          if (selector.select2) {
-            selector.select2.select2("open");
-            selector.select2.on("select2:close", selector, function (e) {
-              const selector = e.data;
-              const { originalSelect2Event } = e.params;
-              if (!originalSelect2Event) {
-                selector.updateHtml();
-              }
-            });
-          }
-        });
-      } else {
-        _.renderAjaxSelect();
-      }
     } else if (multi && structure) {
       _.$content.empty();
       _.$resetButton.hide();
@@ -391,24 +358,32 @@ class ValueSelector {
     const { input, isEdition } = _;
 
     const { value } = input.value ?? {};
+    const { value_rules } = input?.json_value ?? {};
 
+    const { ajax } = value_rules || {};
+    const isAjax = ajax && !!ajax.url;
+
+    _.$resetButton.off('click').on("click", _, function (event) {
+      const selector = event.data;
+      selector.saveValue({
+        value: null,
+        is_expression: false,
+        value_ref: null,
+      });
+    });
     if (value) {
       _.$resetButton.show();
-      _.$resetButton.on("click", _, function (event) {
-        const selector = event.data;
-        selector.saveValue({
-          value: null,
-          is_expression: false,
-          value_ref: null,
-        });
-      });
     } else {
       // _.$resetButton.off("click");
       _.$resetButton.hide();
+      if (isAjax && !_.select2) {
+        _.$content.empty();
+        _.renderAjaxSelect();
+      }
     }
     _.$editButton.show();
 
-    _.$editButton.on("click", _, function (event) {
+    _.$editButton.off("click").on("click", _, function (event) {
       const selector = event.data;
       _.initials.showEditor = true;
       if (selector.popover) {
@@ -423,23 +398,38 @@ class ValueSelector {
       _.$resetButton.hide();
     }
 
-    _.$content.addClass("value-selector");
+    if (!isAjax) _.$content.addClass("value-selector");
 
-    _.$content.on("click", _, function (event) {
+    _.$content.off("click").on("click", _, function (event) {
       const selector = event.data;
+      const { value } = selector.input.value ?? {};
+
       if (!value && _.initials.showEditor) {
         _.initials.showEditor = false;
-        if (!selector.popover) {
+        if (!selector.popover && !isAjax) {
           selector.renderVariablesMenuPopover();
         }
         return;
+      }
+      if (isAjax && !_.initials.showEditor) {
+        if (value) {
+          _.$content.addClass("value-selector");
+          _.$resetButton.show();
+          _.$editButton.show();
+          if (selector.select2) {
+            selector.select2.select2("open");
+          } else {
+            selector.renderAjaxSelect();
+            selector.select2.select2("open");
+          }
+        }
       }
       if (!selector.popover && _.initials.showEditor) {
         selector.onContentEditionRendered();
       }
     });
 
-    if (!_.initials.showEditor) {
+    if (!_.initials.showEditor && !ajax) {
       _.renderVariablesMenuPopover();
     }
   }
@@ -479,33 +469,42 @@ class ValueSelector {
     const ajax_url = (base_plugin_url + url)
       .replace(/\/\//g, "/")
       .replace(/\/$/, "");
-    _.select2 = $(inputElement).select2({
-      dropdownParent: $("#component-side-panel > section"),
-      ajax: {
-        url: ajax_url,
-        dataType: "json",
-        delay: 300,
-        headers: { "X-CSRFToken": $("#csrf_token").val() },
-        data: function (params) {
-          var query = {
-            filter: params.term,
-            page: params.page,
-          };
-          return query;
-        },
-        processResults: function (data, params) {
-          params.page = params.page || 1;
-          return {
-            results: data.map((item) => ({
-              id: item.id,
-              text: item.name,
-            })),
-          };
-        },
+    if (!_.select2) {
+      _.select2 = $(inputElement).select2({
+        dropdownParent: $("#component-side-panel > section"),
+        ajax: {
+          url: ajax_url,
+          dataType: "json",
+          delay: 300,
+          headers: { "X-CSRFToken": $("#csrf_token").val() },
+          data: function (params) {
+            var query = {
+              filter: params.term,
+              page: params.page,
+            };
+            return query;
+          },
+          processResults: function (data, params) {
+            params.page = params.page || 1;
+            return {
+              results: data.map((item) => ({
+                id: item.id,
+                text: item.name,
+              })),
+            };
+          },
 
-        // Additional AJAX parameters go here; see the end of this chapter for the full code of this example
-      },
-    });
+          // Additional AJAX parameters go here; see the end of this chapter for the full code of this example
+        },
+      });
+      _.select2.on("select2:close", _, function (e) {
+        const selector = e.data;
+        const { originalSelect2Event } = e.params;
+        if (!originalSelect2Event) {
+          selector.renderValueEditorBlock();
+        }
+      });
+    }
     $(inputElement).on("select2:select", _, function (event) {
       const selector = event.data;
       const data = event.params.data;
@@ -514,6 +513,9 @@ class ValueSelector {
         is_expression: false,
         value_ref: null,
       });
+
+      selector.select2?.select2("destroy");
+      selector.select2 = null;
     });
   }
   onContentEditionRendered() {
@@ -521,6 +523,8 @@ class ValueSelector {
     const { input, component, isEdition, useOutputFields } = _;
     const { value, value_ref, is_expression } = input.value ?? {};
     _.parentComponentElement.hide();
+    $(`#routing-component`).hide();
+
     _.parentComponentElement.addClass("in-edition");
     $(".value-in-edition").removeClass("value-in-edition");
     _.$content.addClass("value-in-edition");
@@ -552,7 +556,8 @@ class ValueSelector {
 
     editorBlockContent.find(".btn-close").on("click", _, function (event) {
       const selector = event.data;
-      selector.editor?.setValue(selector.input.value?.value ?? "");
+      const { value } = selector.input.value ?? {};
+      selector.editor?.setValue(typeof (value?.value ?? {}) === "string" ? value : JSON.stringify(value?.value ?? ''));
       selector.hideContentEdition();
     });
     editorBlockContent.find(".btn-clear").on("click", _, function (event) {
@@ -579,7 +584,10 @@ class ValueSelector {
       if (!value && !value_ref) {
         _.editor.setValue("");
       }
-      if (value) _.editor.setValue(value);
+
+      if (value) {
+        _.editor.setValue(typeof value === "string" ? value : JSON.stringify(value));
+      }
       if (!value && value_ref) {
         _.editor.setValue(`${value_ref.context}['${value_ref.key}']`);
       }
@@ -633,6 +641,8 @@ class ValueSelector {
     _.parentComponentElement.show();
     _.parentComponentElement.removeClass("in-edition");
     $(".value-in-edition").removeClass("value-in-edition");
+    $(`#routing-component`).show();
+
     _.portal?.empty();
   }
   renderVariablesMenuPopover() {
@@ -731,7 +741,9 @@ class ValueSelector {
       lint: true,
       gutters: ["CodeMirror-lint-markers"],
     });
-    if (value) _.editor.setValue(value);
+    if (value) {
+      _.editor.setValue(typeof value === "string" ? value : JSON.stringify(value));
+    }
     if (!value && value_ref) {
       _.editor.setValue(`${value_ref.context}['${value_ref.key}']`);
     }
@@ -950,11 +962,13 @@ class ValueSelector {
       } else {
         _.$content.addClass("value-selector");
         _.$content.html(
-          markup(
-            "div",
-            [{ tag: "i", class: "bi bi-chain" }, ` ${value.value?.name}` || ""],
-            { class: "text-center" }
-          )
+          value.is_expression
+            ? markup(
+                "div",
+                [{ tag: "i", class: "bi bi-braces" }, " Expression"],
+                { class: "text-center" }
+              )
+            : ` ${value.value?.name}` || ""
         );
       }
     } else {

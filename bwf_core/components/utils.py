@@ -95,7 +95,7 @@ def calculate_next_node(node, workflow_context):
     routing = node.get('routing', None)
     name = node.get('name', None)
     logger.info(f"Evaluating next route for component {name}.")
-    if not routing:
+    if routing is None:
         raise Exception("Routing not defined")
 
     for i in range(len(routing)):
