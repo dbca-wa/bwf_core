@@ -65,7 +65,7 @@ class UpdateRoutingSerializer(serializers.Serializer):
     version_id = serializers.IntegerField()
     route = serializers.CharField(max_length=50)
     plugin_id = serializers.CharField(max_length=500)
-    index = serializers.IntegerField(allow_null=True)
+    index = serializers.IntegerField(allow_null=True, required=False)
     label = serializers.CharField(max_length=100, required=False, allow_null=True, allow_blank=True)
     action = serializers.ChoiceField(choices=["route", "terminate", "repeat"], required=False)
     is_remove = serializers.BooleanField(default=False, required=False)
