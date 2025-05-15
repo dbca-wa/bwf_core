@@ -12,19 +12,6 @@ var workflow_toolbox = {
 
   bindEvents: function () {
     // Bind events to toolbox items
-    $("#toolbox .new-line button").on("click", function (event) {
-      const wf = workflow_components;
-      if (wf.mode === "new-line") {
-        workflow_toolbox.cancelNewLine();
-        $(this).removeClass("btn-primary");
-        $(this).addClass("btn-outline-primary");
-
-        return;
-      }
-      wf.mode = "new-line";
-      $(this).addClass("btn-primary");
-      $(this).remove("btn-outline-primary");
-    });
   },
   cancelNewLine: function () {
     const wf = workflow_components;
@@ -39,8 +26,7 @@ var workflow_toolbox = {
     Object.keys(wf.newLine).forEach((key) => {
       wf.newLine[key] = null;
     });
-    $("#toolbox .new-line button").removeClass("btn-primary");
-    $("#toolbox .new-line button").addClass("btn-outline-primary");
+    $("body").off("keydown", component_utils.handleEscNewLine);
   },
   renderRoutingSidePanel: function (originComponent, destinationComponent) {
     const wf = workflow_components;

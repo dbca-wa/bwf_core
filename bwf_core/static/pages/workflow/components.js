@@ -422,6 +422,24 @@ var workflow_components = {
         const component = component_utils.findComponentInTree(id, config);
         if (component) _.renderComponentSidePanel(component);
       });
+    $(`#${elementId}`)
+      .find(".component-label .arrow-path")
+      ?.on("click", component, function (event) {
+        const _ = workflow_components;
+        const { id, config } = event.data;
+        const component = component_utils.findComponentInTree(id, config);
+        const wf = workflow_components;
+        if (wf.mode === "new-line") {
+          workflow_toolbox.cancelNewLine();
+          
+        } 
+        _.newLine.originElement = $(`#node_${component.id} .diagram-node`);
+        _.newLine.originComponent = component;
+        _.newLine.originElement.addClass("selected");
+        
+        wf.mode = "new-line";
+        $('body').on("keydown", component_utils.handleEscNewLine);
+      });
     $(`#${elementId}`)?.on("dragstop", component, _.handleNodePositionChange);
 
     $(`#${elementId}`)
@@ -451,6 +469,7 @@ var workflow_components = {
             if ($(this).hasClass("selected")) {
               return;
             }
+            $("body").off("keydown", component_utils.handleEscNewLine);
             _.newLine.destinationElement = $(this);
             _.newLine.destinationComponent = component;
             $(this).addClass("selected");

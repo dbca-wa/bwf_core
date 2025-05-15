@@ -201,6 +201,11 @@ var component_utils = {
     }
     return component;
   },
+  handleEscNewLine: function (event) {
+    if (event.key === "Escape") {
+      workflow_toolbox.cancelNewLine();
+    }
+  },
 
   render: {
     renderBranch: function (elementId, component) {
