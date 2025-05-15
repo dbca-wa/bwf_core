@@ -140,7 +140,7 @@ class WorkflowComponentViewset(ViewSet):
             workflow_id = serializer.validated_data.get("workflow_id")
             version_id = serializer.validated_data.get("version_id")
             plugin_id = serializer.validated_data.get("plugin_id")
-            key = serializer.validated_data.get("key")
+            new_index = serializer.validated_data.get("index")
             plugin_version = serializer.validated_data.get("plugin_version", None)
             condition = serializer.validated_data.get("value", {'value': None, 'is_expression': False, 'value_ref': None})
 
@@ -169,6 +169,9 @@ class WorkflowComponentViewset(ViewSet):
                 if index == -1:
                     raise Exception("Route not found")
                 component['routing'].pop(index)
+            elif new_index:
+                affected_route = routing.pop(index)
+                routing.insert(new_index, affected_route)
             else:
                 if index == -1:
                     component['routing'].append({

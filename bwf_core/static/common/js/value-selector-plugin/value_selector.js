@@ -17,6 +17,7 @@ class ValueSelector {
       portal,
       isEdition,
       useOutputFields,
+      isRouting,
       onSave,
       onCancel,
     } = settings;
@@ -34,8 +35,9 @@ class ValueSelector {
     _.parentInput = parent;
     _.isEdition = isEdition;
     _.useOutputFields = useOutputFields || false;
+    _.isRouting = isRouting || false;
     _.portal = portal;
-    _.parentComponentElement = $(`#node_panel_${component.id}, #routing-form`);
+    _.parentComponentElement = $(`#routing-form, #node_panel_${component.id}`);
     _.select2 = null;
 
     _.initials = {
@@ -523,7 +525,7 @@ class ValueSelector {
     const { input, component, isEdition, useOutputFields } = _;
     const { value, value_ref, is_expression } = input.value ?? {};
     _.parentComponentElement.hide();
-    $(`#routing-component`).hide();
+    if (!_.isRouting) $('#routing-component').hide();
 
     _.parentComponentElement.addClass("in-edition");
     $(".value-in-edition").removeClass("value-in-edition");

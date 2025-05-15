@@ -189,6 +189,7 @@ var workflow_toolbox = {
       component: originComponent,
       isEdition: wf.isEdition,
       useOutputFields: true,
+      isRouting: true,
       portal: $(body).find(".panel-value-edition"),
       onSave: function (data) {
         _.var.condition = data;

@@ -227,6 +227,7 @@ var workflow_components = {
       component_utils.render.renderOuterBranchLines(component);
     }
   },
+  // To be deprecacted and removed
   renderRouteLine: function (component) {
     const _ = workflow_components;
     if (component.conditions.route) {
@@ -289,6 +290,7 @@ var workflow_components = {
       function (err) {}
     );
   },
+  // To be deprecacted and removed
   handleLineDrag: function (event, ui) {
     const isSource = event.data.isSource;
     const componentId = event.data.id;
@@ -542,6 +544,7 @@ var workflow_components = {
         event.stopPropagation();
         $(`#component-settings-form`).hide();
         $(`#node_panel_${component.id}`).show();
+        $(`#routing-component`).show();
       }
     );
   },
@@ -563,6 +566,7 @@ var workflow_components = {
       const elementId = `route_${routePath}`;
 
       clone.querySelector("div").setAttribute("id", elementId);
+      clone.querySelector("div").setAttribute("data-route", routePath);
       $(`.list-group.routes`).append(clone);
       // clone.querySelector(".route-action").innerHTML = action;
       $(`#${elementId} .route-label .value`).html(label ?? " -- ");
@@ -575,7 +579,7 @@ var workflow_components = {
         `${component.name} → ${destinationComponent.name}`
       );
 
-      $(`#${elementId} button`).on(
+      $(`#${elementId}`).on(
         "click",
         {
           originComponent: component,
@@ -636,6 +640,42 @@ var workflow_components = {
           );
         }
       );
+
+      $(`.list-group.routes`).sortable({
+        placeholder: "ui-state-highlight",
+      });
+      $(".list-group.routes")
+        .off("sortupdate")
+        .on("sortupdate", component, function (event, ui) {
+          $(".list-group.routes").sortable("option", "disabled", true);
+          const { id, plugin_id } = event.data;
+          const chosen_route = ui.item.data("route");
+          let index = 0;
+          $(`.list-group.routes > div`).each((i, item) => {
+            const routeInList = $(item).data("route");
+            if (chosen_route === routeInList) return;
+            index++;
+          });
+          const data = {
+            id: id,
+            plugin_id: plugin_id,
+            route: chosen_route,
+            index,
+          };
+
+          workflow_components.api.updateRouting(
+            data,
+            function (response) {
+              $(".list-group.routes").sortable("option", "disabled", false);
+              const node = component_utils.findNodeInTree(id);
+              node.routing = response.routing;
+            },
+            function (error) {
+              $(".list-group.routes").sortable("option", "disabled", false);
+              console.log(error);
+            }
+          );
+        });
     }
   },
   addMenuButtonsFunctionality: function (elementId, component) {
@@ -695,6 +735,7 @@ var workflow_components = {
           .val(component.name);
         $(`#component-settings-form`).show();
         $(`#node_panel_${component.id}`).hide();
+        $(`#routing-component`).hide();
       });
   },
   getComponentInputElement: function (input) {
@@ -985,7 +1026,6 @@ var workflow_components = {
                   (line) => line.source !== component_route
                 );
               }
-              
             }
 
             if (component_route) {
