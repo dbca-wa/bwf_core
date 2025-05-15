@@ -622,7 +622,7 @@ class ValueSelector {
           const contextValue = convert_context_to_python_dict(
             selectedValue?.context
           );
-          doc.replaceRange(`${contextValue}['${selectedValue?.key}']`, cursor);
+          doc.replaceRange(`${contextValue}.get('${selectedValue?.key}')`, cursor);
         } else {
           _.saveValue({
             value: null,
@@ -697,7 +697,7 @@ class ValueSelector {
               selectedValue?.context
             );
             doc.replaceRange(
-              `${contextValue}['${selectedValue?.key}']`,
+              `${contextValue}.get('${selectedValue?.key}')`,
               cursor
             );
           } else {

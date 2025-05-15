@@ -127,7 +127,10 @@ var workflow_components = {
 
     if (nodeIds[component.id]) {
       _.appendComponent(component, container);
-      $(".component-node, .diagram-node-parent").draggable({});
+
+      $(".component-node, .diagram-node-parent").draggable({
+        handle: ".node-handle",
+      });
 
       delete nodeIds[component.id];
     }
@@ -415,7 +418,7 @@ var workflow_components = {
         .attr("data-path", node_path);
     }
     $(`#${elementId}`)
-      .find(".component-label .options")
+      .find(".diagram-node")
       ?.on("click", component, function (event) {
         const _ = workflow_components;
         const { id, config } = event.data;
@@ -431,14 +434,13 @@ var workflow_components = {
         const wf = workflow_components;
         if (wf.mode === "new-line") {
           workflow_toolbox.cancelNewLine();
-          
-        } 
+        }
         _.newLine.originElement = $(`#node_${component.id} .diagram-node`);
         _.newLine.originComponent = component;
         _.newLine.originElement.addClass("selected");
-        
+
         wf.mode = "new-line";
-        $('body').on("keydown", component_utils.handleEscNewLine);
+        $("body").on("keydown", component_utils.handleEscNewLine);
       });
     $(`#${elementId}`)?.on("dragstop", component, _.handleNodePositionChange);
 
@@ -1015,7 +1017,10 @@ var workflow_components = {
             }
             // renders component in diagram
             _.appendComponent(data, _.container, appendPosition);
-            $(".component-node, .diagram-node-parent").draggable({});
+            if (_.isEdition)
+              $(".component-node, .diagram-node-parent").draggable({
+                handle: ".node-handle",
+              });
             if (_.var.components.length === 1) {
               _.renderFirstLine(data);
             }
