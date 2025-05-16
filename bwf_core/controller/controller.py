@@ -5,8 +5,9 @@ from bwf_core.models import ComponentInstance, ComponentStepStatusEnum
 from importlib.machinery import SourceFileLoader
 from django.core.cache import cache
 
-BASE_PLUGIN_ROUTE = os.path.join(settings.BASE_DIR, 'bwf_components', 'plugins')
-FLOW_NODES_ROUTE = os.path.join(settings.BASE_DIR, 'bwf_core', 'core_plugins')
+BASE_PLUGIN_ROUTE = settings.BASE_PLUGIN_ROUTE
+FLOW_NODES_ROUTE = settings.FLOW_NODES_ROUTE
+
 IGNORE_DIRS = ['__pycache__']
 
 
@@ -17,12 +18,14 @@ class BWFPluginController:
     def get_instance():
         if BWFPluginController._instance is None:
             BWFPluginController._instance = BWFPluginController()
+            if not BWFPluginController._instance.has_loaded:
+                BWFPluginController._instance.load_plugins()
+                BWFPluginController.has_loaded = True
         return BWFPluginController._instance
     
-    
+    has_loaded = False
     def __init__(self):
         self.plugins = {}
-        self.load_plugins()
     
     def load_plugins(self):
         PLUGIN_ROUTES = [BASE_PLUGIN_ROUTE, FLOW_NODES_ROUTE]

@@ -52,14 +52,16 @@
       </div>
     </div>
     <div class="component-label">
-      <span></span>
-      <!-- <button
+      
+        <i class="bi bi-arrows-move node-handle"></i>
+       <span class="options"></span>
+      <button
         class="btn btn-sm btn-dropdown p-0"
         type="button"
         aria-expanded="false"
       >
-        <i class="bi bi-three-dots-vertical"></i>
-      </button> -->
+        <i class="bi bi-arrow-return-right arrow-path"></i>
+      </button>
     </div>
     <div style="height: 0px">
       <div class="component-route component-out">
@@ -148,6 +150,14 @@
       <div class="conditions-btn"></div>
     </div>
   </div>
+  <div class="p-2 routing-component" id="routing-component">
+    <h6>Routing</h6>
+    <p class="text-muted">
+      Set an order to the different routes of the component.
+      <br />
+    <div class="list-group routes"></div>
+    <div class="component-route-edition"></div>
+  </div>
 </template>
 
 <template id="component-branch-template">
@@ -171,6 +181,23 @@
           </div>
         </div>
         <div class="workflow"></div>
+      </div>
+    </div>
+  </div>
+</template>
+<template id="component-loop-template">
+  <div class="loop-border mt-5">
+    <div class="d-flex">
+      <div
+        class="loop-flow"
+        style="align-content: center"
+      >
+        <div style="height: 0em">
+          <div class="component-route component-out entry-point">
+            <i class="bi bi-plus" style="opacity: 0"></i>
+          </div>
+        </div>
+        <div class="workflow loop-workflow"></div>
       </div>
     </div>
   </div>

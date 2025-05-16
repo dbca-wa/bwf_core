@@ -37,6 +37,20 @@ def find_component_in_tree(workflow_definition, component_id):
             raise Exception(f"Component {component_id} not found in mapping")
     return component
 
+def update_mapping_from_deleted_component(workflow_definition, component_id):
+    mapping = workflow_definition.get('mapping', {})
+    items_to_delete = []
+    for key, value in mapping.items():
+        if key == component_id:
+            del mapping[key]
+            break
+        path = value.get('path', "")
+        path_list = path.split('.')
+        if component_id in path_list:
+            items_to_delete.append(key)
+    for item in items_to_delete:
+        del mapping[item]
+
 def is_workflow_node(node):
     if not node:
         return False
@@ -146,6 +160,7 @@ def create_component_definition_instance(plugin_id, name, route=None, version_nu
             "route": None,
             "on_fail": {}
         },
+        "routing": []
     }
 
     node_definition = node_type_definitions(definition.get("node_type", "node"))
@@ -165,6 +180,7 @@ def insert_node_to_workflow(workflow_definition, node, data={}):
     node_id = node.get('id', None)
     node_path = data.get('node_path', None)
     parent_id = data.get('parent_id', None)
+    insert_before = data.get('insert_before', None)
     
     is_entry = data.get('is_entry', False)
     flow = workflow_components
@@ -179,19 +195,20 @@ def insert_node_to_workflow(workflow_definition, node, data={}):
         node['conditions']['is_entry'] = is_entry
         parent_node['config'][parent_type][node_path][node_id] = node
         node['config']['path'] = f"{parent_node['config']['path']}.config.{parent_type}.{node_path}.{node_id}"
-        adjust_workflow_routing(flow, node_id, route)                    
+        node['config']['local'] = get_parent_context_variables(parent_type)
+        adjust_workflow_routing(flow, node_id, route, insert_before)                    
     else:
         is_entry = is_entry or len(workflow_components.keys()) == 0
         node['conditions']['is_entry'] = is_entry
         workflow_components[node_id] = node
         node['config']['path'] = f"{node_id}"
-        adjust_workflow_routing(workflow_components, node_id, route)
+        adjust_workflow_routing(workflow_components, node_id, route, insert_before)
     
     if is_entry:
         for key, value in flow.items():
             if value['conditions']['is_entry'] and key != node_id:
                 next_node = value
-                node['conditions']['route'] = key
+                # node['conditions']['route'] = key
                 next_node['conditions']['is_entry'] = False
                 next_node['config']['incoming'] = get_incoming_values(node['config']['outputs'])
                 break
@@ -224,7 +241,7 @@ def node_type_definitions(node_type):
     elif node_type == 'loop':
         return {
             node_type: {
-                
+                'flow': {}
             }
         }
     elif node_type == 'node':
@@ -234,10 +251,29 @@ def node_type_definitions(node_type):
             }
         }
 
+def get_parent_context_variables(parent_node_type):
+    if parent_node_type == 'loop':
+        return {
+            "item": {
+                "label": "Item",
+                "key": "item",
+                "data_type": "object",
+                "data": {},
+            },
+            "index": {
+                "label": "Index",
+                "key": "index",
+                "data_type": "integer",
+                "data": {},
+            }
+        }
+
+    return {}
+
 # END: Creation Tasks
 def to_ui_workflow_node(component, parent_info={}):
     definition_info = BWFPluginController().get_instance().get_plugin_definition_info(component.get("plugin_id"))
-    
+
     workflow_node = {
             "id": component.get("id", None),
             "name": component.get("name", "Node"),
@@ -245,9 +281,10 @@ def to_ui_workflow_node(component, parent_info={}):
             "plugin_info": definition_info.get("plugin_info", {}),
             "version_number": component.get("version_number", "1"),
             "config": component.get("config", {}),
-            "ui": definition_info.get("ui", {}),
+            "ui": component.get("ui", {}) | definition_info.get("ui", {}),
             "node_type": component.get("node_type", "node"),
             "conditions": component.get("conditions", {}),
+            "routing": component.get("routing", []),
             "parent_info": parent_info,
         }
     node_type = component.get("node_type", "node")

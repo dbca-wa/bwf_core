@@ -1,0 +1,22 @@
+{
+  "id": "flow_node_loop",
+  "name": "Loop",
+  "description": "Loop through a set of nodes until a condition is met.",
+  "version": "1.0.0",
+  "category": "flow",
+  "author": "BWF Components",
+  "editable": false,
+  "icon_class": "bi bi-arrow-repeat",
+  "icon_image_src": "icon.png",
+  "node_type": "loop",
+  "base_input": [
+    {
+      "key": "items",
+      "label": "Items",
+      "type": "array",
+      "value": [],
+      "required": true
+    }
+  ],
+  "base_output": null
+}

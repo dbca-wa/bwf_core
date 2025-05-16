@@ -149,11 +149,14 @@
 <script src="/static/pages/workflow/inputs.js"></script>
 <script src="/static/pages/workflow/variables.js"></script>
 <script src="/static/pages/workflow/components.js"></script>
+<script src="/static/pages/workflow/component_loop.js"></script>
 <script src="/static/pages/workflow/component_utils.js"></script>
 <script src="/static/pages/workflow/component_on_fail.js"></script>
+<script src="/static/pages/workflow/toolbox.js"></script>
 
 <!-- Fragments -->
 {% include 'fragments/component_node.html' %} 
+{% include 'fragments/routing_template.html' %} 
 {% include 'fragments/value_popover.html' %}
 <!-- END: Fragments -->
 <!-- Modals -->
@@ -174,6 +177,9 @@
       is_diagram: true,
       sidePanel: $("#component-side-panel").SlideOutPanel({
         width: "760px",
+        afterClosed: function() {
+          workflow_toolbox.cancelNewLine();
+        }
       }),
     };
 
@@ -182,6 +188,8 @@
     }
     workflow_inputs.init(options, "inputs-node");
     workflow_variables.init(options, "variables-container");
+    workflow_toolbox.init();
+
     document.addEventListener("variables:change", () => {
       if (!workflow_components.has_init) {
         workflow_components.init(options, "components-flow");

@@ -2,12 +2,16 @@
 {% load static %}
 {% block extra_css %}
     <link rel="icon" type="image/png" href="/static/common/img/favicon.ico">
+    <link rel="stylesheet" type="text/css" href="/static/common/css/workflow.css?ver={{ GIT_COMMIT_HASH }}"/>
     <link rel="stylesheet" type="text/css" href="/static/common/css/admin_custom.css?ver={{ GIT_COMMIT_HASH }}"/>
+    <link rel="stylesheet" type="text/css" href="/static/common/css/styles.css?ver={{ GIT_COMMIT_HASH }}"/>
     <link rel="stylesheet" type="text/css" href="/static/common/css/value-selector-plugin/value_selector.css?ver={{ GIT_COMMIT_HASH }}"/>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.1/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="/static/common/css/codemirror/codemirror.min.css"/>
     <link rel="stylesheet" href="/static/common/css/codemirror/show-hint.min.css"/>
     <link rel="stylesheet" href="/static/common/css/side-out-panel/slide-out-panel.min.css"/>
+    <link rel="stylesheet" href="/static/common/css/select2-bootstrap-5-theme.css"/>
+    <link rel="stylesheet" href="/static/common/css/select2.min.css"/>
 {% endblock %}
     
 {% block extra_js %}
@@ -26,6 +30,7 @@
 <script src="/static/js/table.js?ver={{ GIT_COMMIT_HASH }}"></script>
 <script src="/static/common/js/context-menu-component/context_variable_menu.js?ver={{ GIT_COMMIT_HASH }}"></script>
 <script src="/static/common/js/leader-line.min.js?ver={{ GIT_COMMIT_HASH }}"></script>
+<script src="/static/common/js/select2.min.js?ver={{ GIT_COMMIT_HASH }}"></script>
 <script src="/static/common/js/value-selector-plugin/value_selector.js?ver={{ GIT_COMMIT_HASH }}"></script>
 <!-- any extra javascript goes here -->
 <!-- datatables -->

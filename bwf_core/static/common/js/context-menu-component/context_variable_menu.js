@@ -17,6 +17,7 @@ class ContextVariableMenu {
       onCancel,
       showInPopover,
       isEdition,
+      useOutputFields,
     } = settings;
 
     if (!input || !component) {
@@ -28,6 +29,7 @@ class ContextVariableMenu {
     _.component = component;
     _.input = input;
     _.isEdition = isEdition;
+    _.useOutputFields = useOutputFields;
 
     _.elementId = `context-menu-${component.id}-${input.key}${
       showInPopover ? "-popover" : ""
@@ -206,6 +208,21 @@ class ContextVariableMenu {
         ])
       );
     }
+    if (
+      _.useOutputFields &&
+      _.component.config.outputs.length > 0
+    ) {
+      $(menuElements).append(
+        markup("li", [
+          markup("div", "Output values"),
+          markup(
+            "ul",
+            _.getOutputMenu(_.component.config.outputs, "output")
+          ),
+        ])
+      );
+    }
+    
 
     container.empty();
     container.append(menuElements.children);
@@ -267,6 +284,35 @@ class ContextVariableMenu {
       if (el.data_type === "object" && el.data) {
         const dataArray = Object.keys(el.data).map((key) => el.data[key]);
         subItems.push(_.getIncomingMenu(dataArray, `${el.key}`, parentId));
+      }
+      items.push({
+        tag: "li",
+        content: [
+          { tag: "div", content: el.label },
+          subItems.length > 0 ? { tag: "ul", content: subItems } : "",
+        ],
+        class: "value",
+        id: parentId,
+        "data-context": context,
+        "data-parent-context": parentContextId ?? "",
+        "data-value": el.id,
+        "data-key": el.key,
+      });
+    }
+
+    return items;
+  }
+
+  getOutputMenu(output, context, parentContextId) {
+    const _ = this;
+    const items = [];
+    for (let i = 0; i < output.length; i++) {
+      const el = output[i];
+      const parentId = `ctx-output-${el.key}`;
+      const subItems = [];
+      if (el.data_type === "object" && el.data) {
+        const dataArray = Object.keys(el.data).map((key) => el.data[key]);
+        subItems.push(_.getOutputMenu(dataArray, `${el.key}`, parentId));
       }
       items.push({
         tag: "li",

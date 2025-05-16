@@ -1,4 +1,36 @@
 var component_utils = {
+  const: {
+    routeLineColour: "#4076c6",
+    routeActiveLineColour: "red",
+  },
+  removeComponentDiagram: function (component) {
+    if (component && component.diagram) {
+      component.diagram.lines?.forEach((route) => {
+        try {
+          route.line?.remove();
+          if (route.destination) {
+            const destinationNode = component_utils.findSingleComponentInTree(
+              route.destination
+            );
+            if (destinationNode) {
+              destinationNode.diagram.lines =
+                destinationNode.diagram.lines.filter(
+                  (route) =>
+                    (route.source && route.source !== component.id) ||
+                    (route.destination && route.destination !== component.id)
+                );
+            }
+          }
+        } catch (error) {}
+      });
+      if (component.config.branch) {
+        component_utils.render.removeBranchLines(component);
+      }
+      if (component.config.loop) {
+        component_loop.render.removeLoopLines(component);
+      }
+    }
+  },
   markupErrors: function (errors) {
     const notifContainer = $("#notifications-container");
     if (errors.length > 0) {
@@ -18,11 +50,14 @@ var component_utils = {
   getComponentPrependSelector: function (parentComponent, path) {
     if (parentComponent.node_type === "branch") {
       if (path === "True") {
-        return `#node_${parentComponent.id} .branch-true .workflow`;
+        return `#node_${parentComponent.id} .branch-true .workflow:first`;
       }
       if (path === "False") {
-        return `#node_${parentComponent.id} .branch-false .workflow`;
+        return `#node_${parentComponent.id} .branch-false .workflow:first`;
       }
+    }
+    if (parentComponent.node_type === "loop") {
+      return `#node_${parentComponent.id} .loop-workflow:first`;
     }
   },
   closePopovers: function (value_selector) {
@@ -56,6 +91,29 @@ var component_utils = {
         const paths = Object.values(component["config"][node_type]);
         for (let path in paths) {
           const foundComponent = this.findPreviousNode(id, paths[path]);
+          if (foundComponent) {
+            return foundComponent;
+          }
+        }
+      }
+    }
+  },
+  findNodeInTree: function (id, tree) {
+    const _ = workflow_components;
+    if (!tree) {
+      tree = _.var.components;
+    }
+    for (let i = 0; i < tree.length; i++) {
+      const component = tree[i];
+      const { node_type } = component;
+      if (!node_type) throw new Error("node_type is not defined");
+      if (component.id === id) {
+        return component;
+      }
+      if (node_type !== "node") {
+        const paths = Object.values(component["config"][node_type]);
+        for (let path in paths) {
+          const foundComponent = this.findNodeInTree(id, paths[path]);
           if (foundComponent) {
             return foundComponent;
           }
@@ -143,6 +201,11 @@ var component_utils = {
     }
     return component;
   },
+  handleEscNewLine: function (event) {
+    if (event.key === "Escape") {
+      workflow_toolbox.cancelNewLine();
+    }
+  },
 
   render: {
     renderBranch: function (elementId, component) {
@@ -219,7 +282,7 @@ var component_utils = {
           path: "True",
           start: start,
           end: $(`#${branchElementId} .branch-true .component-out i`),
-          color: "#4076c6",
+          color: component_utils.const.routeLineColour,
           label: "True",
           startSocket: "left",
           endSocket: "top",
@@ -228,7 +291,7 @@ var component_utils = {
           path: "False",
           start: start,
           end: $(`#${branchElementId} .branch-false .component-out i`),
-          color: "#4076c6",
+          color: component_utils.const.routeLineColour,
           label: "False",
           startSocket: "right",
           endSocket: "top",
@@ -272,7 +335,7 @@ var component_utils = {
           start: $(
             `#${component.diagram.branchElementId} .branch-true:first .component-out:last`
           ),
-          color: "#4076c6",
+          color: component_utils.const.routeLineColour,
           startSocket: "bottom",
           endSocket: "left",
           lineRef: "left",
@@ -283,7 +346,7 @@ var component_utils = {
           start: $(
             `#${component.diagram.branchElementId} .branch-false:first .component-out:last`
           ),
-          color: "#4076c6",
+          color: component_utils.const.routeLineColour,
           startSocket: "bottom",
           endSocket: "right",
           lineRef: "right",
@@ -317,6 +380,12 @@ var component_utils = {
           line?.remove();
         });
       }
+
+      Object.values(component.config.branch).forEach((path) => {
+        path.forEach((component) => {
+          component_utils.removeComponentDiagram(component);
+        });
+      });
     },
   },
 };

@@ -1,26 +1,16 @@
 /* eslint-disable prefer-spread */
 /* eslint-disable no-plusplus */
-class ValueSelector {
+class DynamicField {
   constructor(element, settings, $) {
     const _ = this;
     const { markup } = utils;
 
     _.defaults = {
-      name: "DBCA-BWF-VARIABLE-SELECTOR",
+      name: "DBCA-BWF-DYNAMIC-FIELD",
       theme: "default",
     };
 
-    const {
-      input,
-      parent,
-      component,
-      portal,
-      isEdition,
-      useOutputFields,
-      isRouting,
-      onSave,
-      onCancel,
-    } = settings;
+    const { input, parent, component, portal, isEdition, useOutputFields, onSave, onCancel } = settings;
 
     if (!input || !component) {
       return;
@@ -35,10 +25,8 @@ class ValueSelector {
     _.parentInput = parent;
     _.isEdition = isEdition;
     _.useOutputFields = useOutputFields || false;
-    _.isRouting = isRouting || false;
     _.portal = portal;
-    _.parentComponentElement = $(`#routing-form, #node_panel_${component.id}`);
-    _.select2 = null;
+    _.parentComponentElement = $(`#node_panel_${component.id}, #routing-form`);
 
     _.initials = {
       present: true,
@@ -97,8 +85,6 @@ class ValueSelector {
 
     const { type, options, value_rules, multi, structure } =
       _.input?.json_value ?? {};
-
-    const { ajax } = value_rules || {};
 
     if (value_rules && value_rules.variable_only) {
       _.$content.empty();
@@ -190,21 +176,10 @@ class ValueSelector {
 
       const add_button = markup(
         "div",
-        [
-          { tag: "div", content: "&nbsp;", class: "col-3" },
-          {
-            tag: "div",
-            content: markup(
-              "button",
-              [{ tag: "i", class: "bi bi-plus" }, "Add field value"],
-              {
-                class: "btn btn-primary btn-sm mb-4",
-              }
-            ),
-            class: "col-9 d-grid",
-          },
-        ],
-        { class: "row add-array-item" }
+        markup("button", [{ tag: "i", class: "bi bi-plus" }, "Add field"], {
+          class: "btn btn-primary btn-sm ",
+        }),
+        { class: "row add-array-item px-3" }
       );
       const fieldsElement = markup("div", "", {
         class: "fields w-100",
@@ -257,7 +232,7 @@ class ValueSelector {
       markup(
         "div",
         [
-          markup("button", [{ tag: "i", class: "bi bi-x-circle" }], {
+          markup("button", [{ tag: "i", class: "bi bi-trash" }], {
             class: "btn btn-sm btn-outline-danger value-item-remove",
           }),
         ],
@@ -360,32 +335,24 @@ class ValueSelector {
     const { input, isEdition } = _;
 
     const { value } = input.value ?? {};
-    const { value_rules } = input?.json_value ?? {};
 
-    const { ajax } = value_rules || {};
-    const isAjax = ajax && !!ajax.url;
-
-    _.$resetButton.off('click').on("click", _, function (event) {
-      const selector = event.data;
-      selector.saveValue({
-        value: null,
-        is_expression: false,
-        value_ref: null,
-      });
-    });
     if (value) {
       _.$resetButton.show();
+      _.$resetButton.on("click", _, function (event) {
+        const selector = event.data;
+        selector.saveValue({
+          value: null,
+          is_expression: false,
+          value_ref: null,
+        });
+      });
     } else {
       // _.$resetButton.off("click");
       _.$resetButton.hide();
-      if (isAjax && !_.select2) {
-        _.$content.empty();
-        _.renderAjaxSelect();
-      }
     }
     _.$editButton.show();
 
-    _.$editButton.off("click").on("click", _, function (event) {
+    _.$editButton.on("click", _, function (event) {
       const selector = event.data;
       _.initials.showEditor = true;
       if (selector.popover) {
@@ -400,133 +367,31 @@ class ValueSelector {
       _.$resetButton.hide();
     }
 
-    if (!isAjax) _.$content.addClass("value-selector");
+    _.$content.addClass("value-selector");
 
-    _.$content.off("click").on("click", _, function (event) {
+    _.$content.on("click", _, function (event) {
       const selector = event.data;
-      const { value } = selector.input.value ?? {};
-
       if (!value && _.initials.showEditor) {
         _.initials.showEditor = false;
-        if (!selector.popover && !isAjax) {
+        if (!selector.popover) {
           selector.renderVariablesMenuPopover();
         }
         return;
-      }
-      if (isAjax && !_.initials.showEditor) {
-        if (value) {
-          _.$content.addClass("value-selector");
-          _.$resetButton.show();
-          _.$editButton.show();
-          if (selector.select2) {
-            selector.select2.select2("open");
-          } else {
-            selector.renderAjaxSelect();
-            selector.select2.select2("open");
-          }
-        }
       }
       if (!selector.popover && _.initials.showEditor) {
         selector.onContentEditionRendered();
       }
     });
 
-    if (!_.initials.showEditor && !ajax) {
+    if (!_.initials.showEditor) {
       _.renderVariablesMenuPopover();
     }
-  }
-  renderAjaxSelect() {
-    const _ = this;
-    const { markup } = utils;
-
-    const { input, component, isEdition } = _;
-    const { value, value_ref } = input.value ?? {};
-    const { type, options, value_rules } = _.input?.json_value ?? {};
-
-    const { ajax } = value_rules || {};
-    if (!ajax) {
-      return;
-    }
-
-    const { url, structure } = ajax;
-
-    if ((!value || value_ref) && !_.initials.showEditor) {
-      _.$saveButton?.hide();
-    } else {
-      _.$saveButton?.show();
-    }
-    _.$content.removeClass("value-selector");
-    _.$content.empty();
-    _.$resetButton.hide();
-    _.$editButton.hide();
-    const inputElement = markup("div", "", {
-      class: "form-select form-select-sm variables-select",
-      // value: value ?? "",
-      // disabled: isDisabled,
-    });
-
-    _.$content.append(inputElement);
-
-    const base_plugin_url = workflow_components.var.base_plugin_url;
-    const ajax_url = (base_plugin_url + url)
-      .replace(/\/\//g, "/")
-      .replace(/\/$/, "");
-    if (!_.select2) {
-      _.select2 = $(inputElement).select2({
-        dropdownParent: $("#component-side-panel > section"),
-        ajax: {
-          url: ajax_url,
-          dataType: "json",
-          delay: 300,
-          headers: { "X-CSRFToken": $("#csrf_token").val() },
-          data: function (params) {
-            var query = {
-              filter: params.term,
-              page: params.page,
-            };
-            return query;
-          },
-          processResults: function (data, params) {
-            params.page = params.page || 1;
-            return {
-              results: data.map((item) => ({
-                id: item.id,
-                text: item.name,
-              })),
-            };
-          },
-
-          // Additional AJAX parameters go here; see the end of this chapter for the full code of this example
-        },
-      });
-      _.select2.on("select2:close", _, function (e) {
-        const selector = e.data;
-        const { originalSelect2Event } = e.params;
-        if (!originalSelect2Event) {
-          selector.renderValueEditorBlock();
-        }
-      });
-    }
-    $(inputElement).on("select2:select", _, function (event) {
-      const selector = event.data;
-      const data = event.params.data;
-      selector.saveValue({
-        value: { id: data.id, name: data.text },
-        is_expression: false,
-        value_ref: null,
-      });
-
-      selector.select2?.select2("destroy");
-      selector.select2 = null;
-    });
   }
   onContentEditionRendered() {
     const _ = this;
     const { input, component, isEdition, useOutputFields } = _;
     const { value, value_ref, is_expression } = input.value ?? {};
     _.parentComponentElement.hide();
-    if (!_.isRouting) $('#routing-component').hide();
-
     _.parentComponentElement.addClass("in-edition");
     $(".value-in-edition").removeClass("value-in-edition");
     _.$content.addClass("value-in-edition");
@@ -558,8 +423,7 @@ class ValueSelector {
 
     editorBlockContent.find(".btn-close").on("click", _, function (event) {
       const selector = event.data;
-      const { value } = selector.input.value ?? {};
-      selector.editor?.setValue(typeof (value?.value ?? {}) === "string" ? value : JSON.stringify(value?.value ?? ''));
+      selector.editor?.setValue(selector.input.value?.value ?? "");
       selector.hideContentEdition();
     });
     editorBlockContent.find(".btn-clear").on("click", _, function (event) {
@@ -586,10 +450,7 @@ class ValueSelector {
       if (!value && !value_ref) {
         _.editor.setValue("");
       }
-
-      if (value) {
-        _.editor.setValue(typeof value === "string" ? value : JSON.stringify(value));
-      }
+      if (value) _.editor.setValue(value);
       if (!value && value_ref) {
         _.editor.setValue(`${value_ref.context}['${value_ref.key}']`);
       }
@@ -643,8 +504,6 @@ class ValueSelector {
     _.parentComponentElement.show();
     _.parentComponentElement.removeClass("in-edition");
     $(".value-in-edition").removeClass("value-in-edition");
-    $(`#routing-component`).show();
-
     _.portal?.empty();
   }
   renderVariablesMenuPopover() {
@@ -743,9 +602,7 @@ class ValueSelector {
       lint: true,
       gutters: ["CodeMirror-lint-markers"],
     });
-    if (value) {
-      _.editor.setValue(typeof value === "string" ? value : JSON.stringify(value));
-    }
+    if (value) _.editor.setValue(value);
     if (!value && value_ref) {
       _.editor.setValue(`${value_ref.context}['${value_ref.key}']`);
     }
@@ -803,18 +660,11 @@ class ValueSelector {
   }
 
   saveValue(value) {
-    const {
-      input,
-      component,
-      parentInput,
-      $element,
-      popover,
-      isEdition,
-      initials,
-    } = this;
-    const { onSave: overrideSaveValue } = initials;
+    const { input, component, parentInput, $element, popover, isEdition, initials } =
+      this;
+    const { onSave:overrideSaveValue } = initials
     if (!isEdition) return;
-    if (overrideSaveValue) {
+    if(overrideSaveValue) {
       return overrideSaveValue(value);
     }
     if (parentInput && parentInput.input.json_value) {
@@ -891,7 +741,6 @@ class ValueSelector {
     const { input, component } = _;
     const { value, json_value } = input;
     const { type, options, value_rules, multi } = json_value ?? {};
-    const { ajax } = value_rules || {};
 
     if (multi) {
       return;
@@ -907,7 +756,7 @@ class ValueSelector {
 
     if ((value_rules && value_rules.variable_only) || options) {
       if (!value.value) _.$content.addClass(invalidClassName);
-
+      
       _.$resetButton.hide();
       _.$editButton.hide();
       return;
@@ -958,21 +807,6 @@ class ValueSelector {
       _.$content.empty();
       const { context: ref_context, key: ref_key } = value.value_ref;
       _.$content.html(markup("code", `${ref_key}`));
-    } else if (ajax) {
-      if (!value?.value) {
-        _.render(value.value);
-      } else {
-        _.$content.addClass("value-selector");
-        _.$content.html(
-          value.is_expression
-            ? markup(
-                "div",
-                [{ tag: "i", class: "bi bi-braces" }, " Expression"],
-                { class: "text-center" }
-              )
-            : ` ${value.value?.name}` || ""
-        );
-      }
     } else {
       _.$content.empty();
       _.$content.html(
@@ -1047,7 +881,7 @@ jQuery.fn.valueSelector = function (...args) {
 
   for (i = 0; i < l; i++) {
     if (typeof opt === "object" || typeof opt === "undefined") {
-      _[i].formb = new ValueSelector(_[i], opt, jQuery);
+      _[i].formb = new DynamicField(_[i], opt, jQuery);
     } else {
       ret = _[i].formb[opt].apply(_[i].formb, moreArgs, jQuery);
     }

@@ -10,7 +10,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="component-creation-modal-label">
-          Insert Component
+          Insert Component <span></span>
         </h5>
         <button
           type="button"
@@ -27,18 +27,19 @@
             Select a component definition to create a new component.
           </p>
           <div class="row" id="definitions"></div>
-          <div
-            id="component-route"
-            class="mt-2"
-            style="display: none; border-top: 1px solid #ccc"
-          >
-            <label class="form-label">Insert after</label>
-            <div id="components-list"></div>
-          </div>
+          
           <hr class="my-2" />
           <div class="mb-3">
             <label for="component-name" class="form-label">Node Name</label>
             <input type="text" class="form-control" id="component-name" />
+          </div>
+          <div
+            id="component-route"
+            class="mt-2"
+            style="border-top: 1px solid #ccc"
+          >
+            <label class="form-label">Insert before?</label>
+            <div id="components-list"></div>
           </div>
         </form>
       </div>
@@ -126,35 +127,40 @@
         });
       });
       const { markup } = utils;
-      const hasComponents = _.var.components.length > 0;
+      const {data: component } = new_component_data.selectedComponent
+
+      if (component) {
+        const { name, plugin_id } = component;
+        $("#component-creation-modal .modal-title span").html(`after ${name}`);
+        $("#component-route").show();
+      } 
+
+      const hasComponents = component ?  component.routing.length > 0 : false;
       if (hasComponents) {
-        // $("#component-route").show();
         const selectComponents = markup(
           "select",
           [
             {
               tag: "option",
               value: "",
-              content: "Select a component",
-              disabled: true,
+              content: " -- None -- ",
+              disabled: false,
               selected: true,
             },
-            ..._.var.components.map((c) => {
-              return { tag: "option", value: c.id, content: c.name };
+            ...component.routing.map((c) => {
+              const node = component_utils.findSingleComponentInTree(c.route);
+              return {node, c}
+            }).filter(x=> x.node).map(({node, c}) => {
+              return {
+                tag: "option",
+                value: node.id,
+                content: `${node.name} (${node.plugin_id})`,
+              };
             }),
           ],
           { class: "form-select" }
         );
         $(`#components-list`).append(selectComponents);
-        if (new_component_data.selectedComponent.data) {
-          console.log(
-            "new_component_data.selectedComponent.data",
-            new_component_data.selectedComponent.data
-          );
-          $(`#components-list select`).val(
-            new_component_data.selectedComponent.data.id
-          );
-        }
       } else {
         $("#component-route").hide();
       }
@@ -182,6 +188,7 @@
 
     const _ = workflow_components;
     const value = $("#definitions input:checked").val();
+    const insertBefore = $("#components-list select").val() ?? null;
     const hasComponents = _.var.components.length > 0;
     const {
         data: component,
@@ -207,6 +214,7 @@
           ? component.id
           : null,
         parent_id: parentId,
+        insert_before: insertBefore,
         path: path,
         is_entry: isEntry,
       };

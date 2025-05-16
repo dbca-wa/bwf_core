@@ -12,12 +12,14 @@ from bwf_core.models import  WorkflowVersion
 from bwf_core.controller.controller import BWFPluginController
 from . import serializers
 from .tasks import (create_component_definition_instance,
+                    update_mapping_from_deleted_component,
                     insert_node_to_workflow,
                     to_ui_workflow_node,
                     list_workflow_nodes,
                     find_component_in_tree,
                     get_encasing_flow,
                     get_parent_node)
+from .utils import (is_default_route,)
 
 # Create your views here.
 
@@ -69,12 +71,14 @@ class WorkflowComponentViewset(ViewSet):
 
         parent_id = serializer.validated_data.get("parent_id", None)
         node_path = serializer.validated_data.get("path", None)
+        insert_before = serializer.validated_data.get("insert_before", None)
         
         insert_node_to_workflow(workflow_definition, instance, data={
             'route': route,
             'is_entry': is_entry,
             'node_path': node_path,
             'parent_id': parent_id,
+            'insert_before': insert_before,
         })
 
         workflow_definition['workflow'] = workflow_components
@@ -117,7 +121,71 @@ class WorkflowComponentViewset(ViewSet):
                 component['conditions']['on_fail'] = {}
             else:
                 component['conditions']['on_fail'] = serializer.validated_data.get("on_fail", component['conditions'].get("on_fail", {})) 
+            if serializer.validated_data.get("position", None):
+                x = serializer.validated_data.get("position", {}).get("x", None)
+                y = serializer.validated_data.get("position", {}).get("y", None)
+                component['ui']['x'] = x if x else component['ui']['x'] 
+                component['ui']['y'] = y if y else component['ui']['y']
+            workflow.set_json_definition(workflow_definition)
+            return JsonResponse(component_serializers.WorkflowComponentSerializer(to_ui_workflow_node(component)).data)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['PUT'])
+    def update_routing(self, request, *args, **kwargs):
+        try:
+            serializer = component_serializers.UpdateRoutingSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            component_id = kwargs.get("pk", None)
+            workflow_id = serializer.validated_data.get("workflow_id")
+            version_id = serializer.validated_data.get("version_id")
+            plugin_id = serializer.validated_data.get("plugin_id")
+            new_index = serializer.validated_data.get("index")
+            plugin_version = serializer.validated_data.get("plugin_version", None)
+            condition = serializer.validated_data.get("value", {'value': None, 'is_expression': False, 'value_ref': None})
 
+            workflow = get_object_or_404(WorkflowVersion, id=version_id, workflow__id=workflow_id)
+
+            if not workflow.is_editable:
+                return Response({"error": "Workflow version cannot be edited"}, status=status.HTTP_400_BAD_REQUEST)
+           
+            workflow_definition = workflow.get_json_definition()
+            component = find_component_in_tree(workflow_definition, component_id)
+            if not component:
+                raise Exception("Component not found")
+            if component.get("plugin_id") != plugin_id:
+                raise Exception("Plugin ID does not match")
+            # TODO: Check plugin version
+            
+            route = serializer.validated_data.get("route")
+            index = -1
+            routing = component.get("routing",[])
+            for i in range(len(routing)):
+                if routing[i]['route'] == route:
+                    index = i
+                    break
+
+            if serializer.validated_data.pop("is_remove", False):
+                if index == -1:
+                    raise Exception("Route not found")
+                component['routing'].pop(index)
+            elif new_index:
+                affected_route = routing.pop(index)
+                routing.insert(new_index, affected_route)
+            else:
+                if index == -1:
+                    component['routing'].append({
+                        'route': route,
+                        'label': serializer.validated_data.get("label", None),
+                        'action': serializer.validated_data.get("action", None),
+                        'condition': serializer.validated_data.get("condition", None)
+                    })
+                else:
+                    component['routing'][index]['label'] = serializer.validated_data.get("label", component['routing'][index]['label'])
+                    component['routing'][index]['action'] = serializer.validated_data.get("action", component['routing'][index]['action'])
+                    component['routing'][index]['condition'] = serializer.validated_data.get("condition", component['routing'][index]['condition'])
+                
+            
             workflow.set_json_definition(workflow_definition)
             return JsonResponse(component_serializers.WorkflowComponentSerializer(to_ui_workflow_node(component)).data)
         except Exception as e:
@@ -177,29 +245,40 @@ class WorkflowComponentViewset(ViewSet):
 
             instance = workflow_components.pop(component_id, None)
             workflow_definition['mapping'].pop(component_id, None)
-
+            update_mapping_from_deleted_component(workflow_definition, component_id)
             if not instance:
                 return Response("Component not found")
             
-            node_prev = None
             for key, component in workflow_components.items():
-                if component['conditions']['route'] == component_id:
-                    component['conditions']['route'] = None
-                    node_prev = component
-                    components_affected.append(component)
-                    break
-            
-            route = instance['conditions']['route']
-            if route:
-                node_next = workflow_components.get(route, None)
-                if node_next:
-                    components_affected.append(node_next)
-                    node_next['conditions']['is_entry'] = instance['conditions']['is_entry']
-                    if node_prev:
-                        node_prev['conditions']['route'] = node_next['id']
-                        node_next['config']['incoming'] = get_incoming_values(node_prev['config']['outputs'])
-            elif node_prev:
-                node_prev['conditions']['route'] = None
+                if component['id'] == component_id:
+                    continue
+                paths = [r['route'] for r in component['routing']]
+                if not component_id in paths:
+                    continue
+                was_modified = False
+                new_routing = []
+                for route in component['routing']:
+                    if not route.get('route', None):
+                        # clean invalid routes
+                        was_modified = True
+                        continue
+                    if route['route'] != component_id:
+                        new_routing.append(route)
+                    else:
+                        if is_default_route(route):
+                            for after_route in instance['routing']:
+                                if after_route['route'] in paths:
+                                    # already exists
+                                    continue
+                                if after_route['route'] == component['id']:
+                                    # skips self
+                                    continue
+                                if not is_default_route(after_route):
+                                    # skips non default routes
+                                    continue
+                                new_routing.append(after_route)
+                component['routing'] = new_routing
+                components_affected.append(component)
 
             # workflow_definition['workflow'] = workflow_components
             workflow.set_json_definition(workflow_definition)

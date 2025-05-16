@@ -13,34 +13,24 @@ var workflow_components = {
   selectedComponent: null,
   var: {
     base_url: "/bwf/api/workflow-components/",
+    base_plugin_url: "/bwf_components/",
     components: [],
     definitions: [],
     incoming: [],
+  },
+  mode: "default",
+  newLine: {
+    originElement: null,
+    destinationElement: null,
+    originComponent: null,
+    destinationComponent: null,
+    line: null,
+    isNewLine: true,
   },
   pluginDefinitions: [],
 
   reset: function () {
     const _ = workflow_components;
-    // _.container.empty()
-    // _.var.components.forEach((component) => {
-    //   if (component.diagram?.line_out) {
-    //     try {
-    //       component.diagram.line_out.remove();
-    //     } catch (error) {
-          
-    //     }
-    //   }
-    //   if (component.config.branch) {
-    //     try {
-    //       component_utils.render.removeBranchLines(component);
-    //     } catch (error) {
-          
-    //     }
-    //   }
-    //   $(`#node_${component.id}`).remove();
-    //   workflow_components.removeComponent(component.id);
-    // }
-    // );
     window.location.reload();
   },
 
@@ -105,40 +95,19 @@ var workflow_components = {
     components.forEach((component) => {
       nodeIds[component.id] = component;
     });
-    do {
-      if (Object.keys(nodeIds).length === 0 || !component) {
-        break;
-      }
-      if (nodeIds[component.id]) {
-        _.appendComponent(component, container);
-        // $(".component-node, .diagram-node-parent").draggable({});
-
-        delete nodeIds[component.id];
-      }
-      if (component.conditions.route) {
-        const route = component.conditions.route;
-        const next_component = components.find(
-          (component) => component.id === route
-        );
-        if (!next_component) {
-          console.error("Route not found", route);
-          component = nodeIds[Object.keys(nodeIds)[0]];
-          continue;
-          // break;
-        }
-        component = next_component;
-      } else {
-        component = null;
-      }
-    } while (component);
+    _.renderComponentTree(container, component, nodeIds, components);
 
     for (let i = 0; i < components.length; i++) {
       const component = components[i];
       if (i === 0) {
         _.renderFirstLine(component);
       }
-      _.renderRouteLine(component);
+      _.renderRoutingLine(component);
     }
+    // $("#toolbox .new-line button").trigger("click")
+    // $(`#node_${components[3].id}`).find(".component-out")?.trigger("click");
+    // $(`#node_${components[0].id}`).find(".options")?.trigger("click")
+    // $(`#node_${components[2].id}`).find(".diagram-node")?.trigger("click")
     const _container = $("body");
 
     var scrollTo = $("#components-flow");
@@ -146,14 +115,52 @@ var workflow_components = {
       scrollTo.offset().top - _container.offset().top + _container.scrollTop();
     _container.scrollTop(position);
   },
+
+  renderComponentTree: function (container, component, nodeIds, components) {
+    const _ = workflow_components;
+    if (Object.keys(nodeIds).length === 0) {
+      return;
+    }
+    if (!component) {
+      console.log("Orphan component");
+    }
+
+    if (nodeIds[component.id]) {
+      _.appendComponent(component, container);
+
+      $(".component-node, .diagram-node-parent").draggable({
+        handle: ".node-handle",
+      });
+
+      delete nodeIds[component.id];
+    }
+    if (component.routing) {
+      for (let i = 0; i < component.routing.length; i++) {
+        const route = component.routing[i];
+        const next_component = components.find(
+          (component) => component.id === route.route
+        );
+        if (!next_component) {
+          console.error("Route not found", route);
+          continue;
+        }
+        if (!Object.keys(nodeIds).includes(next_component.id)) {
+          console.log("Component has already been added");
+          continue;
+        }
+        _.renderComponentTree(container, next_component, nodeIds, components);
+      }
+    }
+  },
   renderFirstLine: function (component) {
     const _ = workflow_components;
     _.firstLine = new LeaderLine(
       $(`#flow-start-node`)[0],
       $(`.component-node, .diagram-node`)[0],
       {
-        color: "#4076c6",
+        color: component_utils.const.routeLineColour,
         size: 2,
+        path: "grid",
       }
     );
     $(`#node_${component.id}`).on("drag.first_line", _, (event) => {
@@ -161,6 +168,69 @@ var workflow_components = {
       _.firstLine.position();
     });
   },
+  renderRoutingLine: function (component, routeID) {
+    const _ = workflow_components;
+    if (component.routing) {
+      const start = $(
+        `#node_${component.id} .component-route.component-out:last`
+      );
+      for (let i = 0; i < component.routing.length; i++) {
+        const route = component.routing[i];
+        if (routeID && routeID !== route.route) {
+          continue;
+        }
+        const { route: routePath, conditions, label, action } = route;
+        const end = $(`#node_${routePath} .diagram-node`);
+        if (start.length > 0 && end.length > 0) {
+          const destination = component_utils.findNodeInTree(routePath);
+          try {
+            // destination.diagram?.line_in?.remove();
+            if (destination.diagram?.lines) {
+              // destination.diagram?.lines_in
+            }
+          } catch (error) {}
+
+          const line = new LeaderLine(start[0], end[0], {
+            color: component_utils.const.routeLineColour,
+            size: 2,
+            middleLabel: label,
+            path: "grid",
+          });
+
+          component.diagram = component.diagram || {};
+          component.diagram.lines = component.diagram.lines || [];
+          component.diagram.lines.push({
+            destination: routePath,
+            line: line,
+            label: label,
+            action: action,
+          });
+          destination.diagram = destination.diagram || {};
+          destination.diagram.lines = destination.diagram.lines || [];
+          destination.diagram.lines.push({
+            source: component.id,
+            line: line,
+            label: label,
+            action: action,
+          });
+          $(`#node_${component.id}`).on(
+            "drag.line_out",
+            { isSource: true, id: component.id },
+            _.handleRoutingLineDrag
+          );
+          $(`#node_${routePath}`).on(
+            "drag.line_in",
+            { isSource: false, id: routePath },
+            _.handleRoutingLineDrag
+          );
+        }
+      }
+    }
+    if (component.config.branch) {
+      component_utils.render.renderOuterBranchLines(component);
+    }
+  },
+  // To be deprecacted and removed
   renderRouteLine: function (component) {
     const _ = workflow_components;
     if (component.conditions.route) {
@@ -170,16 +240,13 @@ var workflow_components = {
       );
       const end = $(`#node_${route} .diagram-node`);
       if (start.length > 0 && end.length > 0) {
-        const destination = component_utils.findComponentInTree(
-          route,
-          component.config
-        );
+        const destination = component_utils.findNodeInTree(route);
         try {
           destination.diagram?.line_in?.remove();
         } catch (error) {}
 
         const line = new LeaderLine(start[0], end[0], {
-          color: "#4076c6",
+          color: component_utils.const.routeLineColour,
           size: 2,
           // middleLabel: `${component.name} -> ${destination.name}`,
         });
@@ -204,6 +271,29 @@ var workflow_components = {
       component_utils.render.renderOuterBranchLines(component);
     }
   },
+  handleNodePositionChange: function (event) {
+    const _ = workflow_components;
+    const component = event.data;
+    const node = $(`#node_${component.id}`);
+    const x = node.css("top");
+    const y = node.css("left");
+    const data = {
+      id: component.id,
+      plugin_id: component.plugin_id,
+      position: {
+        x,
+        y,
+      },
+    };
+    workflow_components.api.updateComponent(
+      data,
+      function (response) {
+        component_utils.findNodeInTree(component.id);
+      },
+      function (err) {}
+    );
+  },
+  // To be deprecacted and removed
   handleLineDrag: function (event, ui) {
     const isSource = event.data.isSource;
     const componentId = event.data.id;
@@ -217,6 +307,38 @@ var workflow_components = {
     } else {
       try {
         component.diagram.line_in?.position();
+      } catch (e) {}
+    }
+  },
+  handleRoutingLineDrag: function (event, ui) {
+    const isSource = event.data.isSource;
+    const componentId = event.data.id;
+    const component = (source_component =
+      component_utils.findSingleComponentInTree(componentId));
+
+    component?.diagram.lines.forEach((route) => {
+      try {
+        route?.line?.position();
+      } catch (error) {
+        console.log("should delete this line from " + component.name);
+      }
+    });
+    if (isSource) {
+      try {
+        // component.diagram.lines.find((line) => line.source === componentId)?.line?.position();
+        component.diagram.lines
+          .filter((route) => route.source)
+          .forEach((route) => {
+            route?.line?.position();
+          });
+      } catch (e) {}
+    } else {
+      try {
+        component.diagram.lines
+          .filter((route) => route.destination)
+          .forEach((route) => {
+            route?.line?.position();
+          });
       } catch (e) {}
     }
   },
@@ -249,6 +371,10 @@ var workflow_components = {
       container.append(clone);
     }
 
+    const position = { top: component.ui?.x, left: component.ui?.y };
+    $(`#${elementId}`).css("top", position.top);
+    $(`#${elementId}`).css("left", position.left);
+
     $(`#${elementId}`)
       .find(".component-icon")
       .html(
@@ -267,6 +393,10 @@ var workflow_components = {
     if (component.config.branch) {
       component_utils.render.renderBranch(elementId, component);
     }
+
+    if (component.config.loop) {
+      component_loop.render.renderLoop(elementId, component);
+    }
   },
 
   appendComponent: function (component, container, appendPosition) {
@@ -280,6 +410,7 @@ var workflow_components = {
   addMenuDiagramNodeFunctionality: function (elementId, component) {
     // get parent info if any
     const { parent_id, node_path } = component?.parent_info || {};
+    const _ = workflow_components;
     if (parent_id) {
       $(`#${elementId}`)
         .find(".component-route.component-out")
@@ -287,13 +418,31 @@ var workflow_components = {
         .attr("data-path", node_path);
     }
     $(`#${elementId}`)
-      .find(".component-label, .diagram-node")
+      .find(".diagram-node")
       ?.on("click", component, function (event) {
         const _ = workflow_components;
         const { id, config } = event.data;
         const component = component_utils.findComponentInTree(id, config);
         if (component) _.renderComponentSidePanel(component);
       });
+    $(`#${elementId}`)
+      .find(".component-label .arrow-path")
+      ?.on("click", component, function (event) {
+        const _ = workflow_components;
+        const { id, config } = event.data;
+        const component = component_utils.findComponentInTree(id, config);
+        const wf = workflow_components;
+        if (wf.mode === "new-line") {
+          workflow_toolbox.cancelNewLine();
+        }
+        _.newLine.originElement = $(`#node_${component.id} .diagram-node`);
+        _.newLine.originComponent = component;
+        _.newLine.originElement.addClass("selected");
+
+        wf.mode = "new-line";
+        $("body").on("keydown", component_utils.handleEscNewLine);
+      });
+    $(`#${elementId}`)?.on("dragstop", component, _.handleNodePositionChange);
 
     $(`#${elementId}`)
       .find(".add-next-component, .component-route.component-out")
@@ -306,6 +455,57 @@ var workflow_components = {
         console.log({ selectedComponent });
 
         $("#component-creation-modal").modal("show");
+      });
+
+    $(`#${elementId}`)
+      .find(".diagram-node")
+      ?.on("click", component, function (event) {
+        const _ = workflow_components;
+        if (!_.isEdition) return;
+        if (_.mode === "new-line") {
+          if (!_.newLine.originElement) {
+            _.newLine.originElement = $(this);
+            _.newLine.originComponent = component;
+            $(this).addClass("selected");
+          } else {
+            if ($(this).hasClass("selected")) {
+              return;
+            }
+            $("body").off("keydown", component_utils.handleEscNewLine);
+            _.newLine.destinationElement = $(this);
+            _.newLine.destinationComponent = component;
+            $(this).addClass("selected");
+
+            _.newLine.isNewLine = true;
+            if (_.newLine.originComponent.routing) {
+              const existingRoute = _.newLine.originComponent.routing.find(
+                (route) => route.route === _.newLine.destinationComponent.id
+              );
+              _.newLine.isNewLine = existingRoute === undefined;
+              if (!_.newLine.isNewLine) {
+                _.newLine.line = _.newLine.originComponent.diagram.lines.find(
+                  (l) => l.destination === _.newLine.destinationComponent.id
+                )?.line;
+              }
+            }
+
+            if (_.newLine.isNewLine) {
+              _.newLine.line = new LeaderLine(
+                _.newLine.originElement[0],
+                _.newLine.destinationElement[0],
+                {
+                  color: "red",
+                  size: 2,
+                  dash: true,
+                }
+              );
+            }
+            workflow_toolbox.renderRoutingSidePanel(
+              _.newLine.originComponent,
+              _.newLine.destinationComponent
+            );
+          }
+        }
       });
   },
   addComponentSettingsFunctionality: function (component) {
@@ -365,8 +565,139 @@ var workflow_components = {
         event.stopPropagation();
         $(`#component-settings-form`).hide();
         $(`#node_panel_${component.id}`).show();
+        $(`#routing-component`).show();
       }
     );
+  },
+  addSidePanelRoutes: function (component) {
+    const route_template = document.querySelector(
+      "#component-routing-item-template"
+    );
+    const _ = workflow_components;
+    const { routing } = component;
+    // clone.attribute("id", `id`);
+    for (let i = 0; i < routing.length; i++) {
+      const route = routing[i];
+      const clone = route_template.content.cloneNode(true);
+      const { route: routePath, label } = route;
+
+      const destinationComponent =
+        component_utils.findSingleComponentInTree(routePath);
+
+      const elementId = `route_${routePath}`;
+
+      clone.querySelector("div").setAttribute("id", elementId);
+      clone.querySelector("div").setAttribute("data-route", routePath);
+      $(`.list-group.routes`).append(clone);
+      // clone.querySelector(".route-action").innerHTML = action;
+      $(`#${elementId} .route-label .value`).html(label ?? " -- ");
+
+      workflow_toolbox.renderRoutingCondition(
+        $(`#${elementId} .route-conditions .value`),
+        route
+      );
+      $(`#${elementId} .route-components`).html(
+        `${component.name} → ${destinationComponent.name}`
+      );
+
+      $(`#${elementId}`).on(
+        "click",
+        {
+          originComponent: component,
+          destinationComponent: destinationComponent,
+        },
+        function (event) {
+          const _ = workflow_components;
+          const { originComponent, destinationComponent } = event.data;
+          const body = $(".component-route-edition");
+          $(".list-group.routes .route-list-item").hide();
+          workflow_toolbox.setupRoutingEditionContainer(
+            body,
+            originComponent,
+            destinationComponent,
+            function (data) {
+              // ON UPDATE
+              body.empty();
+              $(".list-group.routes .route-list-item").show();
+              const elementId = `route_${destinationComponent.id}`;
+
+              const _component = component_utils.findSingleComponentInTree(
+                originComponent.id
+              );
+              _component.routing = data.routing || [];
+              const route = _component.routing.find(
+                (r) => r.route === destinationComponent.id
+              );
+              const line = _component.diagram.lines.find(
+                (l) => l.destination === destinationComponent.id
+              ).line;
+              if (line) {
+                line.setOptions({
+                  middleLabel: route.label,
+                });
+              }
+              $(`#${elementId} .route-label .value`).html(
+                route.label ?? " -- "
+              );
+              workflow_toolbox.renderRoutingCondition(
+                $(`#${elementId} .route-conditions .value`),
+                route
+              );
+            },
+            function (data) {
+              // ON Delete
+              body.empty();
+              $(".list-group.routes .route-list-item").show();
+              const elementId = `route_${destinationComponent.id}`;
+              $(`#${elementId}`).remove();
+              // $('.list-group.routes .route-list-item').show();
+            },
+            function () {
+              // ON CANCEL
+              body.empty();
+              $(".list-group.routes .route-list-item").show();
+            },
+            function (error) {} //
+          );
+        }
+      );
+
+      $(`.list-group.routes`).sortable({
+        placeholder: "ui-state-highlight",
+      });
+      $(".list-group.routes")
+        .off("sortupdate")
+        .on("sortupdate", component, function (event, ui) {
+          $(".list-group.routes").sortable("option", "disabled", true);
+          const { id, plugin_id } = event.data;
+          const chosen_route = ui.item.data("route");
+          let index = 0;
+          $(`.list-group.routes > div`).each((i, item) => {
+            const routeInList = $(item).data("route");
+            if (chosen_route === routeInList) return;
+            index++;
+          });
+          const data = {
+            id: id,
+            plugin_id: plugin_id,
+            route: chosen_route,
+            index,
+          };
+
+          workflow_components.api.updateRouting(
+            data,
+            function (response) {
+              $(".list-group.routes").sortable("option", "disabled", false);
+              const node = component_utils.findNodeInTree(id);
+              node.routing = response.routing;
+            },
+            function (error) {
+              $(".list-group.routes").sortable("option", "disabled", false);
+              console.log(error);
+            }
+          );
+        });
+    }
   },
   addMenuButtonsFunctionality: function (elementId, component) {
     // Delete Component
@@ -383,7 +714,8 @@ var workflow_components = {
         _.api.deleteComponent(data, function (data) {
           $(`#node_${component.id}`).remove();
           $(`#${elementId}`).remove();
-          workflow_components.removeComponent(id);
+          // data: components_affected
+          workflow_components.removeComponent(id, data);
           _.sidePanel?.close();
         });
       });
@@ -424,6 +756,7 @@ var workflow_components = {
           .val(component.name);
         $(`#component-settings-form`).show();
         $(`#node_panel_${component.id}`).hide();
+        $(`#routing-component`).hide();
       });
   },
   getComponentInputElement: function (input) {
@@ -464,13 +797,13 @@ var workflow_components = {
                 "div",
                 [
                   markup("label", name, { for: key, class: "form-label" }),
-                  markup("code", data_type, {class: "data-type" }),
+                  markup("code", data_type, { class: "data-type" }),
                 ],
                 {
-                  class: "input-label"
+                  class: "input-label",
                 }
               ),
-              { class: "col-auto" }
+              { class: "col-3" }
             ),
 
         markup("div", element, { class: multi ? "col-12" : "col-9" }),
@@ -577,7 +910,10 @@ var workflow_components = {
     );
     body.find(".plugin-name").html(component?.plugin_info?.name);
     body.find(".plugin-description").html(component?.plugin_info?.description);
-    body.find("i").first().attr("class", component.ui?.icon_class ?? "bi bi-gear");
+    body
+      .find("i")
+      .first()
+      .attr("class", component.ui?.icon_class ?? "bi bi-gear");
 
     $(_.sidePanel).on("click", function (event) {
       if ($(event.target).hasClass("slide-out-panel"))
@@ -621,6 +957,7 @@ var workflow_components = {
       $(`#${elementId}`).find(".add-on-fail").remove();
     }
 
+    _.addSidePanelRoutes(component);
     _.addMenuButtonsFunctionality(elementId, component);
     component_on_fail.showOnFailConfig(component);
   },
@@ -678,9 +1015,12 @@ var workflow_components = {
                 )
               );
             }
-
+            // renders component in diagram
             _.appendComponent(data, _.container, appendPosition);
-            // $(".component-node, .diagram-node-parent").draggable({});
+            if (_.isEdition)
+              $(".component-node, .diagram-node-parent").draggable({
+                handle: ".node-handle",
+              });
             if (_.var.components.length === 1) {
               _.renderFirstLine(data);
             }
@@ -689,13 +1029,46 @@ var workflow_components = {
                 component_utils.render.renderOuterBranchLines(parentNode);
               }
             }
-            _.renderRouteLine(data);
+            _.renderRoutingLine(data);
+            let existingRouteID = null;
+            if (data.routing && data.routing.length > 0) {
+              const newNextNode = component_utils.findSingleComponentInTree(
+                data.routing[0].route
+              );
+              if (
+                newNextNode &&
+                newNextNode.diagram.lines.find(
+                  (line) => line.source === component_route
+                )
+              ) {
+                existingRouteID = newNextNode.id;
+                const existingRoute = newNextNode.diagram.lines.find(
+                  (line) => line.source === component_route
+                );
+                existingRoute.line?.remove();
+                newNextNode.diagram.lines = newNextNode.diagram.lines.filter(
+                  (line) => line.source !== component_route
+                );
+              }
+            }
+
             if (component_route) {
               const source_component =
                 component_utils.findSingleComponentInTree(component_route);
               if (source_component) {
-                source_component.conditions.route = data.id;
-                _.renderRouteLine(source_component);
+                source_component.routing.push({
+                  route: data.id,
+                  conditions: {},
+                  label: "",
+                  action: "route",
+                });
+                if (existingRouteID) {
+                  source_component.diagram.lines =
+                    source_component.diagram.lines.filter(
+                      (r) => r.destination !== existingRouteID
+                    );
+                }
+                _.renderRoutingLine(source_component, data.id);
               }
             }
             _.updateLines();
@@ -742,6 +1115,24 @@ var workflow_components = {
           version_id: _.version_id,
         }),
         success: success_callback,
+        error: error_callback,
+      });
+    },
+    updateRouting: function (data, success_callback, error_callback) {
+      const _ = workflow_components;
+      $.ajax({
+        url: _.var.base_url + data.id + "/update_routing/",
+        type: "PUT",
+        headers: { "X-CSRFToken": $("#csrf_token").val() },
+        contentType: "application/json",
+        data: JSON.stringify({
+          ...data,
+          workflow_id: _.workflow_id,
+          version_id: _.version_id,
+        }),
+        success: (response) => {
+          success_callback(response);
+        },
         error: error_callback,
       });
     },
@@ -819,59 +1210,35 @@ var workflow_components = {
       }
     }
   },
-  removeComponent: function (id) {
+  removeComponent: function (id, nodes_affected = []) {
     const _ = workflow_components;
     const component = component_utils.findSingleComponentInTree(id);
     if (!component) {
       console.error("Component not found", id);
       return;
     }
-    if (component && component.diagram) {
-      try {
-        component.diagram.line_out?.remove();
-        component.diagram.line_out = null;
-        component.diagram.line_in = null;
-      } catch (error) {}
-      if (component.config.branch) {
-        component_utils.render.removeBranchLines(component);
-      }
-    }
+    component_utils.removeComponentDiagram(component);
     $(`#node_${component.id}`).off("drag.line_out");
     $(`#node_${component.id}`).off("drag.line_in");
-    const nextComponent = component_utils.findSingleComponentInTree(
-      component.conditions.route
-    );
-    const prevComponent = component_utils.findPreviousNode(component.id);
-    if (prevComponent) {
-      prevComponent.conditions.route = nextComponent ? nextComponent.id : null;
-      if (prevComponent.diagram?.line_out) {
-        prevComponent.diagram.line_out?.remove();
-        prevComponent.diagram.line_out = null;
-        $(`#node_${prevComponent.id}`).off("drag.line_out");
-        if (prevComponent.diagram.line_in) {
-          $(`#node_${prevComponent.id}`).on(
-            "drag.line_in",
-            { isSource: false, id: prevComponent.id },
-            _.handleLineDrag
-          );
-        }
-      }
-      if (prevComponent.conditions.route) {
-        _.renderRouteLine(prevComponent);
-      }
-    }
-    if (nextComponent) {
-      if (nextComponent.diagram?.line_out) {
-        // nextComponent.diagram.line_out = null;
-        $(`#node_${nextComponent.id}`).off("drag.line_out");
-        if (nextComponent.diagram.line_out) {
-          $(`#node_${nextComponent.id}`).on(
-            "drag.line_out",
-            { isSource: true, id: nextComponent.id },
-            _.handleLineDrag
-          );
-        }
-      }
+
+    for (let i = 0; i < nodes_affected.length; i++) {
+      const node_affected = component_utils.findSingleComponentInTree(
+        nodes_affected[i].id
+      );
+      node_affected.routing = nodes_affected[i].routing;
+      node_affected.diagram.lines
+        .filter((route) => route.destination)
+        .forEach((route) => {
+          try {
+            route.line?.remove();
+          } catch (error) {}
+        });
+      node_affected.diagram.lines = node_affected.diagram.lines.filter(
+        (route) => route.source
+      );
+      _.renderRoutingLine(node_affected);
+
+      console.log("node_affected", node_affected["name"]);
     }
 
     component_utils.removeNodeFromTree(id);
@@ -896,20 +1263,13 @@ var workflow_components = {
           _.updateLines(paths[path]);
         }
       }
-      if (component.diagram?.line_in) {
+      component.diagram?.lines?.forEach((route) => {
         try {
-          component.diagram.line_in.position();
+          route?.line?.position();
         } catch (error) {
-          component.diagram.line_in = null;
+          console.error("Error updating line position", error);
         }
-      }
-      if (component.diagram?.line_out) {
-        try {
-          component.diagram.line_out.position();
-        } catch (error) {
-          component.diagram.line_out = null;
-        }
-      }
+      });
       if (component.config.branch) {
         component.diagram?.position && component.diagram.position(component);
       }
