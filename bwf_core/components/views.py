@@ -173,7 +173,15 @@ class WorkflowComponentViewset(ViewSet):
                 affected_route = routing.pop(index)
                 routing.insert(new_index, affected_route)
             else:
-                if index == -1:
+                if index == -1:                    
+                    workflow_components = get_encasing_flow(workflow_definition, component_id)
+                    is_sibling = False
+                    for sKey, sibling_component in workflow_components.items():
+                        if sibling_component['id'] == route:
+                            is_sibling = True
+                            break
+                    if not is_sibling:
+                        raise Exception("Route component not found in the same level")
                     component['routing'].append({
                         'route': route,
                         'label': serializer.validated_data.get("label", None),

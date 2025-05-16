@@ -20,8 +20,6 @@ var workflow_toolbox = {
     wf.newLine.destinationElement?.removeClass("selected");
     if (wf.newLine.isNewLine) {
       wf.newLine.line?.remove();
-    } else {
-      console.log("cancelNewLine", wf.newLine);
     }
     Object.keys(wf.newLine).forEach((key) => {
       wf.newLine[key] = null;
@@ -52,10 +50,14 @@ var workflow_toolbox = {
           originComponent.id
         );
         _component.routing = data.routing || [];
-        workflow_components.renderRoutingLine(_component, destinationComponent.id)
+        workflow_components.renderRoutingLine(
+          _component,
+          destinationComponent.id
+        );
       },
       (data) => {}, // on delete
-      () => { // cancel
+      () => {
+        // cancel
         const wf = workflow_components;
         wf.sidePanel.close();
       },
@@ -234,9 +236,9 @@ var workflow_toolbox = {
     });
   },
   renderRoutingCondition: function (element, route) {
-    if(!element || !route) return;
+    if (!element || !route) return;
     const { markup } = utils;
-    const { value, is_expression, value_ref  } = (route.condition || {});
+    const { value, is_expression, value_ref } = route.condition || {};
 
     if (value_ref) {
       element.empty();
@@ -254,5 +256,5 @@ var workflow_toolbox = {
           : value || ""
       );
     }
-  }
+  },
 };
