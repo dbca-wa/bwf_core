@@ -16,13 +16,14 @@ var workflow_toolbox = {
   cancelNewLine: function () {
     const wf = workflow_components;
     wf.mode = "default";
+    wf.newLine.isNewLine = false;
     wf.newLine.originElement?.removeClass("selected");
     wf.newLine.destinationElement?.removeClass("selected");
     if (wf.newLine.isNewLine) {
       wf.newLine.line?.remove();
     } else {
       wf.newLine.line?.setOptions({
-        color: component_utils.const.routeLineColor,
+        color: component_utils.constants.routeLineColor,
         dash: false,
         size: 1,
       });

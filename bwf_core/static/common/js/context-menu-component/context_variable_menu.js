@@ -265,7 +265,6 @@ class ContextVariableMenu {
         contextList.push(parent.data("context"));
         parentContext = parent.data("parent-context");
       }
-      debugger
       selector?.onSelectValue({
         id,
         key,

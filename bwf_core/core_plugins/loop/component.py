@@ -15,7 +15,7 @@ def execute(plugin:LoopPlugin):
     index = plugin.options.get("index", 0)
 
     # check if loop is finished
-    if index > len(items) or len(items) == 0:
+    if index >= len(items) or len(items) == 0:
         plugin.set_output(True)
         return
     

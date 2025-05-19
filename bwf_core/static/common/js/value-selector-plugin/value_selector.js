@@ -644,7 +644,8 @@ class ValueSelector {
     _.parentComponentElement.removeClass("in-edition");
     $(".value-in-edition").removeClass("value-in-edition");
     $(`#routing-component`).show();
-
+    
+    component_utils.closePopovers(_);
     _.portal?.empty();
   }
   renderVariablesMenuPopover() {
