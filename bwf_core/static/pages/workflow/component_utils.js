@@ -1,7 +1,8 @@
 var component_utils = {
   const: {
-    routeLineColour: "#4076c6",
-    routeActiveLineColour: "red",
+    routeLineColor: "#4076c6",
+    routeStartLineColor: "#249bee36",
+    routeActiveLineColor: "#ff6700",
   },
   removeComponentDiagram: function (component) {
     if (component && component.diagram) {
@@ -282,7 +283,7 @@ var component_utils = {
           path: "True",
           start: start,
           end: $(`#${branchElementId} .branch-true .component-out i`),
-          color: component_utils.const.routeLineColour,
+          color: component_utils.const.routeLineColor,
           label: "True",
           startSocket: "left",
           endSocket: "top",
@@ -291,7 +292,7 @@ var component_utils = {
           path: "False",
           start: start,
           end: $(`#${branchElementId} .branch-false .component-out i`),
-          color: component_utils.const.routeLineColour,
+          color: component_utils.const.routeLineColor,
           label: "False",
           startSocket: "right",
           endSocket: "top",
@@ -335,7 +336,7 @@ var component_utils = {
           start: $(
             `#${component.diagram.branchElementId} .branch-true:first .component-out:last`
           ),
-          color: component_utils.const.routeLineColour,
+          color: component_utils.const.routeLineColor,
           startSocket: "bottom",
           endSocket: "left",
           lineRef: "left",
@@ -346,7 +347,7 @@ var component_utils = {
           start: $(
             `#${component.diagram.branchElementId} .branch-false:first .component-out:last`
           ),
-          color: component_utils.const.routeLineColour,
+          color: component_utils.const.routeLineColor,
           startSocket: "bottom",
           endSocket: "right",
           lineRef: "right",

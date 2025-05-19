@@ -20,6 +20,12 @@ var workflow_toolbox = {
     wf.newLine.destinationElement?.removeClass("selected");
     if (wf.newLine.isNewLine) {
       wf.newLine.line?.remove();
+    } else {
+      wf.newLine.line?.setOptions({
+        color: component_utils.const.routeLineColor,
+        dash: false,
+        size: 1,
+      });
     }
     Object.keys(wf.newLine).forEach((key) => {
       wf.newLine[key] = null;

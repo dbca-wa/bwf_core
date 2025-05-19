@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
 from django.shortcuts import get_object_or_404
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views import View
@@ -18,7 +18,7 @@ class HomeView(View):
     template_name = 'dashboard/main.html'
 
     def get(self, request, *args, **kwargs):
-        wf_versions_queryset = WorkflowVersion.objects.filter(is_disabled=False).only('workflow_id', 'version_number', 'version_name', 'created_at', 'updated_at').order_by('is_active', '-updated_at')
+        wf_versions_queryset = WorkflowVersion.objects.filter(is_disabled=False).filter(Q(is_edition=True)|Q(is_active=True)).only('workflow_id', 'version_number', 'version_name', 'created_at', 'updated_at').order_by('is_active', '-updated_at')
         workflows = Workflow.objects.all().prefetch_related(Prefetch('versions', queryset=wf_versions_queryset))
         context = {
             "workflows": workflows,

@@ -39,7 +39,7 @@ def start_workflow(workflow_id, payload={}):
         raise e
 
 
-def register_workflow_step(workflow_instance: WorkFlowInstance, step:str, output_prev_component={}, parent_node_instance=None):
+def register_workflow_step(workflow_instance: WorkFlowInstance, step:str, additional_inputs={}, parent_node_instance=None):
     try:
         definition = workflow_instance.get_json_definition()
         step_component = find_component_in_tree(definition, step)
@@ -47,9 +47,9 @@ def register_workflow_step(workflow_instance: WorkFlowInstance, step:str, output
         if step_component is None:
             workflow_instance.set_status_completed()
             return
-        
-        input_params = workflow_instance.variables
-        input_params['incoming'] = output_prev_component
+        # Merge workflow variables with additional inputs
+        input_params = workflow_instance.variables | additional_inputs
+
         component_instance = WorkflowComponentInstanceFactory.create_component_instance(workflow_instance, step_component, parent_node_instance, input_params)
         if component_instance is None:
             workflow_instance.set_status_error(f"Component instance could not be created. Step: {step} {step_component}" )
@@ -98,7 +98,7 @@ def start_pending_component(current_component: ComponentInstance, parent=None):
         logger.error(f"Error while starting pending component {current_component.id} error: {str(e)}")
         current_component.set_status_error(str(e))
 
-
+# Deprecated
 def initiate_fallback_component_action(current_component: ComponentInstance):
     base_component = current_component.component
     output = current_component.output if current_component.output else {}

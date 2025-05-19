@@ -265,7 +265,8 @@ class WorkflowInstanceFactory:
 
         for key  in local_variables:
             variable = local_variables[key]
-            context[variable['context']][key] = None
+            context[variable['context']][key] = variable.get("value", None)
+            context[variable['context']][variable['name']] = variable.get("value", None)
 
         for key in input_values:
             input = input_values[key]
@@ -326,7 +327,8 @@ class WorkflowComponentInstanceFactory:
                                                     plugin_id=component_dto.plugin_id, 
                                                     plugin_version=component_dto.version_number, 
                                                     parent_node=parent_node_instance,
-                                                    input=input_values)
+                                                    input=input_values,
+                                                    options={})
 
         input_values = component_dto.get_inputs()
         instance.input = input_values

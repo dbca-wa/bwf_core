@@ -63,10 +63,9 @@ border: 2px solid #0d6efd; */
 }
 
 .diagram-node-parent {
-  display: inline-block;
+  display: block;
   justify-items: center;
   margin-bottom: 5em;
-  width: 100%;
   position: relative;
 }
 .diagram-node-parent > .diagram-node {
@@ -141,6 +140,9 @@ border: 2px solid #0d6efd; */
 }
 .diagram-node-parent .component-label:hover {
   border-width: 2px;
+}
+.arrow-path:hover {
+  color: #ff6700 !important;
 }
 
 .component-superior,
@@ -268,7 +270,7 @@ border: 2px solid #0d6efd; */
 
 .value-selector.is-invalid,
 .value-selector-content.is-invalid select,
-.value-selector-content.is-invalid span.select2-selection  {
+.value-selector-content.is-invalid span.select2-selection {
   border: 2px solid #fbc732;
 }
 
@@ -300,21 +302,21 @@ border: 2px solid #0d6efd; */
   padding: 0px;
 }
 .value-selector-content .select2-container {
-    width: 100% !important;
+  width: 100% !important;
 }
 .value-selector-content .select2-container .select2-selection {
-    height: 100%;
-    display: flex;
-    align-items: center;
-    background: #fbfbfb;
-    border-radius: 5px;
-    border: 1px solid #0d6efd91;
-    cursor: pointer;
-    padding: 2px 11px;
-    font-size: 13px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  background: #fbfbfb;
+  border-radius: 5px;
+  border: 1px solid #0d6efd91;
+  cursor: pointer;
+  padding: 2px 11px;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .variables-select {
   border-color: #0d6efd91;
@@ -342,9 +344,7 @@ border: 2px solid #0d6efd; */
   width: 100%;
 }
 
-.context-menu.ui-menu
-   li.ui-menu-item
-   div.ui-menu-item-wrapper.ui-state-active {
+.context-menu.ui-menu li.ui-menu-item div.ui-menu-item-wrapper.ui-state-active {
   background-color: #4076c6;
   border: none;
   font-weight: bold;
@@ -356,7 +356,6 @@ border: 2px solid #0d6efd; */
   border: none;
   padding: 8px;
   min-width: 150px;
-
 }
 .context-menu.ui-menu > li.ui-menu-item ul li.ui-menu-item:hover {
   background-color: #4076c6;
@@ -445,16 +444,15 @@ border: 2px solid #0d6efd; */
   font-size: 14px;
 }
 
-
 .component-route.component-out.entry-point {
   width: max-content;
 }
-code.data-type{
+code.data-type {
   font-size: 10px;
   color: #6e6e6e;
   font-weight: bold;
 }
-.input-label code.data-type{
+.input-label code.data-type {
   font-size: 9px;
   margin-left: 4px;
   color: #0d6efd;

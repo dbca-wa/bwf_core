@@ -61,7 +61,7 @@ var component_loop = {
           path: "flow",
           start: start,
           end: $(`#${loopElementId} .loop-flow .component-out i`),
-          color: "#4076c6",
+          color: component_utils.const.routeLineColor,
           startSocket: "left",
           endSocket: "top",
         },
@@ -104,7 +104,7 @@ var component_loop = {
           start: $(
             `#${component.diagram.loopElementId} .loop-flow:first .component-out:last`
           ),
-          color: "#4076c6",
+          color: component_utils.const.routeLineColor,
           startSocket: "bottom",
           endSocket: "left",
           lineRef: "left",

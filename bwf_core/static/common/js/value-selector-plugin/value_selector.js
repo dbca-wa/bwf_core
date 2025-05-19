@@ -591,7 +591,7 @@ class ValueSelector {
         _.editor.setValue(typeof value === "string" ? value : JSON.stringify(value));
       }
       if (!value && value_ref) {
-        _.editor.setValue(`${value_ref.context}['${value_ref.key}']`);
+        _.editor.setValue(`${value_ref.context}.get('${value_ref.key}')`);
       }
     }
     if (!isEdition) {
@@ -747,7 +747,7 @@ class ValueSelector {
       _.editor.setValue(typeof value === "string" ? value : JSON.stringify(value));
     }
     if (!value && value_ref) {
-      _.editor.setValue(`${value_ref.context}['${value_ref.key}']`);
+      _.editor.setValue(`${value_ref.context}.get('${value_ref.key}')`);
     }
 
     _.editor.setOption("extraKeys", {
@@ -779,11 +779,11 @@ class ValueSelector {
 
           const vars = workflow_variables.var.variables
             .filter((v) => v.key.startsWith(word))
-            .map((v) => `${v.context}['${v.key}']`);
+            .map((v) => `${v.context}.get('${v.key}')`);
 
           const inputs = workflow_inputs.var.inputs
             .filter((v) => v.key.startsWith(word))
-            .map((v) => `inputs['${v.key}']`);
+            .map((v) => `inputs.get('${v.key}')`);
           const local = [];
           const incoming = [];
 

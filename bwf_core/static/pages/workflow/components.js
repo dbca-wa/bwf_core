@@ -128,7 +128,7 @@ var workflow_components = {
     if (nodeIds[component.id]) {
       _.appendComponent(component, container);
 
-      _.makeComponentDraggable(component);
+      if (_.isEdition) _.makeComponentDraggable(component);
 
       delete nodeIds[component.id];
     }
@@ -165,8 +165,8 @@ var workflow_components = {
       $(`#flow-start-node`)[0],
       $(`.component-node, .diagram-node`)[0],
       {
-        color: component_utils.const.routeLineColour,
-        size: 2,
+        color: component_utils.const.routeLineColor,
+        size: 1,
         path: "grid",
       }
     );
@@ -198,10 +198,13 @@ var workflow_components = {
           } catch (error) {}
 
           const line = new LeaderLine(start[0], end[0], {
-            color: component_utils.const.routeLineColour,
-            size: 2,
+            color: component_utils.const.routeLineColor,
+            startPlugColor: component_utils.const.routeStartLineColor, gradient: true,
+            size: 1,
             middleLabel: label,
             path: component.parent_info?.parent_id ? "fluent" : "grid",
+            endPlugSize: 2,
+
           });
 
           component.diagram = component.diagram || {};
@@ -442,7 +445,7 @@ var workflow_components = {
               return;
             }
             if (
-              _.newLine.originElement.parent_info?.parent_id !==
+              _.newLine.originComponent.parent_info?.parent_id !==
               component.parent_info?.parent_id
             ) {
               console.log("Cannot connect components from different parents");
@@ -467,17 +470,19 @@ var workflow_components = {
                 )?.line;
               }
             }
-
+            const lineOptions = {
+              color: component_utils.const.routeActiveLineColor,
+              size: 2,
+              dash: true,
+            };
             if (_.newLine.isNewLine) {
               _.newLine.line = new LeaderLine(
                 _.newLine.originElement[0],
                 _.newLine.destinationElement[0],
-                {
-                  color: "red",
-                  size: 2,
-                  dash: true,
-                }
+                { ...lineOptions }
               );
+            } else {
+              _.newLine.line?.setOptions({ ...lineOptions });
             }
             workflow_toolbox.renderRoutingSidePanel(
               _.newLine.originComponent,
@@ -1243,9 +1248,7 @@ var workflow_components = {
       component.diagram?.lines?.forEach((route) => {
         try {
           route?.line?.position();
-        } catch (error) {
-          console.error("Error updating line position", error);
-        }
+        } catch (error) {}
       });
       if (component.config.branch) {
         component.diagram?.position && component.diagram.position(component);
