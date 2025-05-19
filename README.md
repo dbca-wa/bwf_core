@@ -1,10 +1,11 @@
 # bwf_core
 bwf_core is a Django app to build flexible, reusable workflows from a highlevel, that can be integrated with any other Django App.
 
-Detailed documentation is in the "docs" directory.
-
 ## Quick start
-
+0. Add module to ``requiremens.txt`` 
+```
+git+https://github.com/dbca-wa/bwf_core.git#egg=bwf_core
+```  
 1. Add "bwf_core" to your INSTALLED_APPS setting like this: 
 ```
 INSTALLED_APPS = [

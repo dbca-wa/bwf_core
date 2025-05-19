@@ -61,7 +61,7 @@ var component_loop = {
           path: "flow",
           start: start,
           end: $(`#${loopElementId} .loop-flow .component-out i`),
-          color: "#4076c6",
+          color: component_utils.constants.routeLineColor,
           startSocket: "left",
           endSocket: "top",
         },
@@ -74,9 +74,7 @@ var component_loop = {
             line.start[0],
             line.end[0],
             {
-              color: line.color,
-              size: 2,
-            
+              ...component_utils.constants.lineStyle,            
               startSocket: line.endSocket,
               endSocket: line.endSocket,
               path: "straight",
@@ -104,7 +102,7 @@ var component_loop = {
           start: $(
             `#${component.diagram.loopElementId} .loop-flow:first .component-out:last`
           ),
-          color: "#4076c6",
+          color: component_utils.constants.routeLineColor,
           startSocket: "bottom",
           endSocket: "left",
           lineRef: "left",
@@ -115,12 +113,10 @@ var component_loop = {
           line.start[0],
           line.end[0],
           {
-            color: line.color,
-            size: 2,
+           ...component_utils.constants.lineStyle,
             middleLabel: line.label,
             startSocket: line.startSocket,
             endSocket: line.endSocket,
-            path: "grid",
           }
         );
       });

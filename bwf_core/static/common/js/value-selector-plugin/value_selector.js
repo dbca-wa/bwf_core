@@ -591,7 +591,7 @@ class ValueSelector {
         _.editor.setValue(typeof value === "string" ? value : JSON.stringify(value));
       }
       if (!value && value_ref) {
-        _.editor.setValue(`${value_ref.context}['${value_ref.key}']`);
+        _.editor.setValue(`${value_ref.context}.get('${value_ref.key}')`);
       }
     }
     if (!isEdition) {
@@ -616,19 +616,19 @@ class ValueSelector {
         const { convert_context_to_python_dict } = utils;
 
         if (!isEdition) return;
+        const contextValue = convert_context_to_python_dict(
+          selectedValue?.context
+        );
         if (_.initials.showEditor && _.editor) {
           const doc = _.editor.getDoc();
           const cursor = doc.getCursor();
-          const contextValue = convert_context_to_python_dict(
-            selectedValue?.context
-          );
           doc.replaceRange(`${contextValue}.get('${selectedValue?.key}')`, cursor);
         } else {
           _.saveValue({
             value: null,
             is_expression: false,
             value_ref: {
-              context: selectedValue.context,
+              context: contextValue,
               key: selectedValue.key,
               id: selectedValue.id,
             },
@@ -644,7 +644,8 @@ class ValueSelector {
     _.parentComponentElement.removeClass("in-edition");
     $(".value-in-edition").removeClass("value-in-edition");
     $(`#routing-component`).show();
-
+    
+    component_utils.closePopovers(_);
     _.portal?.empty();
   }
   renderVariablesMenuPopover() {
@@ -690,12 +691,12 @@ class ValueSelector {
         showInPopover: !!is_expression || _.initials.showEditor,
         onSelectValue: (selectedValue) => {
           if (!isEdition) return;
+          const contextValue = convert_context_to_python_dict(
+            selectedValue?.context
+          );
           if (_.initials.showEditor && _.editor) {
             const doc = _.editor.getDoc();
             const cursor = doc.getCursor();
-            const contextValue = convert_context_to_python_dict(
-              selectedValue?.context
-            );
             doc.replaceRange(
               `${contextValue}.get('${selectedValue?.key}')`,
               cursor
@@ -705,7 +706,7 @@ class ValueSelector {
               value: null,
               is_expression: false,
               value_ref: {
-                context: selectedValue.context,
+                context: contextValue,
                 key: selectedValue.key,
                 id: selectedValue.id,
               },
@@ -747,7 +748,7 @@ class ValueSelector {
       _.editor.setValue(typeof value === "string" ? value : JSON.stringify(value));
     }
     if (!value && value_ref) {
-      _.editor.setValue(`${value_ref.context}['${value_ref.key}']`);
+      _.editor.setValue(`${value_ref.context}.get('${value_ref.key}')`);
     }
 
     _.editor.setOption("extraKeys", {
@@ -779,11 +780,11 @@ class ValueSelector {
 
           const vars = workflow_variables.var.variables
             .filter((v) => v.key.startsWith(word))
-            .map((v) => `${v.context}['${v.key}']`);
+            .map((v) => `${v.context}.get('${v.key}')`);
 
           const inputs = workflow_inputs.var.inputs
             .filter((v) => v.key.startsWith(word))
-            .map((v) => `inputs['${v.key}']`);
+            .map((v) => `inputs.get('${v.key}')`);
           const local = [];
           const incoming = [];
 

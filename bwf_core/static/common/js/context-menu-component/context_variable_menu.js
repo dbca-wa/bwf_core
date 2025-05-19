@@ -195,6 +195,20 @@ class ContextVariableMenu {
       },
     ]);
     if (
+      _.component.config?.local &&
+      Object.keys(_.component.config.local).length > 0
+    ) {
+      $(menuElements).append(
+        markup("li", [
+          markup("div", "Local values"),
+          markup(
+            "ul",
+            _.getNestedMenu(Object.keys(_.component.config.local).map(key => _.component.config.local[key]), "local")
+          ),
+        ])
+      );
+    }
+    if (
       _.component.config?.incoming &&
       _.component.config.incoming.length > 0
     ) {
@@ -203,7 +217,7 @@ class ContextVariableMenu {
           markup("div", "Incoming values"),
           markup(
             "ul",
-            _.getIncomingMenu(_.component.config.incoming, "incoming")
+            _.getNestedMenu(_.component.config.incoming, "incoming")
           ),
         ])
       );
@@ -284,6 +298,35 @@ class ContextVariableMenu {
       if (el.data_type === "object" && el.data) {
         const dataArray = Object.keys(el.data).map((key) => el.data[key]);
         subItems.push(_.getIncomingMenu(dataArray, `${el.key}`, parentId));
+      }
+      items.push({
+        tag: "li",
+        content: [
+          { tag: "div", content: el.label },
+          subItems.length > 0 ? { tag: "ul", content: subItems } : "",
+        ],
+        class: "value",
+        id: parentId,
+        "data-context": context,
+        "data-parent-context": parentContextId ?? "",
+        "data-value": el.id,
+        "data-key": el.key,
+      });
+    }
+
+    return items;
+  }
+
+  getNestedMenu(values, context, parentContextId) {
+    const _ = this;
+    const items = [];
+    for (let i = 0; i < values.length; i++) {
+      const el = values[i];
+      const parentId = `ctx-${context}-${el.key}`;
+      const subItems = [];
+      if (el.data_type === "object" && el.data) {
+        const dataArray = Object.keys(el.data).map((key) => el.data[key]);
+        subItems.push(_.getNestedMenu(dataArray, `${el.key}`, parentId));
       }
       items.push({
         tag: "li",

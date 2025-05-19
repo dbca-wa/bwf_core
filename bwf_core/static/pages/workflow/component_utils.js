@@ -1,7 +1,16 @@
 var component_utils = {
-  const: {
-    routeLineColour: "#4076c6",
-    routeActiveLineColour: "red",
+  constants: {
+    routeLineColor: "#4076c6",
+    routeStartLineColor: "#249bee36",
+    routeActiveLineColor: "#ff6700",
+    lineStyle: {
+      color: "#4076c6",
+      startPlugColor: "#249bee36",
+      gradient: true,
+      size: 1,
+      endPlugSize: 2,
+      path: "grid",
+    },
   },
   removeComponentDiagram: function (component) {
     if (component && component.diagram) {
@@ -206,6 +215,12 @@ var component_utils = {
       workflow_toolbox.cancelNewLine();
     }
   },
+  shouldBeDraggable: function (component) {
+    return !!!component.parent_info?.parent_id;
+  },
+  shouldHaveRoutingFunction: function (component) {
+    return !!!component.parent_info?.parent_id;
+  },
 
   render: {
     renderBranch: function (elementId, component) {
@@ -282,7 +297,7 @@ var component_utils = {
           path: "True",
           start: start,
           end: $(`#${branchElementId} .branch-true .component-out i`),
-          color: component_utils.const.routeLineColour,
+          color: component_utils.constants.routeLineColor,
           label: "True",
           startSocket: "left",
           endSocket: "top",
@@ -291,7 +306,7 @@ var component_utils = {
           path: "False",
           start: start,
           end: $(`#${branchElementId} .branch-false .component-out i`),
-          color: component_utils.const.routeLineColour,
+          color: component_utils.constants.routeLineColor,
           label: "False",
           startSocket: "right",
           endSocket: "top",
@@ -305,12 +320,10 @@ var component_utils = {
             line.start[0],
             line.end[0],
             {
-              color: line.color,
-              size: 2,
+              ...component_utils.constants.lineStyle,
               middleLabel: line.label,
               startSocket: line.startSocket,
               endSocket: line.endSocket,
-              path: "grid",
             }
           );
         }
@@ -335,7 +348,7 @@ var component_utils = {
           start: $(
             `#${component.diagram.branchElementId} .branch-true:first .component-out:last`
           ),
-          color: component_utils.const.routeLineColour,
+          color: component_utils.constants.routeLineColor,
           startSocket: "bottom",
           endSocket: "left",
           lineRef: "left",
@@ -346,7 +359,7 @@ var component_utils = {
           start: $(
             `#${component.diagram.branchElementId} .branch-false:first .component-out:last`
           ),
-          color: component_utils.const.routeLineColour,
+          color: component_utils.constants.routeLineColor,
           startSocket: "bottom",
           endSocket: "right",
           lineRef: "right",
@@ -357,12 +370,10 @@ var component_utils = {
           line.start[0],
           line.end[0],
           {
-            color: line.color,
-            size: 2,
+            ...component_utils.constants.lineStyle,
             middleLabel: line.label,
             startSocket: line.startSocket,
             endSocket: line.endSocket,
-            path: "grid",
           }
         );
       });

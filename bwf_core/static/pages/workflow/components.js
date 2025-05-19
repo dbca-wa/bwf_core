@@ -25,7 +25,7 @@ var workflow_components = {
     originComponent: null,
     destinationComponent: null,
     line: null,
-    isNewLine: true,
+    isNewLine: false,
   },
   pluginDefinitions: [],
 
@@ -99,7 +99,7 @@ var workflow_components = {
 
     for (let i = 0; i < components.length; i++) {
       const component = components[i];
-      if (i === 0) {
+      if (i === 0 && !component.parent_info?.parent_id) {
         _.renderFirstLine(component);
       }
       _.renderRoutingLine(component);
@@ -128,9 +128,7 @@ var workflow_components = {
     if (nodeIds[component.id]) {
       _.appendComponent(component, container);
 
-      $(".component-node, .diagram-node-parent").draggable({
-        handle: ".node-handle",
-      });
+      if (_.isEdition) _.makeComponentDraggable(component);
 
       delete nodeIds[component.id];
     }
@@ -152,21 +150,29 @@ var workflow_components = {
       }
     }
   },
+  makeComponentDraggable: function (component) {
+    if (!component) {
+      return;
+    }
+    $(`#node_${component.id}.diagram-node-parent`).draggable({
+      handle: ".node-handle:first",
+    });
+  },
   renderFirstLine: function (component) {
     const _ = workflow_components;
+
     _.firstLine = new LeaderLine(
       $(`#flow-start-node`)[0],
       $(`.component-node, .diagram-node`)[0],
       {
-        color: component_utils.const.routeLineColour,
-        size: 2,
-        path: "grid",
+        ...component_utils.constants.lineStyle,
       }
     );
-    $(`#node_${component.id}`).on("drag.first_line", _, (event) => {
-      const _ = event.data;
-      _.firstLine.position();
-    });
+    $(`#node_${component.id}`).on(
+      "drag",
+      { isFirstLine: true, id: component.id },
+      _.handleRoutingLineDrag
+    );
   },
   renderRoutingLine: function (component, routeID) {
     const _ = workflow_components;
@@ -191,10 +197,9 @@ var workflow_components = {
           } catch (error) {}
 
           const line = new LeaderLine(start[0], end[0], {
-            color: component_utils.const.routeLineColour,
-            size: 2,
+            ...component_utils.constants.lineStyle,
             middleLabel: label,
-            path: "grid",
+            path: component.parent_info?.parent_id ? "fluent" : "grid",
           });
 
           component.diagram = component.diagram || {};
@@ -230,47 +235,6 @@ var workflow_components = {
       component_utils.render.renderOuterBranchLines(component);
     }
   },
-  // To be deprecacted and removed
-  renderRouteLine: function (component) {
-    const _ = workflow_components;
-    if (component.conditions.route) {
-      const route = component.conditions.route;
-      const start = $(
-        `#node_${component.id} .component-route.component-out:last`
-      );
-      const end = $(`#node_${route} .diagram-node`);
-      if (start.length > 0 && end.length > 0) {
-        const destination = component_utils.findNodeInTree(route);
-        try {
-          destination.diagram?.line_in?.remove();
-        } catch (error) {}
-
-        const line = new LeaderLine(start[0], end[0], {
-          color: component_utils.const.routeLineColour,
-          size: 2,
-          // middleLabel: `${component.name} -> ${destination.name}`,
-        });
-
-        component.diagram = component.diagram || {};
-        component.diagram.line_out = line;
-        destination.diagram = destination.diagram || {};
-        destination.diagram.line_in = line;
-        $(`#node_${component.id}`).on(
-          "drag.line_out",
-          { isSource: true, id: component.id },
-          _.handleLineDrag
-        );
-        $(`#node_${route}`).on(
-          "drag.line_in",
-          { isSource: false, id: route },
-          _.handleLineDrag
-        );
-      }
-    }
-    if (component.config.branch) {
-      component_utils.render.renderOuterBranchLines(component);
-    }
-  },
   handleNodePositionChange: function (event) {
     const _ = workflow_components;
     const component = event.data;
@@ -293,37 +257,28 @@ var workflow_components = {
       function (err) {}
     );
   },
-  // To be deprecacted and removed
-  handleLineDrag: function (event, ui) {
-    const isSource = event.data.isSource;
-    const componentId = event.data.id;
-    const component = (source_component =
-      component_utils.findSingleComponentInTree(componentId));
-
-    if (isSource) {
-      try {
-        component.diagram.line_out?.position();
-      } catch (e) {}
-    } else {
-      try {
-        component.diagram.line_in?.position();
-      } catch (e) {}
-    }
-  },
   handleRoutingLineDrag: function (event, ui) {
+    const _ = workflow_components;
     const isSource = event.data.isSource;
+    const isFirstLine = event.data.isFirstLine;
     const componentId = event.data.id;
     const component = (source_component =
       component_utils.findSingleComponentInTree(componentId));
-
-    component?.diagram.lines.forEach((route) => {
+    const { node_type } = component;
+    Object.keys(component?.diagram?.paths || {}).forEach((key) => {
+      const path = component.diagram.paths[key];
+      try {
+        path.position();
+      } catch (error) {}
+    });
+    component?.diagram?.lines?.forEach((route) => {
       try {
         route?.line?.position();
       } catch (error) {
         console.log("should delete this line from " + component.name);
       }
     });
-    if (isSource) {
+    if (isSource !== undefined && isSource) {
       try {
         // component.diagram.lines.find((line) => line.source === componentId)?.line?.position();
         component.diagram.lines
@@ -340,6 +295,15 @@ var workflow_components = {
             route?.line?.position();
           });
       } catch (e) {}
+    }
+    if (isFirstLine) {
+      _.firstLine.position();
+    }
+    if (node_type !== "node") {
+      const paths = Object.values(component["config"][node_type]);
+      for (let path in paths) {
+        _.updateLines(paths[path]);
+      }
     }
   },
   appendComponentToDiagram: function (component, container, appendPosition) {
@@ -426,22 +390,36 @@ var workflow_components = {
         if (component) _.renderComponentSidePanel(component);
       });
     $(`#${elementId}`)
-      .find(".component-label .arrow-path")
+      .find(".component-label>span")
       ?.on("click", component, function (event) {
         const _ = workflow_components;
         const { id, config } = event.data;
         const component = component_utils.findComponentInTree(id, config);
-        const wf = workflow_components;
-        if (wf.mode === "new-line") {
-          workflow_toolbox.cancelNewLine();
-        }
-        _.newLine.originElement = $(`#node_${component.id} .diagram-node`);
-        _.newLine.originComponent = component;
-        _.newLine.originElement.addClass("selected");
-
-        wf.mode = "new-line";
-        $("body").on("keydown", component_utils.handleEscNewLine);
+        if (component) console.log(component);
       });
+    if (component_utils.shouldBeDraggable(component)) {
+      $(`#${elementId}`)
+        .find(".component-label .arrow-path")
+        ?.on("click", component, function (event) {
+          const _ = workflow_components;
+          const { id, config } = event.data;
+          const component = component_utils.findComponentInTree(id, config);
+          const wf = workflow_components;
+          if (wf.mode === "new-line") {
+            workflow_toolbox.cancelNewLine();
+          }
+          _.newLine.originElement = $(
+            `#node_${component.id} .diagram-node:first`
+          );
+          _.newLine.originComponent = component;
+          _.newLine.originElement.addClass("selected");
+
+          wf.mode = "new-line";
+          $("body").on("keydown", component_utils.handleEscNewLine);
+        });
+    } else {
+      $(`#${elementId}`).find(".component-label .arrow-path")?.remove();
+    }
     $(`#${elementId}`)?.on("dragstop", component, _.handleNodePositionChange);
 
     $(`#${elementId}`)
@@ -471,10 +449,19 @@ var workflow_components = {
             if ($(this).hasClass("selected")) {
               return;
             }
-            $("body").off("keydown", component_utils.handleEscNewLine);
+            if (
+              _.newLine.originComponent.parent_info?.parent_id !==
+              component.parent_info?.parent_id
+            ) {
+              console.log("Cannot connect components from different parents");
+              event.stopPropagation();
+              return;
+            }
             _.newLine.destinationElement = $(this);
             _.newLine.destinationComponent = component;
+
             $(this).addClass("selected");
+            $("body").off("keydown", component_utils.handleEscNewLine);
 
             _.newLine.isNewLine = true;
             if (_.newLine.originComponent.routing) {
@@ -488,17 +475,19 @@ var workflow_components = {
                 )?.line;
               }
             }
-
+            const lineOptions = {
+              color: component_utils.constants.routeActiveLineColor,
+              size: 2,
+              dash: true,
+            };
             if (_.newLine.isNewLine) {
               _.newLine.line = new LeaderLine(
                 _.newLine.originElement[0],
                 _.newLine.destinationElement[0],
-                {
-                  color: "red",
-                  size: 2,
-                  dash: true,
-                }
+                { ...lineOptions }
               );
+            } else {
+              _.newLine.line?.setOptions({ ...lineOptions });
             }
             workflow_toolbox.renderRoutingSidePanel(
               _.newLine.originComponent,
@@ -1017,10 +1006,8 @@ var workflow_components = {
             }
             // renders component in diagram
             _.appendComponent(data, _.container, appendPosition);
-            if (_.isEdition)
-              $(".component-node, .diagram-node-parent").draggable({
-                handle: ".node-handle",
-              });
+            if (_.isEdition) _.makeComponentDraggable(data);
+
             if (_.var.components.length === 1) {
               _.renderFirstLine(data);
             }
@@ -1266,12 +1253,10 @@ var workflow_components = {
       component.diagram?.lines?.forEach((route) => {
         try {
           route?.line?.position();
-        } catch (error) {
-          console.error("Error updating line position", error);
-        }
+        } catch (error) {}
       });
       if (component.config.branch) {
-        component.diagram?.position && component.diagram.position(component);
+        // component.diagram?.position && component.diagram.position(component);
       }
     }
   },

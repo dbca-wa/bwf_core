@@ -1,7 +1,8 @@
 from time import sleep
+import logging
 from bwf_core.models import WorkFlowInstance, ComponentInstance
 from bwf_core.components.utils import calculate_next_node
-import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,10 @@ class BasePlugin:
     
     def execute(self):
         raise Exception("Need to implement the execute method")
-
+    
+    def on_children_complete(self):
+        self.on_complete()
+    
     def set_output(self, success:bool, message="", data={}):
         # Call workflow coordinator to set the output and call the next node
         # store result in workspace instance context
@@ -53,21 +57,20 @@ class BasePlugin:
             register_workflow_step(self.workflow_instance,
                                    step=next_component_id,
                                    parent_node_instance=self.component.parent_node,
-                                   output_prev_component=output.get("data", {}))
+                                   additional_inputs={ "incoming": output.get("data", {}) })
         else:
             # if there is no next component, we check if the parent node has a next node
             if self.component.parent_node:
+                parent_node_instance = self.component.parent_node
                 parent_id = self.component.parent_node.component_id
                 parent_definition = find_component_in_tree(workflow_definition, parent_id)
                 if parent_definition:
-                    parent_next_node = calculate_next_node(parent_definition, input_params)
-                    if parent_next_node:
-                        register_workflow_step(self.workflow_instance, 
-                                               step=parent_next_node, 
-                                               parent_node_instance=self.component.parent_node.parent_node,
-                                               output_prev_component=output.get("data", {}))
-                    else:
-                        self.workflow_instance.set_status_completed()
+                    plugin_wrapper_class = PluginWrapperFactory.wrapper(parent_definition['node_type'])
+                    plugin_wrapper_instance = plugin_wrapper_class(parent_node_instance, self.workflow_instance, context={
+                                                        "variables": self.workflow_instance.variables.get("variables", {}),
+                                                        "inputs": self.workflow_instance.variables.get("inputs", {}),
+                                                    })
+                    plugin_wrapper_instance.on_children_complete()
                 else:
                     raise Exception(f"Parent component {parent_id} not found in workflow definition")
             else:
@@ -168,14 +171,20 @@ class LoopPlugin(BasePlugin):
     def __init__(self, component_instance:ComponentInstance, workflow_instance: WorkFlowInstance, context={}):
         super().__init__(component_instance, workflow_instance, context)
         self.type = "loop"
-        self.loop_flow = self.component['config'].get("loop", {})
-        self.items = self.loop.get("items", [])
-        self.loop_index = 0
-        
+        self.options = self.component.options if self.component.options else {
+           "context": { "index": 0, "item" : None }
+        }
+    
+    def on_children_complete(self):
+        from bwf_core.tasks import start_pending_component
 
-    def execute(self):
+        index = self.options.get("index", 0)
+        index += 1
+        self.options["index"] = index
 
-        return super().execute()
+        self.component.options['index'] = index
+        self.component.save()
+        start_pending_component(self.component, parent=self.component.parent_node)
 
 
 class BranchPlugin(BasePlugin):
@@ -208,7 +217,7 @@ class BranchPlugin(BasePlugin):
             register_workflow_step(self.workflow_instance, 
                                    step=next_component_id, 
                                    parent_node_instance=self.component, 
-                                   output_prev_component=output.get("data", {}))
+                                   additional_inputs={ "incoming": output.get("data", {}) })
         else:
             self.workflow_instance.set_status_completed()
 

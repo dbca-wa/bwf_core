@@ -297,7 +297,7 @@ var utils = {
     }
     const contextValue =  context.map((c, index) => {
       if (index === 0) return c;
-      return `['${c}']`;
+      return `.get('${c}')`;
     }).join('')
     return contextValue;    
   }
