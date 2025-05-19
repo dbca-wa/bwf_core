@@ -20,6 +20,16 @@ def execute(plugin:LoopPlugin):
         return
     
     logger.info(f"Loop plugin: {plugin.component.component_id} - index: {index} - items length: {len(items)}")
+    if not plugin.component.options:
+        plugin.component.options = {
+            "context": {}
+        }
+        plugin.component.save()
+    plugin.component.options['context'] = {
+        "index": index,
+        "item": items[index],
+    }
+    plugin.component.save()
 
     workflow_definition = plugin.workflow_instance.get_json_definition()
     component = find_component_in_tree(workflow_definition, plugin.component.component_id)
@@ -37,5 +47,4 @@ def execute(plugin:LoopPlugin):
 
     register_workflow_step(plugin.workflow_instance,
                             step=entry_point['id'],
-                            parent_node_instance=plugin.component,
-                            additional_inputs={ "loop": {'item': items[index],'index': index,} })
+                            parent_node_instance=plugin.component)

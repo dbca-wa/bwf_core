@@ -244,6 +244,15 @@ class ComponentInstance(models.Model):
             values[input.key] = {"key": input.get("key"), "value": input.get_value(context_values), "label": input.get("name")}
         return values
     
+    def get_node_context(self):
+        context = {}
+        if self.parent_node:
+            context.update({"parent": self.parent_node.get_node_context()})
+        if self.options:
+            context.update(self.options.get("context", {}))
+        return context
+
+    
 
 
 class WorkflowInstanceFactory:
@@ -314,6 +323,9 @@ class WorkflowComponentInstanceFactory:
 
     @staticmethod
     def create_component_instance(workflow_instance: WorkFlowInstance, component, parent_node_instance=None, input_params={}):
+        if parent_node_instance:
+            input_params.update({ "local": parent_node_instance.get_node_context() })
+
         component_dto = ComponentDto(workflow_context=input_params,
                                      id=component['id'], 
                                      name=component['name'],

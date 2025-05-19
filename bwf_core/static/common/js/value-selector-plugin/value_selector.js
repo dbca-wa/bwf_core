@@ -616,19 +616,19 @@ class ValueSelector {
         const { convert_context_to_python_dict } = utils;
 
         if (!isEdition) return;
+        const contextValue = convert_context_to_python_dict(
+          selectedValue?.context
+        );
         if (_.initials.showEditor && _.editor) {
           const doc = _.editor.getDoc();
           const cursor = doc.getCursor();
-          const contextValue = convert_context_to_python_dict(
-            selectedValue?.context
-          );
           doc.replaceRange(`${contextValue}.get('${selectedValue?.key}')`, cursor);
         } else {
           _.saveValue({
             value: null,
             is_expression: false,
             value_ref: {
-              context: selectedValue.context,
+              context: contextValue,
               key: selectedValue.key,
               id: selectedValue.id,
             },
@@ -690,12 +690,12 @@ class ValueSelector {
         showInPopover: !!is_expression || _.initials.showEditor,
         onSelectValue: (selectedValue) => {
           if (!isEdition) return;
+          const contextValue = convert_context_to_python_dict(
+            selectedValue?.context
+          );
           if (_.initials.showEditor && _.editor) {
             const doc = _.editor.getDoc();
             const cursor = doc.getCursor();
-            const contextValue = convert_context_to_python_dict(
-              selectedValue?.context
-            );
             doc.replaceRange(
               `${contextValue}.get('${selectedValue?.key}')`,
               cursor
@@ -705,7 +705,7 @@ class ValueSelector {
               value: null,
               is_expression: false,
               value_ref: {
-                context: selectedValue.context,
+                context: contextValue,
                 key: selectedValue.key,
                 id: selectedValue.id,
               },

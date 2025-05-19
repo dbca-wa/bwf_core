@@ -172,7 +172,7 @@ class LoopPlugin(BasePlugin):
         super().__init__(component_instance, workflow_instance, context)
         self.type = "loop"
         self.options = self.component.options if self.component.options else {
-            "index": 0
+           "context": { "index": 0, "item" : None }
         }
     
     def on_children_complete(self):
@@ -181,6 +181,7 @@ class LoopPlugin(BasePlugin):
         index = self.options.get("index", 0)
         index += 1
         self.options["index"] = index
+
         self.component.options['index'] = index
         self.component.save()
         start_pending_component(self.component, parent=self.component.parent_node)
