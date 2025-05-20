@@ -1,3 +1,26 @@
+/* Dashboard */
+#tb_workflows .row-workflow a {
+    font-weight: 400;
+    text-decoration: none;
+}
+#tb_workflows .row-workflow .description{
+    color: #818181;
+    font-size: 10px;
+}
+#tb_workflows .dates .created {
+    font-size: 12px;
+    
+}
+#tb_workflows .workflow-type .short-lived {
+    color: #fff;
+    background: #ff6700;
+}
+#tb_workflows .workflow-type .long-lived {
+    color: #fff;
+    background: #00aaff;
+}
+/* END Dashboard */
+
 .diagram-node.selected {
     border-color: #ff6700 !important;
 }

@@ -3,12 +3,14 @@ import mimetypes
 import json
 import logging
 from rest_framework import status
+
 from rest_framework.decorators import action, permission_classes, api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ViewSet
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.db.models import Max
+from django.core.paginator import Paginator
+from django.db.models import Max, Prefetch, Q
 from django.db import transaction
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, get_object_or_404
@@ -57,6 +59,40 @@ class WorkflowViewset(ModelViewSet):
     def update(self, request, *args, **kwargs):
 
         return super().update(request, *args, **kwargs)
+    
+
+    def list(self, request, *args, **kwargs):
+    
+        page_param = request.GET.get('page', '1')
+        page_size_param = request.GET.get('page_size', '10')
+        
+        search = request.GET.get('search', '')
+        wf_versions_queryset = (
+            WorkflowVersion.objects.filter(is_disabled=False)
+            .filter(Q(is_edition=True) | Q(is_active=True))
+            .only(
+                "workflow_id",
+                "version_number",
+                "version_name",
+                "created_at",
+                "updated_at",
+            )
+            .order_by("is_active", "-updated_at")
+        )
+        workflows = Workflow.objects.all().prefetch_related(
+            Prefetch("versions", queryset=wf_versions_queryset)
+        )
+
+        if search != '':
+            workflows = workflows.filter(name__icontains=search)
+        paginator = Paginator(workflows, page_size_param)
+        page = paginator.page(page_param)
+        return JsonResponse({
+            "count": paginator.count,
+            "hasPrevious": page.has_previous(),
+            "hasNext": page.has_next(),
+            'results': self.get_serializer(page.object_list, many=True).data,
+        })
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def trigger_workflow(self, request):

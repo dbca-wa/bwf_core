@@ -14,14 +14,14 @@ var bwf_workflow = {
     },
   
     init: function () {
-      const _ = sam_dashboard;
+      const _ = workflow_dashboard;
       const params = new URL(document.location.toString()).searchParams;
   
       _.var.hasInit = false;
       _.var.page = Number(params.get("page")) || 1;
       _.var.page_size = Number(params.get("page_size")) || 10;
     //   _.enableSyncButton();
-    //   _.renderDataTable();
+      _.renderDataTable();
     },
     navigate: {
       toVersionEdition: function (workflow_id, version_id) {

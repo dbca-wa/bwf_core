@@ -1,126 +1,78 @@
 <div class="container-sm">
   <input type="hidden" id="csrf_token" value="{{ csrf_token }}" />
-  <div class="card workflow-info-card">
-    <div class="card-body">
-        <div class="d-flex justify-content-between">
-            <div>
-                <a href="{% url 'workflow' workflow.id %}">
-                    <h5 class="card-title">{{workflow.name}}
-                        <i class="bi bi-link"></i>
-                    </h5>
-                </a>
-          <div class="d-flex">
-            {% if version.is_active %}
-            <div><span class="badge bg-success">Active Version</span></div>
-            {% endif %} {% if version.is_edition %}
-            <div><span class="badge bg-primary">In edition</span></div>
-            {% endif %}
-            <br />
-          </div>
-          <span class="text-secondary"
-            >Current version: {{workflow.version_number}}</span
-          >
-        </div>
+  <div class=" workflow-info-card">
+    <div class="card-">
+      <div class="d-flex justify-content-between">
         <div>
-          <div class="btn-group">
-            <button
-              type="button"
-              class="btn btn-primary dropdown-toggle"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              Actions
-            </button>
-            <ul class="dropdown-menu">
-              {% if not version.is_active %}
-              <li id="btn-mark-active-version" class="dropdown-item">
-                Mark as Workflow's active version
-              </li>
-              {% else %}
-              <li id="btn-create-version" class="dropdown-item">
-                Create editable version
-              </li>
+          <div style="display: inline-flex;">
+            <a href="{% url 'workflow' workflow.id %}">
+              <h4 class="card-title">
+                {{workflow.name}}
+                <i class="bi bi-link"></i>
+              </h4>
+            </a>
+            <span class="text-secondary ms-2"> | Version number: {{version.version_number}}</span>
+            <div class="d-flex ms-3">
+              {% if version.is_active %}
+              <div><span class="badge bg-success">Active</span></div>
               {% endif %}
-              <li class="dropdown-item" id="btn-view-definition">
-                <i class="bi bi-filetype-json"></i>
-                View definition document
-              </li>
-              <!-- <li><hr class="dropdown-divider"></li>
-                <li class="btn ">Remove</li> -->
-            </ul>
-          </div>
+              {% if version.is_edition %}
+              <div><span class="badge bg-primary">Draft</span></div>
+              {% endif %}
+              {% if not version.is_edition and not version.is_active %}
+              <div><span class="badge bg-secondary">Inactive</span></div>
+              {% endif %}
+              <br />
+            </div>
+            
+          </div>          
+        </div>
+        <div>          
+            {% if not version.is_active %}
+              <button type="button" class="btn btn-sm btn-primary" id="btn-mark-active-version">
+                <i class="bi bi-bookmark-star"></i>
+                Set as active version
+              </button>
+            {% else %}
+              <button type="button" class="btn btn-sm btn-primary" id="btn-create-version">
+                <i class="bi bi-pencil"></i>
+                Create editable version
+              </button>
+            {% endif %}
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-view-definition">
+              <i class="bi bi-filetype-json"></i>
+              View definition
+            </button>
         </div>
       </div>
-      <hr />
-      <h6 class="card-subtitle mb-2 text-body-secondary">Description</h6>
-      <p class="card-text">{{workflow.description}}</p>
-      <h6 class="card-subtitle mb-2 text-body-secondary">Version Data</h6>
-      <p class="card-text">
-        <span class="text-bold">Version name:&nbsp;</span
-        >{{version.version_name}}
-        <br />
-        <span class="font-weight-bold">Version number:&nbsp;</span
-        >{{version.version_number}}
-      </p>
+    <ul id="wf-tabs" class="nav nav-tabs mb-4 mt">
+      <li class="nav-item" data-bs-toggle="offcanvas" href="#offCanvasInputs" role="button" aria-controls="offCanvasInputs">
+        <a class="nav-link" href="#">
+          <i class="bi bi-box-arrow-in-right me-1"></i>Inputs</a>
+      </li>
+      <li class="nav-item" data-bs-toggle="offcanvas" href="#offCanvasVariables" role="button" aria-controls="offCanvasVariables">
+        <a class="nav-link" href="#">
+          <i class="bi bi-code-square me-1"></i>
+          Variables</a>
+      </li>
+      <li class="nav-item" data-bs-toggle="modal" data-bs-target="#workflow-info-modal" >
+        <a class="nav-link" href="#">
+          <i class="bi bi-info-circle me-1"></i>Workflow Info</a>
+      </li>
+    </ul>
+    
       <!-- <a href="#" class="card-link">Card link</a> -->
       <!-- <a href="#" class="card-link">Another link</a> -->
     </div>
   </div>
 
-  <div class="row">
-    <div class="col-3">
-      <div
-        id="variables-container"
-        class="row gap-1 py-md-2 align-items-center justify-content-center width-md-30"
-      >
-        <div class="card p-0">
-          <div class="card-header">
-            <i class="bi bi-clipboard2-pulse-fill"></i>
-            Workflow variables
-          </div>
-          <div id="variables"></div>
-          <label class="d-grid mt-2">
-            <button class="btn btn-outline-primary add-variable">
-              <i class="bi bi-plus me-2"></i>
-              Add Variable
-            </button>
-          </label>
-        </div>
-      </div>
-      <div
-        id="inputs-node"
-        class="row gap-4 py-md-2 align-items-center justify-content-center"
-      >
-        <div class="card p-0">
-          <div class="card-header">
-            <i class="bi bi-gear"></i>
-            Workflow input values
-          </div>
-
-          <div class="card-body p-1">
-            <div class="list-group" id="inputs"></div>
-          </div>
-          <label class="d-grid mt-2">
-            <button class="btn btn-outline-primary add-input">
-              <i class="bi bi-plus me-2"></i>
-              Add Input
-            </button>
-          </label>
-        </div>
-      </div>
-
-      <div
-        id="notifications-container"
-        class="row align-items-center justify-content-center"
-      ></div>
-    </div>
-    <div class="col-9">
-      <div id="components-flow" class="workflow-center">
+<div id="panel-diagram"  class="content-panel">
+    <div id="components-flow" class="workflow-center">
         <div id="flow-start-node">
           <span>Start</span>
         </div>
-      </div>
-      <div
+    </div>
+    <div
         class="d-flex flex-column flex-md-row p-4 gap-4 py-md-5 justify-content-center"
       >
         <button
@@ -130,6 +82,55 @@
           <i class="bi bi-plus me-2"></i>
           Add Component
         </button>
+    </div>
+</div>
+
+<div class="offcanvas offcanvas-lg offcanvas-start " tabindex="-1" id="offCanvasVariables" aria-labelledby="offCanvasVariablesLabel" data-bs-scroll="true">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="offCanvasVariablesLabel">Workflow Variables</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <div>
+      Some text as placeholder. In real life you can have the elements you have chosen. Like, text, images, lists, etc.
+    </div>
+    <div id="variables-container"
+        class="row gap-1 py-md-2 align-items-center justify-content-center width-md-30"
+      >
+        <div class="card p-0">
+          <div id="variables"></div>
+          <label class="d-grid mt-2">
+            <button class="btn btn-outline-primary add-variable">
+              <i class="bi bi-plus me-2"></i>
+              Add Variable
+            </button>
+          </label>
+        </div>
+    </div>
+  </div>
+</div>
+<div class="offcanvas offcanvas-start" tabindex="-1" id="offCanvasInputs" aria-labelledby="offCanvasInputsLabel" data-bs-scroll="true">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="offCanvasInputsLabel">Workflow input values</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <div>
+      Some text as placeholder. In real life you can have the elements you have chosen. Like, text, images, lists, etc.
+    </div>
+    
+    <div id="inputs-node" class="row gap-4 py-md-2 align-items-center justify-content-center">
+      <div class="card p-0">
+
+        <div class="card-body p-1">
+          <div class="list-group" id="inputs"></div>
+        </div>
+        <label class="d-grid mt-2">
+          <button class="btn btn-outline-primary add-input">
+            <i class="bi bi-plus me-2"></i>
+            Add Input
+          </button>
+        </label>
       </div>
     </div>
   </div>
@@ -155,16 +156,19 @@
 <script src="/static/pages/workflow/toolbox.js"></script>
 
 <!-- Fragments -->
-{% include 'fragments/component_node.html' %} 
-{% include 'fragments/routing_template.html' %} 
+{% include 'fragments/component_node.html' %}
+{% include 'fragments/routing_template.html' %}
 {% include 'fragments/value_popover.html' %}
 <!-- END: Fragments -->
 <!-- Modals -->
 {% include 'modals/component_creation_modal.html' %}
+{% include 'modals/workflow_info_modal.html' %}
 <!-- END: Modals -->
 
 <script>
   $(() => {
+
+    // Initialize the workflow diagram
     const workflow_id = $("#workflow_id").val();
     const version_id = $("#version_id").val();
     const is_edition = $("#is_edition").val() === "true";
@@ -177,14 +181,14 @@
       is_diagram: true,
       sidePanel: $("#component-side-panel").SlideOutPanel({
         width: "760px",
-        afterClosed: function() {
+        afterClosed: function () {
           workflow_toolbox.cancelNewLine();
-        }
+        },
       }),
     };
 
     if (!is_edition) {
-        $('.workflow-info-card').remove();
+      $(".workflow-info-card").remove();
     }
     workflow_inputs.init(options, "inputs-node");
     workflow_variables.init(options, "variables-container");

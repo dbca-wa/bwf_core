@@ -19,6 +19,7 @@ else:
    BASE_DIR = BASE_DIR_ENV
 PROJECT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'bwf_core')
 PRIVATE_MEDIA_ROOT = decouple.config("PRIVATE_MEDIA_ROOT", default="bwf_private_media")
+PROJECT_WORKING_DIR = os.getcwd()
 
 ''' 
    Here we modify the Installed_Apps list to include bwf_component plugins that have a models.py file.
@@ -26,6 +27,13 @@ PRIVATE_MEDIA_ROOT = decouple.config("PRIVATE_MEDIA_ROOT", default="bwf_private_
 IGNORE_DIRS = ['__pycache__']
 
 BASE_PLUGIN_ROUTE = os.path.join(BASE_DIR, 'bwf_components', 'plugins')
+if os.path.exists(BASE_PLUGIN_ROUTE) is False:   
+   BASE_PLUGIN_ROUTE = os.path.join(PROJECT_WORKING_DIR, 'bwf_components', 'plugins')
+   if os.path.exists(BASE_PLUGIN_ROUTE) is False:
+       import sys
+       print ("BWF Components module does not exist")
+       sys.exit(1)
+
 FLOW_NODES_ROUTE = os.path.join(BASE_DIR, 'bwf_core', 'core_plugins')
 
 plugins = []

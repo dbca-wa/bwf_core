@@ -1,14 +1,22 @@
 from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers
-from bwf_core.models import Workflow, WorkflowVersion
+from bwf_core.models import Workflow, WorkflowVersion, WorkflowTypesEnum
 
 class ListWorkflowSerializer(serializers.Serializer):
-    pass  
+    id = serializers.IntegerField()
+    name = serializers.CharField(max_length=255)
+    workflow_type = serializers.ChoiceField(choices=WorkflowTypesEnum.choices)
+    description = serializers.CharField(max_length=1000, required=False, default="", allow_blank=True)
+    created_at = serializers.DateTimeField()
+    updated_at = serializers.DateTimeField()
+    is_active = serializers.BooleanField(default=False)
+    is_edition = serializers.BooleanField(default=False)
 
 
 class CreateWorkflowSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255)
+    workflow_type = serializers.ChoiceField(choices=WorkflowTypesEnum.choices)
     description = serializers.CharField(max_length=1000, required=False, default="", allow_blank=True)
 
 class CreateWorkflowVersionSerializer(serializers.Serializer):

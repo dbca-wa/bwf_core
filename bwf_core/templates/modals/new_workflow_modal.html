@@ -24,11 +24,30 @@
       <div class="modal-body">
         <form id="workflow-form">
           <div class="mb-3">
-            <label for="input-workflow-name" class="form-label"
-              >Title</label
-            >
-            <input type="text" class="form-control" id="input-workflow-name" placeholder="Workflow name" required />
+            <label for="input-workflow-name" class="form-label">Title</label>
+            <input
+              type="text"
+              class="form-control"
+              id="input-workflow-name"
+              placeholder="Workflow name"
+              required
+            />
           </div>
+          <div class="mb-3">
+            <label for="input-workflow-name" class="form-label"
+              >Workflow type</label
+            >
+            <select
+              class="form-select"
+              id="input-workflow-type"
+              aria-label="Workflow type"
+              required
+            >
+              <option value="LONG_LIVED">Short Lived</option>
+              <option value="SHORT_LIVED">Long lived</option>
+            </select>
+          </div>
+
           <div class="mb-3">
             <label for="input-workflow-description" class="form-label"
               >Description</label
@@ -57,7 +76,15 @@
 <script>
   new_workflow_data = {
     validate: function (data) {
-      const {} = data;
+      const { name, description, type } = data;
+      if (!name || name.length < 3) {
+        alert("Workflow name must be at least 3 characters long.");
+        return false;
+      }
+      if (!type) {
+        alert("Workflow type is required.");
+        return false;
+      }
 
       return true;
     },
@@ -84,20 +111,32 @@
     e.preventDefault();
 
     const _ = bwf_workflow;
-
     $(".create-workflow-button").prop("disabled", true);
     const name = $("#input-workflow-name").val();
     const description = $("#input-workflow-description").val() ?? "";
+    const type = $("#input-workflow-type").val();
+
+    if (!new_workflow_data.validate({ name, description, type })) {
+      $(".create-workflow-button").prop("disabled", false);
+      return;
+    }
     const data = {
       name,
+      workflow_type: type,
       description,
     };
-    _.api.createWorkflow(data).then((response) => {
-      _.navigate.toVersionEdition(response.workflow.id, response.id);
-      $(".create-workflow-button").prop("disabled", false);
-      $("#workflow-creation-modal").modal("hide");
-    }).catch((error) => {
-      $(".create-workflow-button").prop("disabled", false);
-    });
+    _.api
+      .createWorkflow(data)
+      .then((response) => {
+        _.navigate.toVersionEdition(response.workflow.id, response.id);
+        $(".create-workflow-button").prop("disabled", false);
+        $("#workflow-creation-modal").modal("hide");
+      })
+      .catch((error) => {
+        $(".create-workflow-button").prop("disabled", false);
+        alert(
+          "An error occurred while creating the workflow. Please try again."
+        );
+      });
   });
 </script>

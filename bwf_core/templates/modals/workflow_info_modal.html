@@ -1,0 +1,42 @@
+<div
+  class="modal fade"
+  id="workflow-info-modal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="workflow-info-modal-label"
+  aria-hidden="true"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="workflow-info-modal-label">
+          Workflow Info
+        </h5>
+        <button
+          type="button"
+          class="btn btn-ghost"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <h6 class="card-subtitle mb-2 text-body-secondary">Current active version</h6>
+        <p class="card-text">{{workflow.version_number}}</p>
+        <h6 class="card-subtitle mb-2 text-body-secondary">Description</h6>
+        <p class="card-text">{{workflow.description}}</p>
+        <h6 class="card-subtitle mb-2 text-body-secondary">Version Data</h6>
+        <p class="card-text">
+          <span class="text-bold">Version name:&nbsp;</span
+          >{{version.version_name}}
+          <br />
+          <span class="font-weight-bold">Version number:&nbsp;</span
+          >{{version.version_number}}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script></script>

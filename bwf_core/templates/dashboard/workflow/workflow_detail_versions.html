@@ -10,69 +10,62 @@
     data-version-file="{{active_version.workflow_file}}"
     data-is-editable="{{active_version.is_editable}}"
   />
-
-  <div>
-    <div style="display: inline-flex" class="d-flex justify-content-between">
-      <div style="display: inline-flex">
-        <h4 class="card-title">
-          {{workflow.name}}
-          <i class="bi bi-link"></i>
-        </h4>
-        <span class="text-secondary ms-2">
-          | Version number: {{active_version.version_number}}</span
-        >
-        <div class="d-flex ms-3">
-          {% if active_version.is_active %}
-          <div><span class="badge bg-success">Active</span></div>
-          {% endif %}
-          <br />
-        </div>
-      </div>
-      <div>
-        <div class="btn-group">
-          <button
-            type="button"
-            class="btn btn-outline-primary dropdown-toggle btn-sm"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
-          >
-            Actions
-          </button>
-          <ul class="dropdown-menu">
-            <li id="btn-create-version" class="dropdown-item">
-              Create editable version
-            </li>
-            <li class="dropdown-item" id="btn-view-definition">
-              <i class="bi bi-filetype-json"></i>
-              View definition document
-            </li>
-            <!-- <li><hr class="dropdown-divider"></li>
-              <li class="btn ">Remove</li> -->
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div class="card">
     <div class="card-body">
+      <div class="d-flex justify-content-between">
+        <div>
+          <div class="d-flex">
+            <h4 class="card-title">{{workflow.name}}</h4>
+          </div>
+        </div>
+      </div>
       <ul class="nav nav-tabs mb-4 mt">
         <li class="nav-item">
-          <a class="nav-link active" href="{% url 'workflow' workflow.id %}">
+          <a class="nav-link" href="{% url 'workflow' workflow.id %}">
             <i class="bi bi-bookmark-star me-1"></i>Diagram</a
           >
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'version-history' workflow.id %}">
+          <a
+            class="nav-link active"
+            href="{% url 'version-history' workflow.id %}"
+          >
             <i class="bi bi-clock-history me-1"></i>Version history</a
           >
         </li>
       </ul>
       <div class="row p-2">
         <div class="col-12">
-          {% if active_version %} 
-            {% include "dashboard/workflow/workflow_diagram.html" with workflow=workflow version=active_version visualizatio=True %}
-          {% endif %}
+          <div
+            id="versions-container"
+            class="row gap-1 py-md-2 align-items-center justify-content-center width-md-30"
+          >
+            <div class="card p-0">
+              <div class="card-header">
+                <i class="bi bi-clipboard2-pulse-fill"></i>
+                Versions
+              </div>
+              <div id="versions" class="p-3">
+                {% for version in versions %}
+
+                <div class="row mb-2 pb-2">
+                  <div class="col-12">
+                    <a
+                      href="{% url 'workflow-edition' workflow.id version.id %}"
+                      >#{{ version.version_number }} - {{ version.version_name}} </a
+                    ><br />
+                    <span class="text-muted text-sm"
+                      >{{ version.updated_at }}</span
+                    >
+                    {% if version.is_edition %}
+                    <span class="badge bg-primary">Draft</span>
+                    {% endif %}
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

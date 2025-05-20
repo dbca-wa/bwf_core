@@ -9,10 +9,5 @@
   data-version-file="{{version.workflow_file}}"
   data-is-editable="{{version.is_editable}}"
 />
-<div class="container-sm">
-  <div class="row">
-    <h4 class="card-title">Workflow version editor</h4>
-  </div>
-</div>
 {% include "dashboard/workflow/workflow_diagram.html" with workflow=workflow version=version %} 
 {% endblock %}

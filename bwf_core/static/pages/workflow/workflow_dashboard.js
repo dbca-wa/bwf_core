@@ -1,4 +1,4 @@
-var sam_dashboard = {
+var workflow_dashboard = {
   dt: null,
   progressBar: null,
   progressContainer: null,
@@ -9,14 +9,12 @@ var sam_dashboard = {
     search: "",
     url: "/api/list_historical_records/",
     data: [],
-    breadcrumb: [],
-    root: "",
+
     location: "",
-    isDownloading: false,
   },
 
   init: function () {
-    const _ = sam_dashboard;
+    const _ = workflow_dashboard;
     const params = new URL(document.location.toString()).searchParams;
 
     _.var.hasInit = false;
@@ -26,30 +24,12 @@ var sam_dashboard = {
     _.var.search = params.get("search") ?? "";
 
     _.var.location = window.location.href.split("?")[0];
-    _.enableSyncButton();
+
     _.renderDataTable();
   },
-  enableSyncButton: function () {
-    $("#sync-btn").on("click", function (e) {
-      const _ = sam_dashboard;
-      if (!_.var.hasInit) return;
-      const params = new URL(document.location.toString()).searchParams;
-
-      _.var.hasInit = false;
-      _.var.page = 1;
-      _.var.page_size = Number(params.get("page_size")) || 10;
-      _.dt.state({
-        start: (_.var.page - 1) * _.var.page_size,
-        length: _.var.page_size,
-        route_path: _.var.route_path,
-      });
-      _.dt.search(_.var.search);
-      _.dt.draw(true);
-    });
-  },
   renderDataTable: function () {
-    const _ = sam_dashboard;
-    _.dt = $("#sam_dashboard table").DataTable({
+    const _ = workflow_dashboard;
+    _.dt = $("#tb_workflows").DataTable({
       serverSide: true,
 
       language: utils.datatable.common.language,
@@ -61,7 +41,6 @@ var sam_dashboard = {
           _.var.page_size = data?.length;
           _.var.search = data?.search?.value;
         }
-        $("#sync-btn").attr("disabled", true);
 
         _.get_datatable_data(
           {
@@ -72,7 +51,6 @@ var sam_dashboard = {
           },
           function (response) {
             const { count, results } = response;
-            $("#sync-btn").removeAttr("disabled");
             callback({
               data: results,
               recordsTotal: count,
@@ -88,48 +66,74 @@ var sam_dashboard = {
       headerCallback: function (thead, data, start, end, display) {
         $(thead).addClass("table-light");
       },
+      columnDefs: [{ width: "30%", targets: 0 }],
       columns: [
         {
-          title: "Hash",
-          data: "hash",
+          title: "Workflow",
+          data: "workflow",
           render: function (data, type, row) {
             const { markup } = utils;
+            const createdAt = moment(row.created_at).format("DD MMM YYYY HH:mm:ss a");
+
             return markup(
               "div",
               [
                 {
-                  tag: "div",
-                  content: row.layer_name,
+                  tag: "a",
+                  content: row.name,
                   class: "layer_name",
+                  href: `workflow/${row.id}/`,
                 },
                 {
                   tag: "div",
-                  content: row.hash,
-                  class: "hash",
+                  content: row.description,
+                  class: "description",
                 },
+                {tag: "span", content: createdAt, class: "text-muted description"}
               ],
               {
-                class: "row-hash",
+                class: "row-workflow",
                 "data-id": row.id,
               }
             );
           },
         },
         {
-          title: "Created at",
-          data: "created_at",
+          title: "Type",
+          data: "workflow_type",
           render: function (data, type, row) {
             const { markup } = utils;
-            return markup("div", new Date(Date.parse(data)).toLocaleString());
+            const isShortLived = row.workflow_type === "SHORT_LIVED";
+            const workflowType = isShortLived ? "Short lived" : "Long lived";
+            return markup(
+              "div",
+              [
+                {
+                  tag: "span",
+                  content: workflowType,
+                  class: [
+                    "badge",
+                    isShortLived ? "short-lived" : "long-lived",
+                  ].join(" "),
+                },
+              ],
+              { class: "workflow-type" }
+            );
           },
         },
         {
-          title: "Synced at",
-          data: "synced_at",
+          title: "Last update",
+          data: "updated_at",
           render: function (data, type, row) {
-            if (!data) return " - ";
             const { markup } = utils;
-            return markup("div", new Date(Date.parse(data)).toLocaleString());
+            const updatedAt = row.updated_at
+              ? moment(data).format("DD MMM YYYY HH:mm:ss a")
+              : "";
+            return markup(
+              "div",
+              [{ tag: "span", content: updatedAt, class: "updated" }],
+              { class: "dates" }
+            );
           },
         },
       ],
@@ -144,7 +148,7 @@ var sam_dashboard = {
   },
 
   get_datatable_data: function (params, cb_success, cb_error) {
-    const _ = sam_dashboard;
+    const _ = workflow_dashboard;
     const _params = {
       page: params?.page ?? _.var.page,
       page_size: params?.page_size ?? _.var.page_size,
@@ -154,7 +158,7 @@ var sam_dashboard = {
     history.replaceState(null, null, "?" + queryParams.toString());
 
     $.ajax({
-      url: _.var.url + "?" + queryParams,
+      url: bwf_workflow.var.base_url + "?" + queryParams,
       method: "GET",
       dataType: "json",
       contentType: "application/json",

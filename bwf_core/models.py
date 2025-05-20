@@ -12,6 +12,9 @@ from bwf_core.workflow.dto.component_dto import ComponentDto
 
 upload_storage = FileSystemStorage(location=settings.PRIVATE_MEDIA_ROOT)
 
+class WorkflowTypesEnum(models.TextChoices):
+    LONG_LIVED = "LONG_LIVED", "Long Lived"
+    SHORT_LIVED = "SHORT_LIVED", "Short Lived"
 
 class FailureHandleTypesEnum(models.TextChoices):
     RETRY = "RETRY", "Retry"
@@ -79,6 +82,7 @@ def updaload_to_workflow_edition_path(instance, filename):
 
 class Workflow(models.Model):
     name = models.CharField(max_length=200)
+    workflow_type = models.CharField(max_length=50, choices=WorkflowTypesEnum.choices, default=WorkflowTypesEnum.SHORT_LIVED)
     description = models.CharField(max_length=1000, null=True, blank=True)
     version_number = models.IntegerField(default=1)
     workflow_file = models.FileField(max_length=1000, upload_to=upload_to_path, null=True, blank=True, storage=upload_storage)
