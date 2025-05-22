@@ -414,7 +414,9 @@ border: 2px solid #0d6efd; */
 #panel-plugin-info * {
   margin-bottom: 0px;
 }
-
+#component-side-panel {
+  width: 760px;
+}
 #component-side-panel .value-selector-content,
 #component-side-panel .value-selector {
   height: 35px;

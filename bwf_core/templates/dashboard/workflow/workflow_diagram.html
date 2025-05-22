@@ -201,8 +201,14 @@
         find: function (selector) {
           return $(this.panel._element).find(selector);
         },
+        setOnHideEvent: function () {
+          this.panel._element.addEventListener("hidden.bs.offcanvas", function(){
+            workflow_toolbox.cancelNewLine();
+          });
+        },
       }
     };
+    options.sidePanel.setOnHideEvent()
 
     if (!is_edition) {
       $(".edition-only").remove();
