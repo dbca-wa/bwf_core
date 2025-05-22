@@ -263,7 +263,7 @@
       const data = _.selectedInput;
       inputs_data.selectedInput.isNew = !data;
       inputs_data.selectedInput.data = data;
-      console.log(data);
+
       inputs_data.originalData = Object.assign({}, data);
       $(".modal-title").text(
         inputs_data.selectedInput.isNew
@@ -287,8 +287,8 @@
         $("#field_label").off("keyup", handleNameChange);
       }
     });
-    $("#inputs-modal").on("show.bs.modal", function (e) {
-      $("#field_label").focus();
+    $("#inputs-modal").on("shown.bs.modal", function (e) {
+      $("#field_label").trigger("focus");
     });
 
     $("#inputs-modal").on("hidden.bs.modal", function (e) {
