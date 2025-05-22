@@ -10,8 +10,9 @@ from .utils import get_incoming_values
 from bwf_core.workflow.serializers import component_serializers
 from bwf_core.models import  WorkflowVersion
 from bwf_core.controller.controller import BWFPluginController
-from . import serializers
-from .tasks import (create_component_definition_instance,
+from bwf_core.components import serializers
+from bwf_core.components.tasks import (create_component_definition_instance,
+                    apply_workflow_entry_removal,
                     add_predefined_workflow_inputs,
                     update_mapping_from_deleted_component,
                     insert_node_to_workflow,
@@ -259,9 +260,19 @@ class WorkflowComponentViewset(ViewSet):
             if not instance:
                 return Response("Component not found")
             
+            is_entry_point = instance.get('conditions', {}).get('is_entry', False)
+            next_entry_point = None
+            if is_entry_point:
+                if instance['routing'] and len(instance['routing']) > 0:
+                    next_entry_point = instance['routing'][0]['route']
+                    
             for key, component in workflow_components.items():
                 if component['id'] == component_id:
                     continue
+                if key == next_entry_point:
+                    # if the next entry point is the one to be deleted, we need to set the next one as entry point
+                    component['conditions']['is_entry'] = True
+
                 paths = [r['route'] for r in component['routing']]
                 if not component_id in paths:
                     continue
@@ -290,7 +301,20 @@ class WorkflowComponentViewset(ViewSet):
                 component['routing'] = new_routing
                 components_affected.append(component)
 
-            # workflow_definition['workflow'] = workflow_components
+
+            # Remove predefined inputs
+            workflow_inputs = workflow_definition.get("inputs", {})
+            inputs_to_remove = []
+            for key, input_item in workflow_inputs.items():
+                if input_item.get("parent_component", None) == component_id:
+                    inputs_to_remove.append(key)
+                    is_input = True
+                    id = input_item.get("id", None)
+                    apply_workflow_entry_removal(
+                        workflow_definition.get("workflow", {}), is_input, key, id
+                    )
+            for key in inputs_to_remove:
+                workflow_inputs.pop(key, None)
             workflow.set_json_definition(workflow_definition)
             components_affected_to_ui = []
             parent_info = {

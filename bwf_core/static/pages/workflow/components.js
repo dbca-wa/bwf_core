@@ -339,6 +339,14 @@ var workflow_components = {
     $(`#${elementId}`).css("top", position.top);
     $(`#${elementId}`).css("left", position.left);
 
+    $(`#${elementId}`).hover(
+      function () {
+        $(this).find(".diagram-node-buttons").show();
+      },
+      function () {
+        $(this).find(".diagram-node-buttons").hide();
+      }
+    );
     $(`#${elementId}`)
       .find(".component-icon")
       .html(
@@ -384,10 +392,20 @@ var workflow_components = {
     $(`#${elementId}`)
       .find(".diagram-node")
       ?.on("click", component, function (event) {
+        if ($(event.target.parentNode).hasClass("dnb")) {
+          // if the click is on the buttons, do not trigger the event
+          return;
+        }
         const _ = workflow_components;
         const { id, config } = event.data;
         const component = component_utils.findComponentInTree(id, config);
         if (component) _.renderComponentSidePanel(component);
+      });
+    $(`#${elementId}`)
+      .find(".diagram-node-buttons .node-remove")
+      ?.on("click", component, function (event) {
+        const _ = workflow_components;
+        _.showNodeDeletionConfirmation(event.data);
       });
     $(`#${elementId}`)
       .find(".component-label>span")
@@ -688,25 +706,47 @@ var workflow_components = {
         });
     }
   },
-  addMenuButtonsFunctionality: function (elementId, component) {
-    // Delete Component
-    $(`#${elementId}`)
-      .find(".delete-component")
-      ?.on("click", component, function (event) {
-        const _ = workflow_components;
-        const { id } = event.data;
+  showNodeDeletionConfirmation: function (component) {
+    const _ = workflow_components;
+    if (!_.isEdition) return;
+    component_utils.confirmationModal.open(
+      "Remove Component",
+      `Are you sure you want to delete \"${component.name} - ${component?.plugin_info?.name}\" this component?`,
+      function () {
+        component_utils.confirmationModal.disableButtons();
+        const elementId = `node_${component.id}`;
+        $(`#node_${component.id}`).remove();
+        $(`#${elementId}`).remove();
+        const { id } = component;
         const data = {
           id: id,
           workflow_id: _.workflow_id,
           version_id: _.version_id,
         };
-        _.api.deleteComponent(data, function (data) {
-          $(`#node_${component.id}`).remove();
-          $(`#${elementId}`).remove();
-          // data: components_affected
-          workflow_components.removeComponent(id, data);
-          _.sidePanel?.close();
-        });
+        _.api.deleteComponent(
+          data,
+          function (data) {
+            $(`#node_${component.id}`).remove();
+            $(`#${elementId}`).remove();
+            // data: components_affected
+            workflow_components.removeComponent(id, data);
+            _.sidePanel?.close();
+            component_utils.confirmationModal.close();
+          },
+          function (error) {
+            component_utils.confirmationModal.enableButtons();
+            alert("Error deleting component");
+          }
+        );
+      }
+    );
+  },
+  addMenuButtonsFunctionality: function (elementId, component) {
+    // Delete Component
+    $(`#${elementId}`)
+      .find(".delete-component")
+      ?.on("click", component, function (event) {
+        workflow_components.showNodeDeletionConfirmation(event.data);
       });
     // END: Delete Component
     if (

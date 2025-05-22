@@ -12,6 +12,44 @@ var component_utils = {
       path: "grid",
     },
   },
+  confirmationModal: {
+    element: $("#confirmation-modal"),
+    open: function (title, message, onConfirm = () => {}, onCancel = () => {}) {
+      const modal = $("#confirmation-modal");
+      modal.find(".modal-title").text(title);
+      modal.find(".modal-body").text(message);
+      modal.find(".confirm-button").off("click").on("click", onConfirm);
+      modal
+        .find(".close-button")
+        .off("click")
+        .on("click", function (event) {
+          event.stopPropagation();
+          onCancel();
+          component_utils.confirmationModal.close();
+        });
+      modal.modal("show");
+    },
+    close: function () {
+      const modal = $("#confirmation-modal");
+      modal.find(".modal-title").text("");
+      modal.find(".modal-body").text("");
+      modal.find(".confirm-button").off("click");
+      modal.find(".close-button").off("click");
+      modal.find(".confirm-button").attr("disabled", false);
+      modal.find(".close-button").attr("disabled", false);
+      modal.modal("hide");
+    },
+    disableButtons: function () {
+      const modal = $("#confirmation-modal");
+      modal.find(".confirm-button").attr("disabled", true);
+      modal.find(".close-button").attr("disabled", true);
+    },
+    enableButtons: function () {
+      const modal = $("#confirmation-modal");
+      modal.find(".confirm-button").attr("disabled", false);
+      modal.find(".close-button").attr("disabled", false);
+    },
+  },
   removeComponentDiagram: function (component) {
     if (component && component.diagram) {
       component.diagram.lines?.forEach((route) => {

@@ -47,20 +47,24 @@
       <div class="component-superior">
         <div class="component-route component-in"></div>
       </div>
+      <div class="diagram-node-buttons dnb" style="display: none">
+        <i class="node-move bi bi-arrows-move node-handle dnb"></i>
+        <button class="node-remove btn btn-sm btn-danger dnb">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
       <div class="component-content">
         <div class="component-icon"></div>
       </div>
     </div>
     <div class="component-label">
-      
-        <i class="bi bi-arrows-move node-handle"></i>
-       <span class="options"></span>
+      <span class="options"></span>
       <button
         class="btn btn-sm arrow-path p-0"
         type="button"
         aria-expanded="false"
       >
-        <i class="bi bi-arrow-return-right "></i>
+        <i class="bi bi-arrow-return-right"></i>
       </button>
     </div>
     <div style="height: 0px">
@@ -155,6 +159,8 @@
     <p class="text-muted">
       Set an order to the different routes of the component.
       <br />
+    </p>
+
     <div class="list-group routes"></div>
     <div class="component-route-edition"></div>
   </div>
@@ -188,10 +194,7 @@
 <template id="component-loop-template">
   <div class="loop-border mt-5">
     <div class="d-flex">
-      <div
-        class="loop-flow"
-        style="align-content: center"
-      >
+      <div class="loop-flow" style="align-content: center">
         <div style="height: 0em">
           <div class="component-route component-out entry-point">
             <i class="bi bi-plus" style="opacity: 0"></i>

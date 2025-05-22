@@ -1,0 +1,305 @@
+<div
+  class="modal fade"
+  id="confirmation-modal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="confirmation-modal-label"
+  aria-hidden="true"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmation-modal-title"></h5>
+        <button
+          type="button"
+          class="btn btn-ghost"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary close-button">
+          Close
+        </button>
+        <button type="button" class="btn btn-primary confirm-button">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  inputs_data = {
+    editor: null,
+    selectedInput: {
+      isNew: true,
+      data: null,
+      originalData: null,
+    },
+    inputTypes: [
+      {
+        type: "string",
+        name: "String",
+        description: "A string value",
+      },
+      {
+        type: "number",
+        name: "Number",
+        description: "A numerical value",
+      },
+      {
+        type: "boolean",
+        name: "Boolean",
+        description: "A boolean value",
+      },
+      {
+        type: "date",
+        name: "Date",
+        description: "A date value",
+      },
+      {
+        type: "datetime",
+        name: "Datetime",
+        description: "A datetime value",
+      },
+      {
+        type: "array",
+        name: "Array",
+        description: "An array of values",
+      },
+      {
+        type: "object",
+        name: "Object",
+        description: "A JSON object",
+      },
+    ],
+    fillUpForm: function (input) {
+      const dataType = input.data_type ?? "string";
+      $("#field_label").val(input.label);
+      $("#key-span").text(input.key);
+      $("#field_description").val(input.description);
+      $("#field_data_type").val(input.data_type);
+      // $("#field_default_value").val(input.default_value?.value ?? "");
+      inputs_data.renderDefaultValue(
+        $(".data_type_container"),
+        dataType,
+        input.default_value?.value
+      );
+      $("#field_required").prop("checked", input.required);
+    },
+    renderEditor: function (dataType, value) {
+      const _ = inputs_data;
+      const dataContainer = $(".data_type_container");
+      const element = dataContainer.find("textarea")[0];
+      if (!element) {
+        return;
+      }
+      _.editor = CodeMirror.fromTextArea(element, {
+        doc: "Start document",
+        value: "",
+        mode: { name: "python", version: 3, singleLineStringErrors: false },
+        theme: "default",
+        lineNumbers: true,
+        indentUnit: 4,
+        styleActiveLine: true,
+        matchBrackets: true,
+        autoCloseBrackets: true,
+        lineWrapping: true,
+        lint: true,
+      });
+      _.editor.setValue(value ? value : dataType === "array" ? "[]" : "{}");
+    },
+    emptyForm: function () {
+      const _ = inputs_data;
+      const dataType = "string";
+      $("#field_label").val("");
+      $("#key-span").text("");
+      $("#field_description").val("");
+      $("#field_data_type").val(dataType);
+      if (_.editor) {
+        _.editor.toTextArea();
+        _.editor = null;
+      }
+      _.renderDefaultValue($(".data_type_container"), dataType);
+      $("#field_required").prop("checked", false);
+    },
+    renderDefaultValue: function (container, data_type, value) {
+      // types : string, boolean, number, object, array, date, datetime
+      const _ = inputs_data;
+      const current = container.find("#field_default_value");
+      const dataContainer = $(".data_type_container");
+      if (current.length === 0 || current.data("datatype") !== data_type) {
+        if (_.editor) {
+          _.editor.toTextArea();
+          _.editor = null;
+        }
+        current.remove();
+        const types = {
+          string: `<input type="text" class="form-control" id="field_default_value" data-datatype="${data_type}" value="${
+            value ?? ""
+          }">`,
+          boolean: `<select class="form-select" id="field_default_value" data-datatype="${data_type}">
+            <option value="true">True</option>
+            <option value="false">False</option>
+          </select>`,
+          number: `<input type="number" class="form-control" id="field_default_value" data-datatype="${data_type}" value="${
+            value ?? ""
+          }">`,
+          object: `<textarea class="form-control" id="field_default_value" data-datatype="${data_type}" rows="3">${
+            value ?? ""
+          }</textarea>`,
+          array: `<textarea class="form-control" id="field_default_value" data-datatype="${data_type}" rows="3">${
+            value ?? ""
+          }</textarea>`,
+          date: `<input type="date" class="form-control" id="field_default_value" data-datatype="${data_type}" value="${
+            value ?? ""
+          }">`,
+          datetime: `<input type="datetime-local" class="form-control" id="field_default_value" data-datatype="${data_type}" value="${
+            value ?? ""
+          }">`,
+        };
+        const descriptions = {
+          array: "Enter a python array to use as the default value.",
+          object: "Enter a python dict object to use as the default value.",
+        };
+        container.empty();
+        container.append(types[data_type]);
+        if (descriptions[data_type]) {
+          container.append(
+            `<div class="form-text">${descriptions[data_type]}</div>`
+          );
+        }
+      }
+
+      if (data_type === "boolean") {
+        container
+          .find("#field_default_value")
+          .val(value === "true" ? "true" : "false");
+      } else {
+        container.find("#field_default_value").val(value);
+      }
+    },
+    validate: function (data) {
+      const { label, key, description, data_type, default_value, required } =
+        data;
+      if (!label) {
+        alert("Label is required");
+        return false;
+      }
+      if (!key) {
+        alert("Key is required");
+        return false;
+      }
+
+      if (!default_value?.value && required) {
+        console.log("Validate default value");
+      }
+
+      return true;
+    },
+  };
+  $(() => {
+    const _ = workflow_inputs;
+    const data = _.selectedInput;
+    $("#confirmation-modal").on("show.bs.modal", function (e) {
+      const _ = workflow_inputs;
+      const data = _.selectedInput;
+      inputs_data.selectedInput.isNew = !data;
+      inputs_data.selectedInput.data = data;
+
+      inputs_data.originalData = Object.assign({}, data);
+      $(".modal-title").text(
+        inputs_data.selectedInput.isNew
+          ? "New input"
+          : "Edit input: " + data.label
+      );
+
+      if (inputs_data.selectedInput.isNew) {
+        inputs_data.emptyForm();
+      } else {
+        inputs_data.fillUpForm(data);
+      }
+      const handleNameChange = function () {
+        const label = $(this).val() ?? "";
+        const key = utils.generate_key_value(label);
+        $("#key-span").text(key);
+      };
+
+      $("#field_label").on("keyup", handleNameChange);
+      if (data?.parent_component) {
+        $("#field_label").off("keyup", handleNameChange);
+      }
+    });
+    $("#confirmation-modal").on("shown.bs.modal", function (e) {
+      $("#field_label").trigger("focus");
+    });
+
+    $("#confirmation-modal").on("hidden.bs.modal", function (e) {
+      inputs_data.emptyForm();
+    });
+
+    $("#confirmation-modal .save-button").on("click", function () {
+      const data = {
+        label: $("#field_label").val(),
+        key: $("#key-span").text(),
+        description: $("#field_description").val(),
+        data_type: $("#field_data_type").val(),
+        default_value: {
+          value: $("#field_default_value").val(),
+        },
+        required: $("#field_required").prop("checked"),
+      };
+
+      if (!inputs_data.validate(data)) {
+        return;
+      }
+
+      const { addInput, updateInput } = workflow_inputs.api;
+      const { isNew } = inputs_data.selectedInput;
+
+      if (isNew) {
+        addInput(
+          data,
+          (data) => {
+            console.log(data);
+            workflow_inputs.var.inputs.push(data);
+            workflow_inputs.appendInput(data);
+          },
+          (err) => {
+            console.log(err);
+          }
+        );
+      } else {
+        updateInput(
+          { ...data, id: inputs_data.selectedInput.data.id },
+          (data) => {
+            console.log(data);
+            const index = workflow_inputs.var.inputs.findIndex(
+              (a) => a.id === data.id
+            );
+            workflow_inputs.var.inputs[index] = data;
+            workflow_inputs.updateInput(data);
+          },
+          (err) => {
+            console.log(err);
+          }
+        );
+      }
+      $("#confirmation-modal").modal("hide");
+    });
+    $("#field_data_type").on("change", function () {
+      const dataType = $(this).val();
+      inputs_data.renderDefaultValue($(".data_type_container"), dataType);
+      inputs_data.renderEditor(dataType, inputs_data.selectedInput.data?.value);
+    });
+    $("#confirmation-modal .close-button").on("click", function () {
+      $("#confirmation-modal").modal("hide");
+    });
+  });
+</script>
