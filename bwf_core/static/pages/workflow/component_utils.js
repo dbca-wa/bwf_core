@@ -216,7 +216,7 @@ var component_utils = {
     }
   },
   shouldBeDraggable: function (component) {
-    return !!!component.parent_info?.parent_id;
+    return workflow_components.isEdition && !!!component.parent_info?.parent_id;
   },
   shouldHaveRoutingFunction: function (component) {
     return !!!component.parent_info?.parent_id;

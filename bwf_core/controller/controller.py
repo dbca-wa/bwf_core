@@ -115,6 +115,7 @@ class BWFPluginController:
 
             base_inputs  = plugin_definition.get('base_input')
             base_outputs = plugin_definition.get('base_output')
+            workflow_inputs = plugin_definition.get('workflow_inputs')
 
             return {
                 'id': plugin_definition.get('id'),
@@ -125,6 +126,7 @@ class BWFPluginController:
                 'node_type': plugin_definition.get('node_type', 'node'),
                 'base_input': base_inputs,
                 'base_output': base_outputs,
+                'workflow_inputs': workflow_inputs,
             }                
         return None
 

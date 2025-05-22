@@ -16,7 +16,6 @@
       <div style="display: inline-flex">
         <h4 class="card-title">
           {{workflow.name}}
-          <i class="bi bi-link"></i>
         </h4>
         <span class="text-secondary ms-2">
           | Version number: {{active_version.version_number}}</span
@@ -26,29 +25,6 @@
           <div><span class="badge bg-success">Active</span></div>
           {% endif %}
           <br />
-        </div>
-      </div>
-      <div>
-        <div class="btn-group">
-          <button
-            type="button"
-            class="btn btn-outline-primary dropdown-toggle btn-sm"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
-          >
-            Actions
-          </button>
-          <ul class="dropdown-menu">
-            <li id="btn-create-version" class="dropdown-item">
-              Create editable version
-            </li>
-            <li class="dropdown-item" id="btn-view-definition">
-              <i class="bi bi-filetype-json"></i>
-              View definition document
-            </li>
-            <!-- <li><hr class="dropdown-divider"></li>
-              <li class="btn ">Remove</li> -->
-          </ul>
         </div>
       </div>
     </div>

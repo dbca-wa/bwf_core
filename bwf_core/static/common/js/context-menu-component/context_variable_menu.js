@@ -101,7 +101,7 @@ class ContextVariableMenu {
       title: "",
       content: popoverContent,
       placement: "bottom",
-      container: "#component-side-panel > section",
+      container: "#component-side-panel > .offcanvas-body",
       customClass: "popover-value-selector",
     };
     _.popover = new bootstrap.Popover(popoverButton, popoverOptions);

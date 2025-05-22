@@ -151,7 +151,7 @@ var workflow_components = {
     }
   },
   makeComponentDraggable: function (component) {
-    if (!component) {
+    if (!component || !component_utils.shouldBeDraggable(component)) {
       return;
     }
     $(`#node_${component.id}.diagram-node-parent`).draggable({
@@ -397,7 +397,7 @@ var workflow_components = {
         const component = component_utils.findComponentInTree(id, config);
         if (component) console.log(component);
       });
-    if (component_utils.shouldBeDraggable(component)) {
+    if (component_utils.shouldHaveRoutingFunction(component)) {
       $(`#${elementId}`)
         .find(".component-label .arrow-path")
         ?.on("click", component, function (event) {
@@ -850,9 +850,8 @@ var workflow_components = {
     const { isEdition } = _;
     _.sidePanel.open();
 
-    const body = _.sidePanel.find("section");
-    const header = _.sidePanel.find("header");
-    const footer = _.sidePanel.find("footer");
+    const body = _.sidePanel.find(".offcanvas-body");
+    const header = _.sidePanel.find(".offcanvas-header .offcanvas-title");
     header.html("Component edition");
     body.empty();
 

@@ -61,6 +61,7 @@ class WorkflowInputSerializer(serializers.Serializer):
     data_type = serializers.CharField(max_length=255)
     default_value = serializers.JSONField(required=False)
     required = serializers.BooleanField(default=False)
+    parent_component = serializers.CharField(max_length=100, required=False, allow_blank=True)
 
 
 class CreateVariableValueSerializer(serializers.Serializer):

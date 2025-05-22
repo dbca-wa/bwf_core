@@ -39,8 +39,8 @@ var workflow_toolbox = {
     wf.sidePanel.open();
     const { isNewLine } = wf.newLine;
 
-    const body = wf.sidePanel.find("section");
-    const header = wf.sidePanel.find("header");
+    const body = wf.sidePanel.find(".offcanvas-body");
+    const header = wf.sidePanel.find(".offcanvas-header .offcanvas-title");
     header.html(isNewLine ? "New route" : "Routing edition");
     body.empty();
     workflow_toolbox.setupRoutingEditionContainer(
@@ -171,6 +171,10 @@ var workflow_toolbox = {
       });
     } else {
       body.find(".delete-btn").hide();
+    }
+    
+    if(!wf.isEdition) {
+      $(body).find(`.routing-buttons`).remove();
     }
 
     $(`#routing-form`).find(".routing-label").val(label);

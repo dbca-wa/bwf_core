@@ -473,7 +473,7 @@ class ValueSelector {
       .replace(/\/$/, "");
     if (!_.select2) {
       _.select2 = $(inputElement).select2({
-        dropdownParent: $("#component-side-panel > section"),
+        dropdownParent: $("#component-side-panel > .offcanvas-body"),
         ajax: {
           url: ajax_url,
           dataType: "json",
@@ -669,7 +669,7 @@ class ValueSelector {
       content: popoverContent,
       offset: [0, -2],
       placement: "bottom",
-      container: "#component-side-panel > section",
+      container: "#component-side-panel > .offcanvas-body",
       customClass: "popover-value-selector",
     };
 

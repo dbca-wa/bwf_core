@@ -2,7 +2,9 @@ from bwf_core.controller.controller import BWFPluginController
 
 import logging
 import uuid
-from .utils import process_base_input_definition, get_incoming_values, adjust_workflow_routing
+from bwf_core.components.utils import process_base_input_definition, get_incoming_values, adjust_workflow_routing
+from bwf_core.workflow.tasks import add_workflow_input_field
+
 
 logger = logging.getLogger(__name__)
 
@@ -118,9 +120,11 @@ def create_component_definition_instance(plugin_id, name, route=None, version_nu
     definition: BWFPluginController = BWFPluginController.get_plugin_definition(plugin_id)
     if not definition:
         raise Exception(f"Plugin {plugin_id} not found")
-      
+    
+    component_id = str(uuid.uuid4())
     base_input = definition.get("base_input", [])
     base_output = definition.get("base_output", [])
+    workflow_inputs = definition.get("workflow_inputs", [])
     ui = definition.get("ui", {})
     inputs = []
     outputs = []
@@ -140,9 +144,9 @@ def create_component_definition_instance(plugin_id, name, route=None, version_nu
                 'data': output_item.get("data", {}),
             })                
             output_index += 1
-
+    # predefined required inputs for the workflow
     instance = {
-        "id": str(uuid.uuid4()),
+        "id": component_id,
         "name": name,  
         "plugin_id": plugin_id,
         "version_number": version_number,
@@ -170,6 +174,30 @@ def create_component_definition_instance(plugin_id, name, route=None, version_nu
 
     return instance
 
+
+def add_predefined_workflow_inputs(workflow_definition, plugin_id, component_id=None):
+    definition: BWFPluginController = BWFPluginController.get_plugin_definition(plugin_id)
+    if not definition:
+        raise Exception(f"Plugin {plugin_id} not found")
+    
+    workflow_inputs = definition.get("workflow_inputs", [])
+    new_inputs = []
+    if workflow_inputs:
+        for input_item in workflow_inputs:
+            new_input = add_workflow_input_field(
+                workflow_definition,
+                key=input_item.get("key"),
+                input_field={
+                    "label": input_item.get("label"),
+                    "description": input_item.get("description", ""),
+                    "data_type": input_item.get("data_type"),
+                    "default_value": input_item.get("default_value"),
+                    "required": input_item.get("required", False),
+                },
+                parent_component=component_id,
+            )
+            new_inputs.append(new_input)
+    return new_inputs
 
 def insert_node_to_workflow(workflow_definition, node, data={}):
     workflow_components = workflow_definition.get('workflow', {})
@@ -307,35 +335,43 @@ def list_workflow_nodes(workflow_components, parent_info={}):
     return components_list
 
 def apply_workflow_entry_removal(workflow_components, is_input, input_key, input_id):
-    context = "inputs" if is_input else "variables"
-    text = "input" if is_input else "variable"
-    name_field = "name"
     errors = []
     for key, component in workflow_components.items():
         inputs = component.get("config", {}).get("inputs", [])
-        
-        for input_item in inputs:
-            value = input_item.get("value", None)
-            if value == "" or not value:
-                continue
-            if value.get("value_ref", None) is not None:
-                if value.get("value_ref", {}).get("key", None) == input_key and value.get("value_ref", {}).get("context", None) == context:
-                    input_item["value"] = ""
-                    continue
-            elif value.get("is_expression", False):
-                expression = value.get("expression", "")
-                alternatives = [f"{context}['{input_key}']", f"{context}[\"{input_key}\"]"]
-                for alternative in alternatives:
-                    if alternative in expression:
-                        errors.append({
-                            "component_id": component.get("id"),
-                            "error": f"Field {input_item.get(name_field)} references the {text} [{input_key}] inside {component.get('name')}.",
-                        })
-                        break
+        errors += evaluate_inputs_for_removal(component, inputs, is_input, input_key, input_id)
 
         node_type = component.get("node_type", "node")
         if node_type in ['branch','switch', 'loop']:
             flows = component['config'][node_type].keys()
             for flow in flows:
                 errors += apply_workflow_entry_removal(component['config'][node_type][flow], is_input, input_key, input_id)
+    return errors
+
+def evaluate_inputs_for_removal(component, inputs, is_input, input_key, input_id):
+    errors = []
+    context = "inputs" if is_input else "variables"
+    text = "input" if is_input else "variable"
+    name_field = "name"
+    for input_item in inputs:
+        value = input_item.get("value", None)
+        json_value = input_item.get("json_value", {})
+        if json_value.get("multi", False):
+            errors += evaluate_inputs_for_removal(component, value, is_input, input_key, input_id)
+            continue
+        if value == "" or not value:
+            continue
+        if value.get("value_ref", None) is not None:
+            if value.get("value_ref", {}).get("key", None) == input_key and value.get("value_ref", {}).get("context", None) == context:
+                input_item["value"] = ""
+                continue
+        elif value.get("is_expression", False):
+            expression = value.get("expression", "")
+            alternatives = [f"{context}['{input_key}']", f"{context}[\"{input_key}\"]"]
+            for alternative in alternatives:
+                if alternative in expression:
+                    errors.append({
+                        "component_id": component.get("id"),
+                        "error": f"Field {input_item.get(name_field)} references the {text} [{input_key}] inside {component.get('name')}.",
+                    })
+                    break
     return errors

@@ -12,6 +12,7 @@ from bwf_core.models import  WorkflowVersion
 from bwf_core.controller.controller import BWFPluginController
 from . import serializers
 from .tasks import (create_component_definition_instance,
+                    add_predefined_workflow_inputs,
                     update_mapping_from_deleted_component,
                     insert_node_to_workflow,
                     to_ui_workflow_node,
@@ -68,7 +69,8 @@ class WorkflowComponentViewset(ViewSet):
         version_number = serializer.validated_data.get("version_number", "1")
         is_entry = serializer.validated_data.get("is_entry", False)
         instance = create_component_definition_instance(plugin_id, name, route, version_number)
-
+        new_inputs = add_predefined_workflow_inputs(workflow_definition, plugin_id=plugin_id, component_id=instance['id'])
+        
         parent_id = serializer.validated_data.get("parent_id", None)
         node_path = serializer.validated_data.get("path", None)
         insert_before = serializer.validated_data.get("insert_before", None)
@@ -88,7 +90,7 @@ class WorkflowComponentViewset(ViewSet):
                 'node_path': node_path,
             }
         instance = to_ui_workflow_node(instance, parent_info=parent_info)
-        
+        instance.update({'refresh_inputs': len(new_inputs) > 0})
         return Response(component_serializers.WorkflowComponentSerializer(instance).data)
 
     @action(detail=True, methods=['PUT'])

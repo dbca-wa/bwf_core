@@ -15,6 +15,8 @@ class WorkflowComponentSerializer(serializers.Serializer):
     parent_info = serializers.JSONField(default={})
     node_type = serializers.CharField(default="node")
     routing = serializers.JSONField(default=[])
+
+    refresh_inputs = serializers.BooleanField(default=False)
     # children = serializers.JSONField()
 
 class CreateComponentSerializer(serializers.Serializer):

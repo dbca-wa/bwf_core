@@ -5,14 +5,14 @@
       <div class="d-flex justify-content-between">
         <div>
           <div style="display: inline-flex;">
-            <a href="{% url 'workflow' workflow.id %}">
+            <a class="edition-only" href="{% url 'workflow' workflow.id %}">
               <h4 class="card-title">
                 {{workflow.name}}
                 <i class="bi bi-link"></i>
               </h4>
             </a>
-            <span class="text-secondary ms-2"> | Version number: {{version.version_number}}</span>
-            <div class="d-flex ms-3">
+            <span class="edition-only text-secondary ms-2"> | Version number: {{version.version_number}}</span>
+            <div class="edition-only d-flex ms-3">
               {% if version.is_active %}
               <div><span class="badge bg-success">Active</span></div>
               {% endif %}
@@ -92,7 +92,7 @@
   </div>
   <div class="offcanvas-body">
     <div>
-      Some text as placeholder. In real life you can have the elements you have chosen. Like, text, images, lists, etc.
+      Add variables to the workflow. Variables are used to store data that can be used by any node across in the workflow.
     </div>
     <div id="variables-container"
         class="row gap-1 py-md-2 align-items-center justify-content-center width-md-30"
@@ -116,7 +116,8 @@
   </div>
   <div class="offcanvas-body">
     <div>
-      Some text as placeholder. In real life you can have the elements you have chosen. Like, text, images, lists, etc.
+      Add and configure the input values for the workflow. 
+      This initial values are used to pass data to the workflow when it is executed.
     </div>
     
     <div id="inputs-node" class="row gap-4 py-md-2 align-items-center justify-content-center">
@@ -135,9 +136,12 @@
     </div>
   </div>
 </div>
-<div id="component-side-panel">
-  <header></header>
-  <section></section>
+<div class="offcanvas offcanvas-xl offcanvas-end" tabindex="-1" id="component-side-panel" aria-labelledby="component-side-panelLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="component-side-panelLabel">Offcanvas right</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body"></div>
   <footer>
     <!-- Modals -->
     {% include 'modals/inputs_modal.html' %} 
@@ -179,16 +183,29 @@
       version_id,
       is_edition: isEditable === "True" && is_edition,
       is_diagram: true,
-      sidePanel: $("#component-side-panel").SlideOutPanel({
-        width: "760px",
-        afterClosed: function () {
-          workflow_toolbox.cancelNewLine();
+      // sidePanel: $("#component-side-panel").SlideOutPanel({
+      //   width: "760px",
+      //   afterClosed: function () {
+      //     workflow_toolbox.cancelNewLine();
+      //   },
+      // }),
+      sidePanel: {
+        panel: new bootstrap.Offcanvas($("#component-side-panel")),
+        open: function () {
+          this.panel.show();
         },
-      }),
+        close: function () {
+          this.panel.hide();
+        },
+
+        find: function (selector) {
+          return $(this.panel._element).find(selector);
+        },
+      }
     };
 
     if (!is_edition) {
-      $(".workflow-info-card").remove();
+      $(".edition-only").remove();
     }
     workflow_inputs.init(options, "inputs-node");
     workflow_variables.init(options, "variables-container");

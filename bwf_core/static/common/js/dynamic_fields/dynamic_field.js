@@ -527,7 +527,7 @@ class DynamicField {
       content: popoverContent,
       offset: [0, -2],
       placement: "bottom",
-      container: "#component-side-panel > section",
+      container: "#component-side-panel > .offcanvas-body",
       customClass: "popover-value-selector",
     };
 
