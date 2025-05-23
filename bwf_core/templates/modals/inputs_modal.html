@@ -265,7 +265,7 @@
       inputs_data.selectedInput.data = data;
 
       inputs_data.originalData = Object.assign({}, data);
-      $(".modal-title").text(
+      $("#inputs-modal .modal-title").text(
         inputs_data.selectedInput.isNew
           ? "New input"
           : "Edit input: " + data.label
