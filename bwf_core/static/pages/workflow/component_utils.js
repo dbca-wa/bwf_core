@@ -16,8 +16,8 @@ var component_utils = {
     element: $("#confirmation-modal"),
     open: function (title, message, onConfirm = () => {}, onCancel = () => {}) {
       const modal = $("#confirmation-modal");
-      modal.find(".modal-title").text(title);
-      modal.find(".modal-body").text(message);
+      modal.find(".modal-title").html(title);
+      modal.find(".modal-body").html(message);
       modal.find(".confirm-button").off("click").on("click", onConfirm);
       modal
         .find(".close-button")
@@ -27,6 +27,9 @@ var component_utils = {
           onCancel();
           component_utils.confirmationModal.close();
         });
+      modal.off("hide.bs.modal").on("hide.bs.modal", function () {
+          onCancel();
+      });
       modal.modal("show");
     },
     close: function () {

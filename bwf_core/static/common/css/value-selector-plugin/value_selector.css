@@ -36,7 +36,9 @@ Definitions
 }
 /* background: #000f2b;
 border: 2px solid #0d6efd; */
-
+#components-flow {
+  min-height: 500px;
+}
 #flow-start-node {
   height: 2em;
   width: 7em;
