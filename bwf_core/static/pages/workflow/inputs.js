@@ -32,22 +32,7 @@ var workflow_inputs = {
     _.container = $(`#${containerId} #inputs`);
     _.add_input_btn = $(`#${containerId} button.add-input`);
     // Add + Buttton
-    const _params = {
-      workflow_id: _.workflow_id,
-      version_id: _.version_id,
-    };
-    const queryParams = utils.make_query_params(_params);
-    $.ajax({
-      url: _.var.base_url + "?" + queryParams,
-      type: "GET",
-      success: function (data) {
-        _.var.inputs = data;
-        _.renderInputs();
-      },
-      error: function (error) {
-        console.error(error);
-      },
-    });
+    _.api.refreshInputs();
 
     if (_.is_edition) {
       _.add_input_btn.on("click", function () {
@@ -61,6 +46,7 @@ var workflow_inputs = {
   },
   renderInputs: function () {
     const _ = workflow_inputs;
+    _.container.empty();
     const inputs = _.var.inputs;
     for (let i = 0; i < inputs.length; i++) {
       const input = inputs[i];
@@ -100,21 +86,24 @@ var workflow_inputs = {
       $(`#${elementId} button.add-input`).remove();
       $(`#${elementId} button.remove-input`).remove();
     }
+    if (input.parent_component) {
+      $(`#${elementId} button.remove-input`).remove();
+    }
+
 
     $(`#${elementId}`)
       .find(`button.add-input`)
       ?.on("click", function () {
         const _ = workflow_inputs;
-        _.selectedInput = input;
+        _.selectedInput = _.var.inputs.find((i) => i.id == input.id);
         $("#inputs-modal").modal("show");
       });
     $(`#${elementId}`)
       .find(`button.remove-input`)
       ?.on("click", function () {
-        $(`#${elementId}`)
-      .find(`button.remove-input`).prop("disabled", true);
+        $(`#${elementId}`).find(`button.remove-input`).prop("disabled", true);
         const _ = workflow_inputs;
-        _.selectedInput = input;
+        _.selectedInput = _.var.inputs.find((i) => i.id == input.id);
         workflow_inputs.api.deleteInput(
           input,
           function (data) {
@@ -122,21 +111,19 @@ var workflow_inputs = {
             $(`#${elementId}`).remove();
             _.var.inputs = _.var.inputs.filter((i) => i.id != input.id);
             const errors = data.errors || [];
-            component_utils.markupErrors(errors)
+            component_utils.markupErrors(errors);
           },
           function (error) {
             $(`#${elementId} button.remove-input`).prop("disabled", false);
             console.error(error);
-            alert(
-              "Error deleting input. Please try again later."
-            );
+            alert("Error deleting input. Please try again later.");
           }
         );
       });
   },
   updateInput: function (input) {
-    const element =  $(`#input_${input.id}`)
-    
+    const element = $(`#input_${input.id}`);
+
     element.find(`.input-label`).text(input.label);
     element.find(`.input-key`).text(input.key);
     element.find(`.input-type`).text(input.data_type);
@@ -188,6 +175,25 @@ var workflow_inputs = {
         contentType: "application/json",
         success: success_callback,
         error: error_callback,
+      });
+    },
+    refreshInputs: function () {
+      const _ = workflow_inputs;
+      const _params = {
+        workflow_id: _.workflow_id,
+        version_id: _.version_id,
+      };
+      const queryParams = utils.make_query_params(_params);
+      $.ajax({
+        url: _.var.base_url + "?" + queryParams,
+        type: "GET",
+        success: function (data) {
+          _.var.inputs = data;
+          _.renderInputs();
+        },
+        error: function (error) {
+          console.error(error);
+        },
       });
     },
   },

@@ -101,7 +101,7 @@ class ContextVariableMenu {
       title: "",
       content: popoverContent,
       placement: "bottom",
-      container: "#component-side-panel > section",
+      container: "#component-side-panel > .offcanvas-body",
       customClass: "popover-value-selector",
     };
     _.popover = new bootstrap.Popover(popoverButton, popoverOptions);
@@ -275,8 +275,8 @@ class ContextVariableMenu {
     container.find(".values-list .add-input").on("click", _, function (event) {
       const _ = event.data;
       if (!_.isEdition) return;
-      $("#inputs-modal").modal("show");
       _.initials.onCancel();
+      $("#inputs-modal").modal("show");
     });
     container
       .find(".values-list .add-variable")

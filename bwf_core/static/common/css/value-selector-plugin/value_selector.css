@@ -2,7 +2,9 @@
 Definitions
 */
 #component-creation-modal label.list-group-item:hover {
-  border: 3px solid #0d6efd;
+  border: 1px solid #0d6efd;
+  background: #f1f3ff;
+  color: #000024;
 }
 
 /*  */
@@ -34,7 +36,9 @@ Definitions
 }
 /* background: #000f2b;
 border: 2px solid #0d6efd; */
-
+#components-flow {
+  min-height: 500px;
+}
 #flow-start-node {
   height: 2em;
   width: 7em;
@@ -69,14 +73,14 @@ border: 2px solid #0d6efd; */
   position: relative;
 }
 .diagram-node-parent > .diagram-node {
-  width: 6em;
-  height: 6em;
+  width: 4.5em;
+  height: 4.5em;
   max-width: 330px;
   padding: 0px;
   margin-bottom: 0px;
-  border-radius: 3em;
+  border-radius: 10px;
   text-align: center;
-  border: 5px solid #1d91e82e;
+  border: 2px solid #1d91e82e;
   cursor: pointer;
   display: flex;
   justify-content: center;
@@ -106,7 +110,7 @@ border: 2px solid #0d6efd; */
 }
 
 .diagram-node-parent .diagram-node .component-icon {
-  font-size: 3em;
+  font-size: 2em;
   color: #3971c4;
   align-self: center;
   margin-right: 0px;
@@ -141,6 +145,27 @@ border: 2px solid #0d6efd; */
 .diagram-node-parent .component-label:hover {
   border-width: 2px;
 }
+.diagram-node-buttons {
+}
+
+.diagram-node-buttons .node-move,
+.diagram-node-buttons .node-remove,
+.diagram-node-buttons .node-line {
+  position: absolute;
+  top: -10px;
+  width: 20px;
+  padding: 0px;
+  height: 20px;
+}
+
+.diagram-node-buttons .node-move {
+  margin-left: -42px;
+  color: #6181d1;
+}
+.diagram-node-buttons .node-remove {
+  margin-left: 55px;
+}
+
 .arrow-path:hover {
   color: #ff6700 !important;
 }
@@ -412,7 +437,9 @@ border: 2px solid #0d6efd; */
 #panel-plugin-info * {
   margin-bottom: 0px;
 }
-
+#component-side-panel {
+  width: 760px;
+}
 #component-side-panel .value-selector-content,
 #component-side-panel .value-selector {
   height: 35px;

@@ -16,7 +16,6 @@ var workflow_toolbox = {
   cancelNewLine: function () {
     const wf = workflow_components;
     wf.mode = "default";
-    wf.newLine.isNewLine = false;
     wf.newLine.originElement?.removeClass("selected");
     wf.newLine.destinationElement?.removeClass("selected");
     if (wf.newLine.isNewLine) {
@@ -28,6 +27,7 @@ var workflow_toolbox = {
         size: 1,
       });
     }
+    wf.newLine.isNewLine = false;
     Object.keys(wf.newLine).forEach((key) => {
       wf.newLine[key] = null;
     });
@@ -39,8 +39,8 @@ var workflow_toolbox = {
     wf.sidePanel.open();
     const { isNewLine } = wf.newLine;
 
-    const body = wf.sidePanel.find("section");
-    const header = wf.sidePanel.find("header");
+    const body = wf.sidePanel.find(".offcanvas-body");
+    const header = wf.sidePanel.find(".offcanvas-header .offcanvas-title");
     header.html(isNewLine ? "New route" : "Routing edition");
     body.empty();
     workflow_toolbox.setupRoutingEditionContainer(
@@ -171,6 +171,10 @@ var workflow_toolbox = {
       });
     } else {
       body.find(".delete-btn").hide();
+    }
+    
+    if(!wf.isEdition) {
+      $(body).find(`.routing-buttons`).remove();
     }
 
     $(`#routing-form`).find(".routing-label").val(label);

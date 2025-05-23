@@ -187,9 +187,9 @@
       const dataContainer = $(".data_type_container");
       if (current.length === 0 || current.data("datatype") !== data_type) {
         if (_.editor) {
-        _.editor.toTextArea();
-        _.editor = null;
-      }
+          _.editor.toTextArea();
+          _.editor = null;
+        }
         current.remove();
         const types = {
           string: `<input type="text" class="form-control" id="field_default_value" data-datatype="${data_type}" value="${
@@ -256,14 +256,16 @@
     },
   };
   $(() => {
+    const _ = workflow_inputs;
+    const data = _.selectedInput;
     $("#inputs-modal").on("show.bs.modal", function (e) {
       const _ = workflow_inputs;
       const data = _.selectedInput;
       inputs_data.selectedInput.isNew = !data;
       inputs_data.selectedInput.data = data;
-      console.log(data);
+
       inputs_data.originalData = Object.assign({}, data);
-      $(".modal-title").text(
+      $("#inputs-modal .modal-title").text(
         inputs_data.selectedInput.isNew
           ? "New input"
           : "Edit input: " + data.label
@@ -274,20 +276,25 @@
       } else {
         inputs_data.fillUpForm(data);
       }
+      const handleNameChange = function () {
+        const label = $(this).val() ?? "";
+        const key = utils.generate_key_value(label);
+        $("#key-span").text(key);
+      };
+
+      $("#field_label").on("keyup", handleNameChange);
+      if (data?.parent_component) {
+        $("#field_label").off("keyup", handleNameChange);
+      }
     });
-    $("#inputs-modal").on("show.bs.modal", function (e) {
-      $("#field_label").focus();
+    $("#inputs-modal").on("shown.bs.modal", function (e) {
+      $("#field_label").trigger("focus");
     });
 
     $("#inputs-modal").on("hidden.bs.modal", function (e) {
       inputs_data.emptyForm();
     });
 
-    $("#field_label").on("keyup", function () {
-      const label = $(this).val() ?? "";
-      const key = utils.generate_key_value(label);
-      $("#key-span").text(key);
-    });
     $("#inputs-modal .save-button").on("click", function () {
       const data = {
         label: $("#field_label").val(),

@@ -297,8 +297,11 @@ var utils = {
     }
     const contextValue =  context.map((c, index) => {
       if (index === 0) return c;
-      return `.get('${c}')`;
+      return utils.replace_context_key(c);
     }).join('')
     return contextValue;    
+  },
+  replace_context_key: function (key) {
+   return `.${key}`; 
   }
 };

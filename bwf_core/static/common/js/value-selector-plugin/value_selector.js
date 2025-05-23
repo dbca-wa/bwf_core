@@ -473,7 +473,7 @@ class ValueSelector {
       .replace(/\/$/, "");
     if (!_.select2) {
       _.select2 = $(inputElement).select2({
-        dropdownParent: $("#component-side-panel > section"),
+        dropdownParent: $("#component-side-panel > .offcanvas-body"),
         ajax: {
           url: ajax_url,
           dataType: "json",
@@ -591,7 +591,7 @@ class ValueSelector {
         _.editor.setValue(typeof value === "string" ? value : JSON.stringify(value));
       }
       if (!value && value_ref) {
-        _.editor.setValue(`${value_ref.context}.get('${value_ref.key}')`);
+        _.editor.setValue(`{{${value_ref.context}${utils.replace_context_key(value_ref.key)}}}`);
       }
     }
     if (!isEdition) {
@@ -622,7 +622,7 @@ class ValueSelector {
         if (_.initials.showEditor && _.editor) {
           const doc = _.editor.getDoc();
           const cursor = doc.getCursor();
-          doc.replaceRange(`${contextValue}.get('${selectedValue?.key}')`, cursor);
+          doc.replaceRange(`{{${contextValue}${utils.replace_context_key(selectedValue?.key)}}}`, cursor);
         } else {
           _.saveValue({
             value: null,
@@ -669,7 +669,7 @@ class ValueSelector {
       content: popoverContent,
       offset: [0, -2],
       placement: "bottom",
-      container: "#component-side-panel > section",
+      container: "#component-side-panel > .offcanvas-body",
       customClass: "popover-value-selector",
     };
 
@@ -698,7 +698,7 @@ class ValueSelector {
             const doc = _.editor.getDoc();
             const cursor = doc.getCursor();
             doc.replaceRange(
-              `${contextValue}.get('${selectedValue?.key}')`,
+              `{{${contextValue}${utils.replace_context_key(selectedValue?.key)}}}`,
               cursor
             );
           } else {
@@ -748,7 +748,7 @@ class ValueSelector {
       _.editor.setValue(typeof value === "string" ? value : JSON.stringify(value));
     }
     if (!value && value_ref) {
-      _.editor.setValue(`${value_ref.context}.get('${value_ref.key}')`);
+      _.editor.setValue(`{{${value_ref.context}${utils.replace_context_key(value_ref.key)}}}`);
     }
 
     _.editor.setOption("extraKeys", {
@@ -780,11 +780,11 @@ class ValueSelector {
 
           const vars = workflow_variables.var.variables
             .filter((v) => v.key.startsWith(word))
-            .map((v) => `${v.context}.get('${v.key}')`);
+            .map((v) => `{{${v.context}${utils.replace_context_key(v.key)}}}`);
 
           const inputs = workflow_inputs.var.inputs
             .filter((v) => v.key.startsWith(word))
-            .map((v) => `inputs.get('${v.key}')`);
+            .map((v) => `{{inputs${utils.replace_context_key(v.key)}}}`);
           const local = [];
           const incoming = [];
 

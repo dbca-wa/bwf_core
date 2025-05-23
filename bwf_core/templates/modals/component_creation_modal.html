@@ -221,8 +221,14 @@
       _.api
         .addComponent(data)
         .then((data) => {
+          const refreshInputsFlag = !!data.refresh_inputs
+          if (refreshInputsFlag) {
+            workflow_inputs.api.refreshInputs();
+          }
+
           $(".create-component-button").prop("disabled", false);
           $("#component-creation-modal").modal("hide");
+          
         })
         .catch((error) => {
           $(".create-component-button").prop("disabled", false);
