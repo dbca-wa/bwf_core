@@ -114,7 +114,7 @@ class Workflow(models.Model):
 
 class WorkflowVersion(models.Model):
     workflow = models.ForeignKey(to=Workflow, on_delete=models.CASCADE, related_name="versions")
-    version_number = models.CharField(max_length=15)
+    version_number = models.IntegerField(max_length=15)
     version_name = models.CharField(max_length=50)
     applied_on = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=False)
@@ -157,7 +157,7 @@ class WorkflowVersion(models.Model):
         return definition.get('workflow', {})
 
     def __str__(self):
-        return f"{self.workflow} | {self.version_number} | {self.version_name}"
+        return f"{self.workflow} | {str(self.version_number)} | {self.version_name}"
 
 class WorkFlowInstance(models.Model):
     workflow_version = models.ForeignKey(to=WorkflowVersion, on_delete=models.CASCADE, related_name="instances", null=True, blank=True)
