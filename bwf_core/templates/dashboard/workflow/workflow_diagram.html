@@ -2,21 +2,63 @@
   <input type="hidden" id="csrf_token" value="{{ csrf_token }}" />
   <div class="workflow-info-card">
     <div class="card-">
+      {% if not visualization %}
+        <div class="d-flex justify-content-between">
+          <div>
+            <div style="display: inline-flex">
+              <a class="edition-only" href="{% url 'workflow' workflow.id %}">
+                <h4 class="card-title">
+                  {{workflow.name}}
+                  <i class="bi bi-link"></i>
+                </h4>
+              </a>
+              
+            </div>
+          </div>
+        </div>
+      {% endif %}
+
       <div class="d-flex justify-content-between">
+        <div class="align-content-end">
+          <div class="btn-group" role="group" aria-label="toolbox">
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-primary"
+              data-bs-toggle="offcanvas"
+              data-bs-target="#offCanvasInputs"
+              aria-controls="offCanvasInputs"
+              data-bs-toggle="offcanvas"
+            >
+              <i class="bi bi-box-arrow-in-right me-1"></i>Inputs
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-primary"
+              data-bs-toggle="offcanvas"
+              data-bs-target="#offCanvasVariables"
+              aria-controls="offCanvasVariables"
+              data-bs-toggle="offcanvas"
+            >
+              <i class="bi bi-code-square me-1"></i>Variables
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary"
+              data-bs-toggle="modal"
+              data-bs-target="#workflow-info-modal"
+            >
+              <i class="bi bi-info-circle me-1"></i>Workflow Info
+            </button>
+          
+          </div>
+        </div>
         <div>
-          <div style="display: inline-flex">
-            <a class="edition-only" href="{% url 'workflow' workflow.id %}">
-              <h4 class="card-title">
-                {{workflow.name}}
-                <i class="bi bi-link"></i>
-              </h4>
-            </a>
-            <span class="edition-only text-secondary ms-2">
-              | Version number: {{version.version_number}}</span
+          <div class="d-flex mb-2 justify-content-between">
+            <span class="edition-only text-secondary">Version number: {{version.version_number}}</span
             >
             <div class="edition-only d-flex ms-3">
               {% if version.is_active %}
-              <div><span class="badge bg-success">Active</span></div>
+              <div class="text-secondary"><span class="badge bg-success">Active</span> | Read only</div>
               {% endif %} {% if version.is_edition %}
               <div><span class="badge bg-primary">Draft</span></div>
               {% endif %} {% if not version.is_edition and not version.is_active %}
@@ -25,78 +67,46 @@
               <br />
             </div>
           </div>
+          <div>
+            {% if not version.is_active %}
+            <button
+              type="button"
+              class="btn btn-sm btn-primary"
+              id="btn-mark-active-version"
+            >
+              <i class="bi bi-bookmark-star"></i>
+              Set as active version
+            </button>
+            {% else %}
+            <button
+              type="button"
+              class="btn btn-sm btn-primary"
+              id="btn-create-version"
+            >
+              <i class="bi bi-pencil"></i>
+              Create editable version
+            </button>
+            {% endif %}
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary"
+              id="btn-view-definition"
+            >
+              <i class="bi bi-filetype-json"></i>
+              View definition
+            </button>
+          </div>
         </div>
-        <div>
-          {% if not version.is_active %}
-          <button
-            type="button"
-            class="btn btn-sm btn-primary"
-            id="btn-mark-active-version"
-          >
-            <i class="bi bi-bookmark-star"></i>
-            Set as active version
-          </button>
-          {% else %}
-          <button
-            type="button"
-            class="btn btn-sm btn-primary"
-            id="btn-create-version"
-          >
-            <i class="bi bi-pencil"></i>
-            Create editable version
-          </button>
-          {% endif %}
-          <button
-            type="button"
-            class="btn btn-sm btn-outline-secondary"
-            id="btn-view-definition"
-          >
-            <i class="bi bi-filetype-json"></i>
-            View definition
-          </button>
-        </div>
+
       </div>
-      <ul id="wf-tabs" class="nav nav-tabs mb-4 mt">
-        <li
-          class="nav-item"
-          data-bs-toggle="offcanvas"
-          href="#offCanvasInputs"
-          role="button"
-          aria-controls="offCanvasInputs"
-        >
-          <a class="nav-link" href="#">
-            <i class="bi bi-box-arrow-in-right me-1"></i>Inputs</a
-          >
-        </li>
-        <li
-          class="nav-item"
-          data-bs-toggle="offcanvas"
-          href="#offCanvasVariables"
-          role="button"
-          aria-controls="offCanvasVariables"
-        >
-          <a class="nav-link" href="#">
-            <i class="bi bi-code-square me-1"></i>
-            Variables</a
-          >
-        </li>
-        <li
-          class="nav-item"
-          data-bs-toggle="modal"
-          data-bs-target="#workflow-info-modal"
-        >
-          <a class="nav-link" href="#">
-            <i class="bi bi-info-circle me-1"></i>Workflow Info</a
-          >
-        </li>
-      </ul>
+
 
       <!-- <a href="#" class="card-link">Card link</a> -->
       <!-- <a href="#" class="card-link">Another link</a> -->
     </div>
   </div>
 
-  <div id="panel-diagram" class="content-panel">
+  <div id="panel-diagram" class="content-panel {% if not visualization %} card mt-4{% endif %}">
     <div id="components-flow" class="workflow-center">
       <div id="flow-start-node">
         <span>Start</span>
@@ -196,6 +206,7 @@
       </div>
     </div>
   </div>
+
   <div
     class="offcanvas offcanvas-xl offcanvas-end"
     tabindex="-1"
@@ -215,7 +226,9 @@
       ></button>
     </div>
     <div class="offcanvas-body"></div>
-    <footer></footer>
+    <footer>
+      
+    </footer>
   </div>
   <!-- Modals -->
   {% include 'modals/inputs_modal.html' %}
@@ -236,6 +249,7 @@
   <!-- Fragments -->
   {% include 'fragments/component_node.html' %}
   {% include 'fragments/routing_template.html' %}
+  {% include 'fragments/bwf_toast_fragment.html' %}
   {% include 'fragments/value_popover.html' %}
   <!-- END: Fragments -->
   <!-- Modals -->
@@ -243,6 +257,13 @@
   {% include 'modals/workflow_info_modal.html' %}
   <!-- END: Modals -->
 
+<script type="text/javascript">
+    // Initialize Select2 for all select elements with class 'select2'
+    $(document).ready(function() {
+        utils.toast.init();
+    });
+
+</script>
   <script>
     $(() => {
       // Initialize the workflow diagram
@@ -324,16 +345,15 @@
                   if (response.success) {
                     window.location.reload();
                   } else {
-                    alert(
+                    utils.toast.showError(
                       (response.message ||
-                        "An error occurred while marking the version as active.") +
-                        "\n" +
+                        "An error occurred while marking the version as active.") ,
                         "Errors: \n" +
                         (response.errors || []).join("\n")
                     );
                   }
                 } else {
-                  alert(
+                  utils.toast.showError(
                     "An error occurred while marking the version as active"
                   );
                 }

@@ -365,7 +365,7 @@ class ValueSelector {
     const { ajax } = value_rules || {};
     const isAjax = ajax && !!ajax.url;
 
-    _.$resetButton.off('click').on("click", _, function (event) {
+    _.$resetButton.off("click").on("click", _, function (event) {
       const selector = event.data;
       selector.saveValue({
         value: null,
@@ -525,7 +525,7 @@ class ValueSelector {
     const { input, component, isEdition, useOutputFields } = _;
     const { value, value_ref, is_expression } = input.value ?? {};
     _.parentComponentElement.hide();
-    if (!_.isRouting) $('#routing-component').hide();
+    if (!_.isRouting) $("#routing-component").hide();
 
     _.parentComponentElement.addClass("in-edition");
     $(".value-in-edition").removeClass("value-in-edition");
@@ -547,19 +547,31 @@ class ValueSelector {
     _.$saveButton.on("click", _, function (event) {
       const selector = event.data;
       const selectedValue = selector.editor?.getValue();
-      selector.hideContentEdition();
+      
+      if (selector.validateValueEntered(selectedValue)) {
+        selector.hideContentEdition();
 
-      selector.saveValue({
-        value: selectedValue,
-        is_expression: true,
-        value_ref: null,
-      });
+        selector.saveValue({
+          value: selector.tansformValue(selectedValue),
+          is_expression: true,
+          value_ref: null,
+        });
+      } else {
+        utils.toast.showError(
+          "Please check the value.",
+          "Invalid value entered"
+        );
+      }
     });
 
     editorBlockContent.find(".btn-close").on("click", _, function (event) {
       const selector = event.data;
       const { value } = selector.input.value ?? {};
-      selector.editor?.setValue(typeof (value?.value ?? {}) === "string" ? value : JSON.stringify(value?.value ?? ''));
+      selector.editor?.setValue(
+        typeof (value?.value ?? {}) === "string"
+          ? value
+          : JSON.stringify(value?.value ?? "")
+      );
       selector.hideContentEdition();
     });
     editorBlockContent.find(".btn-clear").on("click", _, function (event) {
@@ -588,10 +600,14 @@ class ValueSelector {
       }
 
       if (value) {
-        _.editor.setValue(typeof value === "string" ? value : JSON.stringify(value));
+        _.editor.setValue(
+          typeof value === "string" ? value : JSON.stringify(value)
+        );
       }
       if (!value && value_ref) {
-        _.editor.setValue(`{{${value_ref.context}${utils.replace_context_key(value_ref.key)}}}`);
+        _.editor.setValue(
+          `{{${value_ref.context}${utils.replace_context_key(value_ref.key)}}}`
+        );
       }
     }
     if (!isEdition) {
@@ -622,7 +638,12 @@ class ValueSelector {
         if (_.initials.showEditor && _.editor) {
           const doc = _.editor.getDoc();
           const cursor = doc.getCursor();
-          doc.replaceRange(`{{${contextValue}${utils.replace_context_key(selectedValue?.key)}}}`, cursor);
+          doc.replaceRange(
+            `{{${contextValue}${utils.replace_context_key(
+              selectedValue?.key
+            )}}}`,
+            cursor
+          );
         } else {
           _.saveValue({
             value: null,
@@ -644,7 +665,7 @@ class ValueSelector {
     _.parentComponentElement.removeClass("in-edition");
     $(".value-in-edition").removeClass("value-in-edition");
     $(`#routing-component`).show();
-    
+
     component_utils.closePopovers(_);
     _.portal?.empty();
   }
@@ -698,7 +719,9 @@ class ValueSelector {
             const doc = _.editor.getDoc();
             const cursor = doc.getCursor();
             doc.replaceRange(
-              `{{${contextValue}${utils.replace_context_key(selectedValue?.key)}}}`,
+              `{{${contextValue}${utils.replace_context_key(
+                selectedValue?.key
+              )}}}`,
               cursor
             );
           } else {
@@ -745,21 +768,33 @@ class ValueSelector {
       gutters: ["CodeMirror-lint-markers"],
     });
     if (value) {
-      _.editor.setValue(typeof value === "string" ? value : JSON.stringify(value));
+      _.editor.setValue(
+        typeof value === "string" ? value : JSON.stringify(value)
+      );
     }
     if (!value && value_ref) {
-      _.editor.setValue(`{{${value_ref.context}${utils.replace_context_key(value_ref.key)}}}`);
+      _.editor.setValue(
+        `{{${value_ref.context}${utils.replace_context_key(value_ref.key)}}}`
+      );
     }
 
     _.editor.setOption("extraKeys", {
       "Ctrl-Space": "autocomplete",
       "Ctrl-Enter": function (cm) {
-        _.saveValue({
-          value: cm.getValue(),
-          is_expression: true,
-          value_ref: null,
-        });
-        _.hideContentEdition();
+        const enteredValue = cm.getValue();
+        if (_.validateValueEntered(enteredValue)) {
+          _.saveValue({
+            value: _.tansformValue(enteredValue),
+            is_expression: true,
+            value_ref: null,
+          });
+          _.hideContentEdition();
+        } else {
+          utils.toast.showError(
+            "Please check the value.",
+            "Invalid value entered"
+          );
+        }
       },
       Esc: function (cm) {
         _.hideContentEdition();
@@ -1035,6 +1070,44 @@ class ValueSelector {
   }
   getSelector() {
     return this;
+  }
+
+  validateValueEntered(enteredValue) {
+    let isValid = true;
+    const { input } = this;
+    const { data_type } = input;
+    if (["object", "array"].includes(data_type)) {
+      try {
+        JSON.parse(enteredValue);
+      } catch (error) {
+        isValid = false;
+      }
+      if(data_type === "array") {
+        try {
+          const parsedValue = JSON.parse(enteredValue);
+          if (!Array.isArray(parsedValue)) {
+            isValid = false;
+          }
+        } catch (error) {
+          isValid = false;
+        }
+      }
+    }
+
+    return isValid;
+  }
+  tansformValue(value) {
+    const _ = this;
+    const { input } = _;
+    const { data_type } = input;
+    if (data_type === "object" || data_type === "array") {
+      try {
+        return JSON.stringify(JSON.parse(value));
+      } catch (error) {
+        return null;
+      }
+    }
+    return value;
   }
 }
 

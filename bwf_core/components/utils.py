@@ -1,4 +1,5 @@
-
+from django.template import engines
+import json
 import logging
 logger = logging.getLogger(__name__)
 
@@ -141,3 +142,39 @@ def evaluate_boolean_expression(expression, workflow_context):
         return result
     except Exception as e:
         return False
+    
+
+def evaluate_expression(expression, data_type, workflow_context):
+    """
+    Evaluates an expression in the context of the workflow.
+    """
+    try:
+        
+        django_engine = engines["django"]
+        template = django_engine.from_string(expression)
+        result = template.render(workflow_context)
+        return parse_evaluated_expression(result, data_type)
+    except Exception as e:
+        logger.error(f"Error evaluating expression {expression}: {e}")
+        raise Exception(f"Error evaluating expression {expression}: {e}")
+                      
+
+
+def parse_evaluated_expression(result, data_type):
+    """
+    Parse the evaluated expression result based on the data type.
+    """
+    if data_type == ['int', 'integer', 'number']:
+        return int(result)
+    elif data_type == ['float', 'double']:
+        return float(result)
+    elif data_type in ['bool', 'boolean']:
+        return bool(result)
+    elif data_type == 'list':
+        return list(result)
+    elif data_type == 'dict':
+        return dict(result)
+    elif data_type == 'array' or data_type == 'object':
+        return json.loads(result)
+    else:
+        return result

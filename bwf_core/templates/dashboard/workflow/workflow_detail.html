@@ -10,26 +10,24 @@
     data-version-file="{{active_version.workflow_file}}"
     data-is-editable="{{active_version.is_editable}}"
   />
-
-  <div>
-    <div style="display: inline-flex" class="d-flex justify-content-between">
-      <div style="display: inline-flex">
-        <h4 class="card-title">
-          {{workflow.name}}
-        </h4>
-        <span class="text-secondary ms-2">
-          | Version number: {{active_version.version_number}}</span
-        >
-        <div class="d-flex ms-3">
-          {% if active_version.is_active %}
-          <div><span class="badge bg-success">Active</span></div>
-          {% endif %}
-          <br />
-        </div>
+  <div class="mb-2">
+    <div style="display: inline-flex">
+      <h4 class="card-title">
+        {{workflow.name}}
+      </h4>
+    </div>
+    <div class="d-flex">
+      <span class="text-secondary ms-2">
+        Version number: {{active_version.version_number}}</span
+      >
+      <div class="d-flex ms-3">
+        {% if active_version.is_active %}
+        <div><span class="badge bg-success">Active</span></div>
+        {% endif %}
+        <br />
       </div>
     </div>
   </div>
-
   <div class="card">
     <div class="card-body">
       <ul class="nav nav-tabs mb-4 mt">
@@ -47,7 +45,7 @@
       <div class="row p-2">
         <div class="col-12">
           {% if active_version %} 
-            {% include "dashboard/workflow/workflow_diagram.html" with workflow=workflow version=active_version visualizatio=True %}
+            {% include "dashboard/workflow/workflow_diagram.html" with workflow=workflow version=active_version visualization=True %}
           {% endif %}
         </div>
       </div>

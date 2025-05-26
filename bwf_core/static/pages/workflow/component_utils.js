@@ -53,6 +53,33 @@ var component_utils = {
       modal.find(".close-button").attr("disabled", false);
     },
   },
+  adjustWorkflowContainerHeight: function () {
+    // check node position inside container
+    const _ = workflow_components;
+    const minHeight = 500;
+    const container = _.container;
+    workflow_components.var.components.forEach((component) => {
+      const node = $(`#node_${component.id}`);
+      if(!node || node.length === 0) return;
+      const containerTop = container.position().top;
+      const containerHeight = container.height();
+      const {top: nodeTop} = node?.position();
+      const nodeHeight = node.height();
+      if (nodeTop === undefined) {
+        debugger
+        return
+      }
+      const lowerBound = containerTop + containerHeight;
+      const nodeLowerBound = nodeTop + nodeHeight;
+
+      if (nodeLowerBound > lowerBound) {
+        
+        container.css("height", `${nodeLowerBound}px`);
+        // _.container.css("height", `${nodeLowerBound}px`);
+        // _.container.position();
+      }
+    })
+  },
   removeComponentDiagram: function (component) {
     if (component && component.diagram) {
       component.diagram.lines?.forEach((route) => {
