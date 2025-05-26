@@ -141,6 +141,7 @@ class ContextVariableMenu {
                 "data-context": "inputs",
                 "data-value": el.id,
                 "data-key": el.key,
+                "data-data-type": el.data_type,
               }))
               .concat([
                 {
@@ -174,6 +175,7 @@ class ContextVariableMenu {
                 "data-context": "variables",
                 "data-id": el.id,
                 "data-key": el.key,
+                "data-data-type": el.data_type,
               }))
               .concat([
                 {
@@ -253,6 +255,8 @@ class ContextVariableMenu {
       const id = $this.data("id");
       const key = $this.data("key");
       const context = $this.data("context");
+
+      const dataType = $this.data("data-type");
       if (!key || !context) {
         return;
       }
@@ -269,6 +273,7 @@ class ContextVariableMenu {
         id,
         key,
         context: contextList.reverse().join("."),
+        dataType: dataType || "string",
       });
       selector.popover?.hide();
     });
@@ -340,6 +345,7 @@ class ContextVariableMenu {
         "data-parent-context": parentContextId ?? "",
         "data-value": el.id,
         "data-key": el.key,
+        "data-data-type": el.data_type,
       });
     }
 
