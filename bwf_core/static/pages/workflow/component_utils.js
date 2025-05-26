@@ -354,7 +354,7 @@ var component_utils = {
       component_utils.render.renderBranchLines(component);
       component.diagram.position = function (component) {
         component_utils.render.renderBranchLines(component);
-        component_utils.render.renderOuterBranchLines(component);
+        // component_utils.render.renderOuterBranchLines(component);
       };
     },
     renderBranchLines: function (component) {
@@ -445,6 +445,15 @@ var component_utils = {
           }
         );
       });
+    },
+    positionOuterBranchLines: function (component) {
+      component.diagram.out = component.diagram.out || {};
+      if (component.diagram.out.left) {
+        component.diagram.out.left.position();
+      }
+      if (component.diagram.out.right) {
+        component.diagram.out.right.position();
+      }
     },
 
     removeBranchLines: function (component) {
