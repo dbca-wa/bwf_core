@@ -213,7 +213,7 @@ class WorkflowComponentViewset(ViewSet):
             plugin_id = serializer.validated_data.get("plugin_id")
             key = serializer.validated_data.get("key")
             plugin_version = serializer.validated_data.get("plugin_version", None)
-            value = serializer.validated_data.get("value", {'value': None, 'is_expression': False, 'value_ref': None})
+            value = serializer.validated_data.get("value", {'value': None, 'is_expression': False, 'value_ref': None, 'syntax': None})
 
             workflow = get_object_or_404(WorkflowVersion, id=version_id, workflow__id=workflow_id)
 

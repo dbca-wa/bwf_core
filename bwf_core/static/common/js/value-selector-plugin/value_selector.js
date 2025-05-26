@@ -1,5 +1,10 @@
 /* eslint-disable prefer-spread */
 /* eslint-disable no-plusplus */
+BWF_SYNTAX = {
+  template: "python",
+  javascript: "javascript",
+  text: "text",
+}
 class ValueSelector {
   constructor(element, settings, $) {
     const _ = this;
@@ -28,12 +33,13 @@ class ValueSelector {
 
     const { json_value, data_type } = input;
     const { type, options, value_rules } = json_value || {};
-    const { value_ref, value, is_expression } = input.value ?? {};
+    const { value_ref, value, is_expression, editor_syntax } = input.value ?? {};
 
     _.component = component;
     _.input = input;
     _.parentInput = parent;
     _.isEdition = isEdition;
+    _.editor_syntax = editor_syntax;
     _.useOutputFields = useOutputFields || false;
     _.isRouting = isRouting || false;
     _.portal = portal;
@@ -49,6 +55,7 @@ class ValueSelector {
       value_rules: value_rules,
       is_expression: !!is_expression,
       showEditor: !!is_expression,
+      editor_syntax: editor_syntax,
       onSave: onSave,
       onCancel: onCancel,
     };
@@ -91,14 +98,12 @@ class ValueSelector {
     const _ = this;
     const { markup } = utils;
     const $vars = workflow_variables;
-    const { input, component, isEdition } = _;
+    const { isEdition } = _;
 
     const isDisabled = !isEdition;
 
-    const { type, options, value_rules, multi, structure } =
+    const { options, value_rules, multi, structure } =
       _.input?.json_value ?? {};
-
-    const { ajax } = value_rules || {};
 
     if (value_rules && value_rules.variable_only) {
       _.$content.empty();
@@ -136,12 +141,6 @@ class ValueSelector {
       $(selectElement).on("change", _, function (event) {
         const selector = event.data;
         const selectedValue = event.target.value;
-        const context =
-          $(event.target).find("option:selected").data("context") ??
-          "variables";
-        const name =
-          $(event.target).find("option:selected").data("name") ?? "undefined";
-        const key = $(event.target).find("option:selected").data("key");
         selector.saveValue({
           value: selectedValue,
           is_expression: false,
@@ -252,7 +251,6 @@ class ValueSelector {
     const { markup } = utils;
     const selector = this;
     const { input, component } = selector;
-    const { value } = input;
     const extraButtons = [
       markup(
         "div",
@@ -335,12 +333,15 @@ class ValueSelector {
       });
   }
 
+  renderBooleanBuilder() {
+    
+  }
+
   onPopoverOpen() {
     const _ = this;
     // console.log({ settings: _.initials });
-    const { input, component, isEdition } = _;
-    const { value, value_ref, is_expression } = input.value ?? {};
-    const { type, options, value_rules } = _.input?.json_value ?? {};
+    const { input, isEdition } = _;
+    const { value, value_ref } = input.value ?? {};
     if ((!value || value_ref) && !_.initials.showEditor) {
       _.$saveButton?.hide();
     } else {
@@ -439,16 +440,16 @@ class ValueSelector {
     const _ = this;
     const { markup } = utils;
 
-    const { input, component, isEdition } = _;
+    const { input } = _;
     const { value, value_ref } = input.value ?? {};
-    const { type, options, value_rules } = _.input?.json_value ?? {};
+    const { value_rules } = _.input?.json_value ?? {};
 
     const { ajax } = value_rules || {};
     if (!ajax) {
       return;
     }
 
-    const { url, structure } = ajax;
+    const { url } = ajax;
 
     if ((!value || value_ref) && !_.initials.showEditor) {
       _.$saveButton?.hide();
@@ -523,7 +524,8 @@ class ValueSelector {
   onContentEditionRendered() {
     const _ = this;
     const { input, component, isEdition, useOutputFields } = _;
-    const { value, value_ref, is_expression } = input.value ?? {};
+    const {data_type} = input;
+    const { value, value_ref, is_expression, editor_syntax } = input.value ?? {};
     _.parentComponentElement.hide();
     if (!_.isRouting) $("#routing-component").hide();
 
@@ -547,7 +549,7 @@ class ValueSelector {
     _.$saveButton.on("click", _, function (event) {
       const selector = event.data;
       const selectedValue = selector.editor?.getValue();
-      
+
       if (selector.validateValueEntered(selectedValue)) {
         selector.hideContentEdition();
 
@@ -587,7 +589,6 @@ class ValueSelector {
       _.portal.empty().append(editorBlockContent);
       _.setUpEditor(_.portal.find(".editor")[0]);
     }
-    const { type, options, value_rules } = _.input?.json_value ?? {};
     if ((!value || value_ref) && !_.initials.showEditor) {
       _.$saveButton.hide();
     } else {
@@ -638,10 +639,13 @@ class ValueSelector {
         if (_.initials.showEditor && _.editor) {
           const doc = _.editor.getDoc();
           const cursor = doc.getCursor();
+          // ensures lists will be safely replaced
+          let suffix = "";
+          if (selectedValue.dataType === "array") suffix = `|safe`;
           doc.replaceRange(
             `{{${contextValue}${utils.replace_context_key(
               selectedValue?.key
-            )}}}`,
+            )}${suffix}}}`,
             cursor
           );
         } else {
@@ -701,7 +705,7 @@ class ValueSelector {
     _.$content.on("shown.bs.popover", _, function (event) {
       const _ = event.data;
       const { input, component } = _;
-      const { value, is_expression } = input.value ?? {};
+      const { is_expression } = input.value ?? {};
       const { convert_context_to_python_dict } = utils;
 
       $(`#context-menu-${component.id}-${input.key}`).contextMenu({
@@ -718,10 +722,12 @@ class ValueSelector {
           if (_.initials.showEditor && _.editor) {
             const doc = _.editor.getDoc();
             const cursor = doc.getCursor();
+            let suffix = "";
+            if (selectedValue.dataType === "array") suffix = `|safe`;
             doc.replaceRange(
               `{{${contextValue}${utils.replace_context_key(
                 selectedValue?.key
-              )}}}`,
+              )}${suffix}}}`,
               cursor
             );
           } else {
@@ -752,6 +758,7 @@ class ValueSelector {
     const _ = this;
     const { input } = _;
     const { value, value_ref } = input.value ?? {};
+    const { data_type } = input;
 
     _.editor = CodeMirror.fromTextArea(element, {
       doc: "Start document",
@@ -777,12 +784,33 @@ class ValueSelector {
         `{{${value_ref.context}${utils.replace_context_key(value_ref.key)}}}`
       );
     }
+    
+    if (!["array", "object"].includes(data_type)) {
+      _.portal.find("#editor-syntax").hide();
+    } else {
+      _.portal.find("#editor-syntax").show();
+      const syntax = input.editor_syntax || BWF_SYNTAX.javascript;
+      _.portal.find("#editor-syntax").val(syntax);
+    }
+
+
+    _.portal.find("#editor-syntax").on("change", _, function (event) {
+      const selector = event.data;
+      const syntax = event.target.value;
+      if (selector.editor) {
+        // TODO
+        selector.editor.setOption("mode", syntax);
+      }
+      selector.editor_syntax = syntax;
+      // selector.updateValue(selector.input.value, selector.input.json_value);
+    })
 
     _.editor.setOption("extraKeys", {
       "Ctrl-Space": "autocomplete",
       "Ctrl-Enter": function (cm) {
         const enteredValue = cm.getValue();
-        if (_.validateValueEntered(enteredValue)) {
+        const currentSyntax = $("#editor-syntax").val();
+        if (_.validateValueEntered(enteredValue, currentSyntax)) {
           _.saveValue({
             value: _.tansformValue(enteredValue),
             is_expression: true,
@@ -812,14 +840,25 @@ class ValueSelector {
           while (end < line.length && /(\$)\w/.test(line.charAt(end))) ++end;
           var word = line.slice(start, end).toLowerCase();
           if (word === "" || word.startsWith("$")) return accept(null);
-
           const vars = workflow_variables.var.variables
             .filter((v) => v.key.startsWith(word))
-            .map((v) => `{{${v.context}${utils.replace_context_key(v.key)}}}`);
+            .map((v) => {
+              let suffix = "";
+              if (v.data_type === "array") suffix = `|safe`;
+
+              return `{{${v.context}${utils.replace_context_key(
+                v.key
+              )}${suffix}}}`;
+            });
 
           const inputs = workflow_inputs.var.inputs
             .filter((v) => v.key.startsWith(word))
-            .map((v) => `{{inputs${utils.replace_context_key(v.key)}}}`);
+            .map((v) => {
+              let suffix = "";
+              if (v.data_type === "array") suffix = `|safe`;
+
+              return `{{inputs${utils.replace_context_key(v.key)}${suffix}}}`;
+            });
           const local = [];
           const incoming = [];
 
@@ -843,7 +882,6 @@ class ValueSelector {
       input,
       component,
       parentInput,
-      $element,
       popover,
       isEdition,
       initials,
@@ -924,7 +962,7 @@ class ValueSelector {
   updateHtml() {
     const _ = this;
     const { markup } = utils;
-    const { input, component } = _;
+    const { input } = _;
     const { value, json_value } = input;
     const { type, options, value_rules, multi } = json_value ?? {};
     const { ajax } = value_rules || {};
@@ -968,7 +1006,6 @@ class ValueSelector {
         _.$content.addClass("boolean-value");
       }
       $(element).on("change", _, function (event) {
-        const selector = event.data;
         const selectedValue =
           event.target.type === "checkbox"
             ? event.target.checked
@@ -980,7 +1017,6 @@ class ValueSelector {
         });
       });
       $(element).on("keyup", _, function (event) {
-        const selector = event.data;
         const key = event.key;
         if (key === "Enter") {
         } else if (key === "Escape") {
@@ -1027,7 +1063,6 @@ class ValueSelector {
     const _ = this;
     const { markup } = utils;
     const isDisabled = !_.isEdition;
-    const options = {};
     if (type === "boolean") {
       return markup("div", [
         markup("input", "", {
@@ -1072,17 +1107,17 @@ class ValueSelector {
     return this;
   }
 
-  validateValueEntered(enteredValue) {
+  validateValueEntered(enteredValue, currentSyntax = null) {
     let isValid = true;
     const { input } = this;
     const { data_type } = input;
-    if (["object", "array"].includes(data_type)) {
+    if (["object", "array"].includes(data_type) && currentSyntax == BWF_SYNTAX.javascript) {
       try {
         JSON.parse(enteredValue);
       } catch (error) {
         isValid = false;
       }
-      if(data_type === "array") {
+      if (data_type === "array") {
         try {
           const parsedValue = JSON.parse(enteredValue);
           if (!Array.isArray(parsedValue)) {
