@@ -1,4 +1,7 @@
 var utils = {
+  vars: {
+    toast: null,
+  },
   make_query_params: function (params) {
     var url_params = "";
 
@@ -278,9 +281,9 @@ var utils = {
     ]
       .map((a) => "\\" + a)
       .join("|");
-      if (input.length > 0) {
-        input = (input[0].toLowerCase()) + input.slice(1);
-      }
+    if (input.length > 0) {
+      input = input[0].toLowerCase() + input.slice(1);
+    }
     return input
       .trim()
       .split(/\ |\_/g)
@@ -288,20 +291,62 @@ var utils = {
       .join("_");
   },
   convert_context_to_python_dict: function (context) {
-    if (!context) return '';
+    if (!context) return "";
     if (typeof context === "string") {
       context = context.split(".");
     }
     if (!Array.isArray(context)) {
       throw new Error("Invalid context format.");
     }
-    const contextValue =  context.map((c, index) => {
-      if (index === 0) return c;
-      return utils.replace_context_key(c);
-    }).join('')
-    return contextValue;    
+    const contextValue = context
+      .map((c, index) => {
+        if (index === 0) return c;
+        return utils.replace_context_key(c);
+      })
+      .join("");
+    return contextValue;
   },
   replace_context_key: function (key) {
-   return `.${key}`; 
-  }
+    return `.${key}`;
+  },
+  isValidFieldInput: function (value, type) {},
+  toast: {
+    init: function () {
+      const bwfLiveToast = document.getElementById("bwfLiveToast");
+      if (bwfLiveToast) {
+        utils.vars.toast = bootstrap.Toast.getOrCreateInstance(bwfLiveToast);
+        console.log("Toast initialized:", utils.vars.toast);
+        // bwfLiveToast.addEventListener('hidden.bs.toast', function () {
+        //   bwfLiveToast.querySelector('.toast-body').textContent = '';
+        // });
+      }
+    },
+    showError: function (message = "", title = "") {
+      if (!utils.vars.toast) utils.toast.init();
+      const header = title || "An error occurred";
+      const body = message || "Please try again later.";
+      utils.toast.__show(header, body);
+      
+    },
+    showSuccess: function (message="", title = "") {
+      if (!utils.vars.toast) utils.toast.init();
+      const header = title || "Success";
+      const body = message || "Operation completed successfully.";
+      utils.toast.__show(header, body);
+    },
+    showWarning: function (message="", title = "") {
+      if (!utils.vars.toast) utils.toast.init();
+      const header = title || "Warning";
+      const body = message || "Please check your input.";
+      utils.toast.__show(header, body);
+    },
+    __show: function (title, message, type = "error") {
+      const body = message ?? "Please try again later.";
+      const element = $(utils.vars.toast._element);
+      element.find(".toast-header strong").text(title);
+      element.find(".toast-body").text(body);
+      // utils.vars.toast.show();
+      alert(title + ": " + body); // Fallback for demonstration
+    },
+  },
 };

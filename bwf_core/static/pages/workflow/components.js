@@ -96,6 +96,7 @@ var workflow_components = {
       nodeIds[component.id] = component;
     });
     _.renderComponentTree(container, component, nodeIds, components);
+    // component_utils.adjustWorkflowContainerHeight();
 
     for (let i = 0; i < components.length; i++) {
       const component = components[i];
@@ -106,7 +107,10 @@ var workflow_components = {
     }
     // $("#toolbox .new-line button").trigger("click")
     // $(`#node_${components[3].id}`).find(".component-out")?.trigger("click");
-    // $(`#node_${components[0].id}`).find(".options")?.trigger("click")
+    // $(`#node_${components[0].id}`).find(".diagram-node")?.trigger("click")
+    // setTimeout(() => { 
+    //   $($(".value-selector-edit")[3]).trigger("click");
+    //  }, 300);
     // $(`#node_${components[2].id}`).find(".diagram-node")?.trigger("click")
     const _container = $("body");
 
@@ -156,6 +160,7 @@ var workflow_components = {
     }
     $(`#node_${component.id}.diagram-node-parent`).draggable({
       handle: ".node-handle:first",
+      containment: "#components-flow", scroll: false
     });
   },
   renderFirstLine: function (component) {
@@ -373,9 +378,25 @@ var workflow_components = {
 
   appendComponent: function (component, container, appendPosition) {
     const _ = workflow_components;
+    _.container
     if (_.is_diagram) {
       _.appendComponentToDiagram(component, container, appendPosition);
       _.updateLines();
+      /* // check node position inside container
+      const node = $(`#node_${component.id}`);
+      debugger
+      _.container.position()
+      const {top} = node.position()
+      const {top: containerTop} = _.container.position()
+      
+      const lowerBound = containerTop + _.container.height();
+      const nodeLowerBound = top + node.height();
+
+      if (nodeLowerBound > lowerBound) {
+        
+      } */
+
+
       return;
     }
   },
