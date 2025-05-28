@@ -164,7 +164,7 @@ class WorkflowVersionViewset(ModelViewSet):
         version_number = instance.versions.aggregate(
             version_number=Max("version_number")
         ).get("version_number", 0)
-        version_number = int(version_number) + 1 if version_number else 1
+        version_number = version_number + 1 if version_number else 1
         try:
             with transaction.atomic():
                 instance_edition = WorkflowVersion.objects.create(

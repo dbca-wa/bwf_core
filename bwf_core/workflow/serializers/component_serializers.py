@@ -81,6 +81,7 @@ class UpdateComponentInputSerializer(serializers.Serializer):
     plugin_version = serializers.IntegerField(default=1)
     key = serializers.CharField(max_length=500)
     value = serializers.JSONField()
+    editor_syntax = serializers.ChoiceField(choices=["javascript", "template", "text"], required=False, allow_null=True, allow_blank=True)
 
 
 class PluginDefinitionSerializer(serializers.Serializer):

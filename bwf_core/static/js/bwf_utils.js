@@ -315,7 +315,6 @@ var utils = {
       const bwfLiveToast = document.getElementById("bwfLiveToast");
       if (bwfLiveToast) {
         utils.vars.toast = bootstrap.Toast.getOrCreateInstance(bwfLiveToast);
-        console.log("Toast initialized:", utils.vars.toast);
         // bwfLiveToast.addEventListener('hidden.bs.toast', function () {
         //   bwfLiveToast.querySelector('.toast-body').textContent = '';
         // });

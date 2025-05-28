@@ -197,7 +197,10 @@ class BranchPlugin(BasePlugin):
     def on_complete(self):
         output = self.component.output
         self.component.set_status_completed()
-        self.call_next_node(output.get('data', {}).get('next_component_id', None))
+        next_node_id = output.get('data', {}).pop('next_component_id')
+        self.component.output  = output
+        self.component.save()
+        self.call_next_node(next_node_id)
 
     def call_next_node(self, override_route=None):
         from bwf_core.tasks import register_workflow_step

@@ -309,6 +309,7 @@ var workflow_components = {
       for (let path in paths) {
         _.updateLines(paths[path]);
       }
+      component_utils.render.positionOuterBranchLines(component)
     }
   },
   appendComponentToDiagram: function (component, container, appendPosition) {
