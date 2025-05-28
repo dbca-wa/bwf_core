@@ -280,6 +280,7 @@ class ContextVariableMenu {
     container.find(".values-list .add-input").on("click", _, function (event) {
       const _ = event.data;
       if (!_.isEdition) return;
+      _.popover?.hide();
       _.initials.onCancel();
       $("#inputs-modal").modal("show");
     });
@@ -288,8 +289,9 @@ class ContextVariableMenu {
       .on("click", _, function (event) {
         const _ = event.data;
         if (!_.isEdition) return;
-        $("#variables-modal").modal("show");
+        _.popover?.hide();
         _.initials.onCancel();
+        $("#variables-modal").modal("show");
       });
   }
 

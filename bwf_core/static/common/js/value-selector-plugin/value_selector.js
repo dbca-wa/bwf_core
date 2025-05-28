@@ -4,7 +4,7 @@ BWF_SYNTAX = {
   template: "python",
   javascript: "javascript",
   text: "text",
-}
+};
 class ValueSelector {
   constructor(element, settings, $) {
     const _ = this;
@@ -20,6 +20,7 @@ class ValueSelector {
       parent,
       component,
       portal,
+      valueOnly,
       isEdition,
       useOutputFields,
       isRouting,
@@ -33,7 +34,8 @@ class ValueSelector {
 
     const { json_value, data_type } = input;
     const { type, options, value_rules } = json_value || {};
-    const { value_ref, value, is_expression, editor_syntax } = input.value ?? {};
+    const { value_ref, value, is_expression, is_condition, editor_syntax } =
+      input.value ?? {};
 
     _.component = component;
     _.input = input;
@@ -45,15 +47,18 @@ class ValueSelector {
     _.portal = portal;
     _.parentComponentElement = $(`#routing-form, #node_panel_${component.id}`);
     _.select2 = null;
+    _.tmpValue = null;
 
     _.initials = {
       present: true,
+      valueOnly: valueOnly || false,
       value: value,
       value_ref: value_ref,
       type: type,
       options: options,
       value_rules: value_rules,
       is_expression: !!is_expression,
+      is_condition: !!is_condition,
       showEditor: !!is_expression,
       editor_syntax: editor_syntax,
       onSave: onSave,
@@ -90,6 +95,9 @@ class ValueSelector {
     _.$editButton = _.$element.find(".value-selector-edit");
     _.$saveButton = null;
 
+    if (valueOnly) {
+      _.$editButton.remove();
+    }
     _.updateHtml();
     _.render(value, value_ref);
   }
@@ -333,9 +341,6 @@ class ValueSelector {
       });
   }
 
-  renderBooleanBuilder() {
-    
-  }
 
   onPopoverOpen() {
     const _ = this;
@@ -524,8 +529,9 @@ class ValueSelector {
   onContentEditionRendered() {
     const _ = this;
     const { input, component, isEdition, useOutputFields } = _;
-    const {data_type} = input;
-    const { value, value_ref, is_expression, editor_syntax } = input.value ?? {};
+    const { data_type } = input;
+    const { value, value_ref, is_expression, editor_syntax } =
+      input.value ?? {};
     _.parentComponentElement.hide();
     if (!_.isRouting) $("#routing-component").hide();
 
@@ -551,18 +557,31 @@ class ValueSelector {
       const selectedValue = selector.editor?.getValue();
 
       if (selector.validateValueEntered(selectedValue)) {
-        selector.hideContentEdition();
+        if (data_type === "boolean") {
+          selector.saveValue({
+            value: selector.tmpValue,
+            is_expression: false,
+            is_condition: true,
+            value_ref: null,
+          });
+        } else {
+          selector.hideContentEdition();
 
-        selector.saveValue({
-          value: selector.tansformValue(selectedValue),
-          is_expression: true,
-          value_ref: null,
-        });
+          selector.saveValue({
+            value: selector.tansformValue(selectedValue),
+            is_expression: true,
+            value_ref: null,
+          });
+        }
       } else {
-        utils.toast.showError(
-          "Please check the value.",
-          "Invalid value entered"
-        );
+        if (data_type === "boolean") {
+          utils.toast.showError("Please check the condition values.", "");
+        } else {
+          utils.toast.showError(
+            "Please check the value.",
+            "Invalid value entered"
+          );
+        }
       }
     });
 
@@ -587,7 +606,11 @@ class ValueSelector {
 
     if (_.initials.showEditor) {
       _.portal.empty().append(editorBlockContent);
-      _.setUpEditor(_.portal.find(".editor")[0]);
+      if (data_type === "boolean") {
+        _.setUpConditionsEditor(_.portal.find(".conditions-editor")[0]);
+      } else {
+        _.setUpEditor(_.portal.find(".editor")[0]);
+      }
     }
     if ((!value || value_ref) && !_.initials.showEditor) {
       _.$saveButton.hide();
@@ -754,6 +777,47 @@ class ValueSelector {
     });
   }
 
+  setUpConditionsEditor(container) {
+    const _ = this;
+    const { input } = _;
+    const { value } = input.value || [];
+    $(container).show();
+    _.tmpValue = [];
+    if (value.length === 0) {
+      _.renderConditionRow($(container).find(".conditions-block"), {
+        left_value: null,
+        condition: "equals",
+        right_value: null,
+        operand: "and",
+      });
+    } else {
+      for (let i = 0; i < value.length; i++) {
+        const condition = value[i];
+        _.renderConditionRow(
+          $(container).find(".conditions-block"),
+          condition
+        );
+      }
+    }
+
+    $(container).find(".btn-add-condition").attr("data-");
+    const conditionsBlock = $(container).find(".conditions-block");
+    $(container)
+      .find(".btn-add-condition")
+      .on("click", { selector: _, conditionsBlock }, function (event) {
+        const { selector, conditionsBlock } = event.data;
+        selector.renderConditionRow(
+          conditionsBlock,
+          {
+            left_value: null,
+            condition: "equals",
+            right_value: null,
+            operand: "and",
+          }
+        );
+      });
+  }
+
   setUpEditor(element) {
     const _ = this;
     const { input } = _;
@@ -784,7 +848,7 @@ class ValueSelector {
         `{{${value_ref.context}${utils.replace_context_key(value_ref.key)}}}`
       );
     }
-    
+
     if (!["array", "object"].includes(data_type)) {
       _.portal.find("#editor-syntax").hide();
     } else {
@@ -792,7 +856,6 @@ class ValueSelector {
       const syntax = input.editor_syntax || BWF_SYNTAX.javascript;
       _.portal.find("#editor-syntax").val(syntax);
     }
-
 
     _.portal.find("#editor-syntax").on("change", _, function (event) {
       const selector = event.data;
@@ -803,7 +866,7 @@ class ValueSelector {
       }
       selector.editor_syntax = syntax;
       // selector.updateValue(selector.input.value, selector.input.json_value);
-    })
+    });
 
     _.editor.setOption("extraKeys", {
       "Ctrl-Space": "autocomplete",
@@ -878,18 +941,12 @@ class ValueSelector {
   }
 
   saveValue(value) {
-    const {
-      input,
-      component,
-      parentInput,
-      popover,
-      isEdition,
-      initials,
-    } = this;
+    const { input, component, parentInput, popover, isEdition, initials } =
+      this;
     const { onSave: overrideSaveValue } = initials;
     if (!isEdition) return;
     if (overrideSaveValue) {
-      return overrideSaveValue(value);
+      return overrideSaveValue(value, this);
     }
     if (parentInput && parentInput.input.json_value) {
       const { input: parentInputObj } = parentInput;
@@ -962,7 +1019,7 @@ class ValueSelector {
   updateHtml() {
     const _ = this;
     const { markup } = utils;
-    const { input } = _;
+    const { input, initials } = _;
     const { value, json_value } = input;
     const { type, options, value_rules, multi } = json_value ?? {};
     const { ajax } = value_rules || {};
@@ -989,7 +1046,11 @@ class ValueSelector {
 
     _.$editButton.show();
     if (value.value === null || value.value === undefined) {
-      _.$resetButton.hide();
+      if (value.value_ref && initials.valueOnly) {
+        _.$resetButton.show();
+      } else {
+        _.$resetButton.hide();
+      }
     } else {
       _.$resetButton.show();
     }
@@ -997,7 +1058,8 @@ class ValueSelector {
     if (
       ["string", "boolean", "number"].includes(type) &&
       !value.value_ref &&
-      !value.is_expression
+      !value.is_expression &&
+      !value.is_condition
     ) {
       _.$content.empty();
       const element = _.getInputElement(type, value);
@@ -1036,7 +1098,7 @@ class ValueSelector {
       } else {
         _.$content.addClass("value-selector");
         _.$content.html(
-          value.is_expression
+          (value.is_expression || value.is_condition)
             ? markup(
                 "div",
                 [{ tag: "i", class: "bi bi-braces" }, " Expression"],
@@ -1047,11 +1109,13 @@ class ValueSelector {
       }
     } else {
       _.$content.empty();
+      const text = value.is_expression ? " Expression" : value.is_condition ? " Condition value" : "";
+      const iconClass = value.is_expression ? "bi bi-braces" : value.is_condition ? "bi bi-patch-check" : "";
       _.$content.html(
-        value.is_expression
+        (value.is_expression || value.is_condition)
           ? markup(
               "div",
-              [{ tag: "i", class: "bi bi-braces" }, " Expression"],
+              [{ tag: "i", class: iconClass }, text],
               { class: "text-center" }
             )
           : value.value || ""
@@ -1111,7 +1175,10 @@ class ValueSelector {
     let isValid = true;
     const { input } = this;
     const { data_type } = input;
-    if (["object", "array"].includes(data_type) && currentSyntax == BWF_SYNTAX.javascript) {
+    if (
+      ["object", "array"].includes(data_type) &&
+      currentSyntax == BWF_SYNTAX.javascript
+    ) {
       try {
         JSON.parse(enteredValue);
       } catch (error) {
@@ -1127,6 +1194,8 @@ class ValueSelector {
           isValid = false;
         }
       }
+    } else if (data_type === "boolean") {
+      isValid = selector_condition_utils.validateTmpValue(this);
     }
 
     return isValid;
@@ -1143,6 +1212,169 @@ class ValueSelector {
       }
     }
     return value;
+  }
+
+  renderConditionRow(container, conditionValue = {}) {
+    const _ = this;
+    const { markup } = utils;
+    const { input, component, isEdition } = this;
+    const rowId = `cond__${input.key}_${utils.generateRandomId()}`;
+    const includeOperand = (_.tmpValue || []).length > 0;
+    const leftElement = markup("div", "", {
+      class: "left-element",
+      "data-row-id": rowId,
+    });
+    const rightElement = markup("div", "", {
+      class: "right-element",
+      "data-row-id": rowId,
+    });
+    const conditionElement = markup(
+      "select",
+      [
+        { tag: "option", content: "Equal to", value: "equals" },
+        { tag: "option", content: "Not equal to", value: "not_equals" },
+        { tag: "option", content: "Greater than", value: "greater_than" },
+        { tag: "option", content: "Less than", value: "less_than" },
+        { tag: "option", content: "Greater than or equal to", value: "gte" },
+        { tag: "option", content: "Less than or equal to", value: "lte" },
+        { tag: "option", content: "Type of", value: "type_of" },
+        { tag: "option", content: "Contains", value: "contains" },
+        { tag: "option", content: "Does not contain", value: "not_contains" },
+        { tag: "option", content: "Starts with", value: "starts_with" },
+        { tag: "option", content: "Ends with", value: "ends_with" },
+        { tag: "option", content: "Is empty", value: "is_empty" },
+        { tag: "option", content: "Is not empty", value: "is_not_empty" },
+        { tag: "option", content: "Is none", value: "is_none" },
+        { tag: "option", content: "Is not none", value: "is_not_none" },
+      ],
+      {
+        class: "condition-select form-select",
+        "data-row-id": rowId,
+      }
+    );
+
+    const operandElement = markup(
+      "select",
+      [
+        { tag: "option", content: "AND", value: "and", selected: true },
+        { tag: "option", content: "OR", value: "or" },
+      ],
+      { class: "operand-select form-select", "data-row-id": rowId }
+    );
+
+    const removeButton = markup(
+      "button",
+      { tag: "i", class: "bi bi-trash" },
+      {
+        class: "btn btn-sm btn-outline-danger remove-condition",
+        "data-row-id": rowId,
+      }
+    );
+    const row = markup(
+      "div",
+      [
+        markup("div", leftElement, { class: "col-3" }),
+        markup("div", conditionElement, { class: "col-3" }),
+        markup("div", rightElement, { class: "col-3" }),
+      ],
+      {
+        class: "condition-row row mb-2",
+        id: rowId,
+        style: "--bs-gutter-x: 10px;",
+      }
+    );
+
+    $(row).prepend(
+      markup("div", includeOperand ? operandElement : "", { class: "col-2" })
+    );
+    if (_.isEdition)
+      $(row).append(markup("div", removeButton, { class: "col-1" }));
+    container.append(row);
+    const items = [
+      {
+        id: "left_value",
+        selector: ".left-element",
+        name: "Left Value",
+        key: "left_value",
+        data_type: "string",
+        value: conditionValue.left_value || "",
+      },
+      {
+        id: "right_value",
+        selector: ".right-element",
+        name: "Right Value",
+        key: "right_value",
+        data_type: "string",
+        value: conditionValue.right_value || "",
+      },
+    ];
+    items.forEach((item) => {
+      $(row)
+        .find(item.selector)
+        .valueSelector({
+          valueOnly: true,
+          parent: _,
+          input: {
+            name: item.name,
+            key: item.key,
+            data_type: "string",
+            value: item.value,
+            json_value: {
+              type: "string",
+              options: null,
+              value_rules: null,
+            },
+            required: true,
+          },
+          component: component,
+          isEdition: isEdition,
+          onSave: function (value, selector) {
+            const rowId = $(selector.$element).data("row-id");
+            selector.input.value = value;
+            selector_condition_utils.updateTmpValue(
+              selector.parentInput,
+              rowId
+            );
+            selector.updateHtml();
+            if (selector.popover) selector.popover.hide();
+            return value;
+          },
+        });
+    });
+
+    // update Initial Tmp Value
+    selector_condition_utils.updateTmpValue(_, rowId);
+    if (conditionValue.operand) $(operandElement).val(conditionValue.operand);
+    if (conditionValue.condition) {
+      $(conditionElement).val(conditionValue.condition);
+      selector_condition_utils.onConditionChange(
+        conditionValue.condition,
+        rowId
+      );
+    }
+
+    $(`#${rowId}`)
+      .find(".condition-select")
+      .on("change", _, function (event) {
+        const selector = event.data;
+        const value = $(this).val();
+        const rowId = $(this).data("row-id");
+        selector_condition_utils.onConditionChange(value, rowId);
+        selector_condition_utils.updateTmpValue(selector, rowId);
+      });
+
+    $(`#${rowId}`)
+      .find(".operand-select")
+      .on("change", _, function (event) {
+        const selector = event.data;
+        const rowId = $(this).data("row-id");
+        selector_condition_utils.updateTmpValue(selector, rowId);
+      });
+    $(removeButton).on("click", _, function (event) {
+      const selector = event.data;
+      const rowId = $(this).data("row-id");
+      selector_condition_utils.removeRow(selector, rowId);
+    });
   }
 }
 
@@ -1163,4 +1395,72 @@ jQuery.fn.valueSelector = function (...args) {
     if (typeof ret !== "undefined") return ret;
   }
   return _;
+};
+
+selector_condition_utils = {
+  validateTmpValue: function (selector) {
+    selector.tmpValue = selector.tmpValue || [];
+    let isValid = true;
+    for (let i = 0; i < selector.tmpValue.length; i++) {
+      const { id, left_value, right_value, operand } = selector.tmpValue[i];
+      if (!left_value || left_value === "") isValid = false;
+    }
+    return isValid;
+  },
+  updateTmpValue: function (selector, rowId) {
+    const value = selector_condition_utils.getConditionRowValue(rowId);
+    selector.tmpValue = selector.tmpValue || [];
+    const index = selector.tmpValue.findIndex((v) => v.id === rowId);
+    if (index !== -1) {
+      selector.tmpValue[index] = value;
+    } else {
+      selector.tmpValue.push(value);
+    }
+  },
+  onConditionChange: function (value, rowId) {
+    if (
+      ["is_empty", "is_not_empty", "is_none", "is_not_none"].includes(value)
+    ) {
+      $(`#${rowId}`).find(".right-element").hide();
+    } else {
+      $(`#${rowId}`).find(".right-element").show();
+    }
+  },
+  removeRow: function (selector, rowId) {
+    const row = $(`#${rowId}`);
+    if (!row.length) return;
+    row.remove();
+    const index = selector.tmpValue.findIndex((v) => v.id === rowId);
+    if (index !== -1) {
+      selector.tmpValue.splice(index, 1);
+    }
+  },
+  getConditionRowValue: function (rowId) {
+    const row = $(`#${rowId}`);
+    if (!row.length) return null;
+    const leftValueSelector = row
+      .find(".left-element")
+      .valueSelector("getSelector");
+    const rightValueSelector = row
+      .find(".right-element")
+      .valueSelector("getSelector");
+    const condition = row.find(".condition-select").val();
+    const operand = row.find(".operand-select").val();
+
+    let left_value = leftValueSelector.input?.value;
+    let right_value = rightValueSelector.input?.value;
+    if (
+      ["is_empty", "is_not_empty", "is_none", "is_not_none"].includes(condition)
+    ) {
+      right_value = null;
+    }
+
+    return {
+      id: rowId,
+      left_value,
+      right_value,
+      condition: condition,
+      operand: operand || "and",
+    };
+  },
 };

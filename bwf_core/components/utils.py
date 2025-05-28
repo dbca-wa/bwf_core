@@ -1,6 +1,7 @@
 from django.template import engines
 import json
 import logging
+import ast
 logger = logging.getLogger(__name__)
 
 def process_base_input_definition(input_item, input_index):
@@ -171,6 +172,7 @@ def parse_evaluated_expression(result, data_type):
     elif data_type in ['bool', 'boolean']:
         return bool(result)
     elif data_type == 'list':
+        # return list(ast.literal_eval(result))
         return list(result)
     elif data_type == 'dict':
         return dict(result)
