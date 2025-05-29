@@ -59,7 +59,7 @@ class ValueSelector {
       value_rules: value_rules,
       is_expression: !!is_expression,
       is_condition: !!is_condition,
-      showEditor: !!is_expression,
+      showEditor: !!is_expression || !!is_condition,
       editor_syntax: editor_syntax,
       onSave: onSave,
       onCancel: onCancel,
@@ -159,6 +159,11 @@ class ValueSelector {
       _.$content.empty();
       _.$resetButton.hide();
       _.$editButton.hide();
+
+      if (_.popover) {
+        _.popover.dispose();
+        _.popover = null;
+      }
 
       const selectElement = markup(
         "select",
@@ -341,7 +346,6 @@ class ValueSelector {
       });
   }
 
-
   onPopoverOpen() {
     const _ = this;
     // console.log({ settings: _.initials });
@@ -432,7 +436,10 @@ class ValueSelector {
           }
         }
       }
-      if (!selector.popover && _.initials.showEditor) {
+      if (
+        !selector.popover &&
+        (_.initials.showEditor || _.initials.is_condition)
+      ) {
         selector.onContentEditionRendered();
       }
     });
@@ -793,28 +800,25 @@ class ValueSelector {
     } else {
       for (let i = 0; i < value.length; i++) {
         const condition = value[i];
-        _.renderConditionRow(
-          $(container).find(".conditions-block"),
-          condition
-        );
+        _.renderConditionRow($(container).find(".conditions-block"), condition);
       }
     }
 
     $(container).find(".btn-add-condition").attr("data-");
+    if (!_.isEdition) $(container).find(".btn-add-condition").remove();
+
     const conditionsBlock = $(container).find(".conditions-block");
     $(container)
       .find(".btn-add-condition")
       .on("click", { selector: _, conditionsBlock }, function (event) {
         const { selector, conditionsBlock } = event.data;
-        selector.renderConditionRow(
-          conditionsBlock,
-          {
-            left_value: null,
-            condition: "equals",
-            right_value: null,
-            operand: "and",
-          }
-        );
+        if (!selector.isEdition) return;
+        selector.renderConditionRow(conditionsBlock, {
+          left_value: null,
+          condition: "equals",
+          right_value: null,
+          operand: "and",
+        });
       });
   }
 
@@ -1037,6 +1041,8 @@ class ValueSelector {
     }
 
     if ((value_rules && value_rules.variable_only) || options) {
+      _.$content.removeClass("value-selector");
+
       if (!value.value) _.$content.addClass(invalidClassName);
 
       _.$resetButton.hide();
@@ -1098,7 +1104,7 @@ class ValueSelector {
       } else {
         _.$content.addClass("value-selector");
         _.$content.html(
-          (value.is_expression || value.is_condition)
+          value.is_expression || value.is_condition
             ? markup(
                 "div",
                 [{ tag: "i", class: "bi bi-braces" }, " Expression"],
@@ -1109,15 +1115,21 @@ class ValueSelector {
       }
     } else {
       _.$content.empty();
-      const text = value.is_expression ? " Expression" : value.is_condition ? " Condition value" : "";
-      const iconClass = value.is_expression ? "bi bi-braces" : value.is_condition ? "bi bi-patch-check" : "";
+      const text = value.is_expression
+        ? " Expression"
+        : value.is_condition
+        ? " Condition value"
+        : "";
+      const iconClass = value.is_expression
+        ? "bi bi-braces"
+        : value.is_condition
+        ? "bi bi-patch-check"
+        : "";
       _.$content.html(
-        (value.is_expression || value.is_condition)
-          ? markup(
-              "div",
-              [{ tag: "i", class: iconClass }, text],
-              { class: "text-center" }
-            )
+        value.is_expression || value.is_condition
+          ? markup("div", [{ tag: "i", class: iconClass }, text], {
+              class: "text-center",
+            })
           : value.value || ""
       );
     }
@@ -1287,8 +1299,11 @@ class ValueSelector {
     $(row).prepend(
       markup("div", includeOperand ? operandElement : "", { class: "col-2" })
     );
-    if (_.isEdition)
+    if (_.isEdition) {
       $(row).append(markup("div", removeButton, { class: "col-1" }));
+    } else {
+      $(row).find(".operand-select, .condition-select").attr("disabled", true);
+    }
     container.append(row);
     const items = [
       {
@@ -1424,6 +1439,26 @@ selector_condition_utils = {
       $(`#${rowId}`).find(".right-element").hide();
     } else {
       $(`#${rowId}`).find(".right-element").show();
+      if ("type_of" === value) {
+        const selector = $(`#${rowId}`)
+          .find(".right-element")
+          .valueSelector("getSelector");
+        if (selector) {
+          selector.input.json_value = {
+            type: "string",
+            options: [
+              { value: "string", label: "String" },
+              { value: "number", label: "Number" },
+              { value: "boolean", label: "Boolean" },
+              { value: "array", label: "Array" },
+              { value: "object", label: "Object" },
+            ],
+          };
+
+          selector.updateHtml();
+          selector.render(selector.value);
+        }
+      }
     }
   },
   removeRow: function (selector, rowId) {

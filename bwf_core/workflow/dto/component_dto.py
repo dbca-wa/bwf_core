@@ -37,6 +37,7 @@ class ComponentDto:
 
 def eval_inputs(component_inputs, workflow_context={}, plugin_id=""):
     from bwf_core.components.utils import evaluate_expression
+
     inputs_evaluated = {}
     for input in component_inputs:
         data_type = input.get("data_type", None)
@@ -47,7 +48,7 @@ def eval_inputs(component_inputs, workflow_context={}, plugin_id=""):
             }
             if not input["value"]:
                 pass
-            elif input["json_value"].get("multi", False):
+            elif input.get("json_value", {}).get("multi", False):
                 if isinstance(input["value"], list):
                     new_input["value"] = []
                     for fields in input["value"]:
@@ -55,12 +56,18 @@ def eval_inputs(component_inputs, workflow_context={}, plugin_id=""):
                         for field in fields:
                             fields_list.append(fields[field])
                         new_input["value"].append(
-                            eval_inputs(fields_list, workflow_context)
+                            eval_inputs(fields_list, workflow_context, plugin_id)
                         )
-            elif input["value"]["is_expression"]:
+            elif input.get("value").get("is_expression"):
                 expression = input["value"].get("value", "")
-                new_input["value"] = evaluate_expression(expression, data_type, workflow_context)
-            elif input["value"]["value_ref"]:
+                new_input["value"] = evaluate_expression(
+                    expression, data_type, workflow_context
+                )
+            elif input.get("value").get("is_condition", False):
+                new_input["value"] = eval_conditional_expression(
+                    input, workflow_context, plugin_id
+                )
+            elif input.get("value").get("value_ref"):
                 value_ref = input["value"]["value_ref"]
                 # TODO: validate context value
                 id = value_ref.get("id", None)
@@ -80,3 +87,150 @@ def eval_inputs(component_inputs, workflow_context={}, plugin_id=""):
                 input["key"],
             )
     return inputs_evaluated
+
+
+def eval_conditional_expression(input, workflow_context, plugin_id=""):
+    conditions = input["value"].get("value", [])
+    expression_value = True
+    values = {}
+    for condition in conditions:
+        result = eval_inputs(
+            [
+                {
+                    "key": "left_value",
+                    "data_type": "string",
+                    "value": condition.get("left_value", None),
+                }
+            ],
+            workflow_context,
+            plugin_id,
+        )
+        values.update(**result)
+        right_value = condition.get("right_value", {})
+        if right_value:
+            result = eval_inputs(
+                [
+                    {
+                        "key": "right_value",
+                        "data_type": "string",
+                        "value": condition.get("right_value", None),
+                    }
+                ],
+                workflow_context,
+                plugin_id,
+            )
+            values.update(**result)
+        
+        condition_value = condition.get("condition", None)
+        operand = condition.get("operand", None)
+
+        evaluation = compare_values(
+            {"value": values["left_value"], "data_type": "string"}, 
+            condition_value, 
+            {"value": values["right_value"], "data_type": ""} if right_value else None, 
+            
+        )
+        expression_value = (
+            (expression_value and evaluation)
+            if operand == "and"
+            else (expression_value or evaluation)
+        )
+    return expression_value
+
+
+def compare_values(left_value, condition, right_value):
+    from bwf_core.components.utils import parse_evaluated_expression
+
+    if not left_value or not condition:
+        raise Exception(
+            "Invalid conditional expression: left_value or condition is None"
+        )
+
+    left_value_val = left_value.get("value")
+    first_value_data_type = left_value.get("data_type")
+    right_value_val = right_value.get("value")
+    if condition in [COND_IS_EMPTY, COND_IS_NOT_EMPTY, COND_IS_NONE, COND_IS_NOT_NONE]:
+        if condition == COND_IS_EMPTY:
+            return left_value_val == [] or left_value_val == {} or left_value_val == ""
+        elif condition == COND_IS_NOT_EMPTY:
+            return left_value_val != [] or left_value_val != {} or left_value_val != ""
+        elif condition == COND_IS_NONE:
+            return left_value_val is None
+        elif condition == COND_IS_NOT_NONE:
+            return left_value_val is not None
+    if condition == COND_EQUAL_TO:
+        return left_value == parse_evaluated_expression(
+            right_value_val, first_value_data_type
+        )
+    elif condition == COND_NOT_EQUAL_TO:
+        return left_value_val != right_value_val
+    elif condition == COND_GREATER_THAN:
+        return left_value_val > right_value_val
+    elif condition == COND_LESS_THAN:
+        return left_value_val < right_value_val
+    elif condition == COND_GREATER_THAN_OR_EQUAL_TO:
+        return left_value_val >= right_value_val
+    elif condition == COND_LESS_THAN_OR_EQUAL_TO:
+        return left_value_val <= right_value_val
+
+    elif condition == COND_TYPE_OF:
+        if right_value_val == "string":
+            return isinstance(left_value_val, str)
+        elif right_value_val == "number":
+            return isinstance(left_value_val, (int, float))
+        elif right_value_val == "boolean":
+            return isinstance(left_value_val, bool)
+        elif right_value_val in ["array", "list"]:
+            return isinstance(left_value_val, list)
+        elif right_value_val == "object":
+            return isinstance(left_value_val, dict)
+        else:
+            raise Exception(f"Unknown type condition: {right_value_val}")
+    elif condition == COND_CONTAINS:
+        if isinstance(left_value_val, str):
+            return right_value_val in left_value_val
+        elif isinstance(left_value_val, list):
+            return right_value_val in left_value_val
+        elif isinstance(left_value_val, dict):
+            return right_value_val in left_value_val.values()
+    elif condition == COND_NOT_CONTAINS:
+        if isinstance(left_value_val, str):
+            return right_value_val not in left_value_val
+        elif isinstance(left_value_val, list):
+            return right_value_val not in left_value_val
+        elif isinstance(left_value_val, dict):
+            return right_value_val not in left_value_val.values()
+    elif condition == COND_STARTS_WITH:
+        if isinstance(left_value_val, str):
+            return left_value_val.startswith(right_value_val)
+        else:
+            raise Exception("Condition 'starts_with' can only be used with strings")
+    elif condition == COND_ENDS_WITH:
+        if isinstance(left_value_val, str):
+            return left_value_val.endswith(right_value_val)
+        else:
+            raise Exception("Condition 'ends_with' can only be used with strings")
+    else:
+        logger.error(f"Unknown condition: {condition}")
+        raise Exception(f"Unknown condition: {condition}")
+    return False
+
+
+
+
+COND_EQUAL_TO = "equals"
+COND_NOT_EQUAL_TO = "not_equals"
+COND_GREATER_THAN = "greater_than"
+COND_LESS_THAN = "less_than"
+COND_GREATER_THAN_OR_EQUAL_TO = "gte"
+COND_LESS_THAN_OR_EQUAL_TO = "lte"
+COND_TYPE_OF = "type_of"
+COND_CONTAINS = "contains"
+
+COND_NOT_CONTAINS = "not_contains"
+COND_STARTS_WITH = "starts_with"
+COND_ENDS_WITH = "ends_with"
+COND_IS_EMPTY = "is_empty"
+COND_IS_NOT_EMPTY = "is_not_empty"
+COND_IS_NONE = "is_none"
+COND_IS_NOT_NONE = "is_not_none"
