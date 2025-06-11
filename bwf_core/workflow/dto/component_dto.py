@@ -15,6 +15,7 @@ class ComponentDto:
         version_number,
         config,
         conditions,
+        workflow_instance=None,
         workflow_context={},
     ):
         self.id = id
@@ -26,116 +27,132 @@ class ComponentDto:
         self.config = config
         self.conditions = conditions
         self.workflow_context = workflow_context
+        self.workflow_instance = workflow_instance
 
     def get_inputs(self):
         if not self.inputs:
-            self.inputs = eval_inputs(
+            self.inputs = self.eval_inputs(
                 self.config["inputs"], self.workflow_context, plugin_id=self.plugin_id
             )
         return self.inputs
 
 
-def eval_inputs(component_inputs, workflow_context={}, plugin_id=""):
-    from bwf_core.components.utils import evaluate_expression
+    def eval_inputs(self, component_inputs, workflow_context={}, plugin_id=""):
+        from bwf_core.components.utils import evaluate_expression
 
-    inputs_evaluated = {}
-    for input in component_inputs:
-        data_type = input.get("data_type", None)
-        try:
-            new_input = {
-                "key": input["key"],
-                "value": None,
-            }
-            if not input["value"]:
-                pass
-            elif input.get("json_value", {}).get("multi", False):
-                if isinstance(input["value"], list):
-                    new_input["value"] = []
-                    for fields in input["value"]:
-                        fields_list = []
-                        for field in fields:
-                            fields_list.append(fields[field])
-                        new_input["value"].append(
-                            eval_inputs(fields_list, workflow_context, plugin_id)
-                        )
-            elif input.get("value").get("is_expression"):
-                expression = input["value"].get("value", "")
-                new_input["value"] = evaluate_expression(
-                    expression, data_type, workflow_context
+        inputs_evaluated = {}
+        for input in component_inputs:
+            data_type = input.get("data_type", None)
+            try:
+                new_input = {
+                    "key": input["key"],
+                    "value": None,
+                }
+                if not input["value"]:
+                    pass
+                elif input.get("json_value", {}).get("multi", False):
+                    if isinstance(input["value"], list):
+                        new_input["value"] = []
+                        for fields in input["value"]:
+                            fields_list = []
+                            for field in fields:
+                                fields_list.append(fields[field])
+                            new_input["value"].append(
+                                self.eval_inputs(fields_list, workflow_context, plugin_id)
+                            )
+                elif input.get("value").get("is_expression"):
+                    expression = input["value"].get("value", "")
+                    new_input["value"] = evaluate_expression(
+                        expression, data_type, workflow_context
+                    )
+                elif input.get("value").get("is_condition", False):
+                    new_input["value"] = self.eval_conditional_expression(
+                        input, workflow_context, plugin_id
+                    )
+                elif input.get("value").get("value_ref"):
+                    value_ref = input["value"]["value_ref"]
+                    # TODO: validate context value
+                    id = value_ref.get("id", None)
+                    key = value_ref.get("key", None)
+                    param = id if id else key if key else None
+                    if not param:
+                        raise Exception("Invalid value reference")
+                    new_input["value"] = workflow_context[value_ref["context"]].get(
+                        param, None
+                    )
+                else:
+                    new_input["value"] = input["value"]["value"]
+                inputs_evaluated[new_input["key"]] = new_input["value"]
+            except Exception as e:
+                raise bwf_exceptions.ComponentInputsEvaluationException(
+                    f"Error evaluating input in plugin '{plugin_id}' value for '{input['key']}': {str(e)}",
+                    input["key"],
                 )
-            elif input.get("value").get("is_condition", False):
-                new_input["value"] = eval_conditional_expression(
-                    input, workflow_context, plugin_id
-                )
-            elif input.get("value").get("value_ref"):
-                value_ref = input["value"]["value_ref"]
-                # TODO: validate context value
+        return inputs_evaluated
+
+
+    def eval_conditional_expression(self, input, workflow_context, plugin_id=""):
+        from bwf_core.workflow.utils import get_variable_info, get_input_info
+
+        conditions = input["value"].get("value", [])
+        expression_value = True
+        values = {}
+        workflow_definition = self.workflow_instance.get_json_definition()
+        for condition in conditions:
+            left_value = condition.get("left_value", {})
+            left_value_data_type = "string"
+            if left_value.get("value_ref", None):
+                value_ref = left_value.get("value_ref", {})
                 id = value_ref.get("id", None)
                 key = value_ref.get("key", None)
-                param = id if id else key if key else None
-                if not param:
-                    raise Exception("Invalid value reference")
-                new_input["value"] = workflow_context[value_ref["context"]].get(
-                    param, None
-                )
-            else:
-                new_input["value"] = input["value"]["value"]
-            inputs_evaluated[new_input["key"]] = new_input["value"]
-        except Exception as e:
-            raise bwf_exceptions.ComponentInputsEvaluationException(
-                f"Error evaluating input in plugin '{plugin_id}' value for '{input['key']}': {str(e)}",
-                input["key"],
-            )
-    return inputs_evaluated
+                context = value_ref.get("context", None)
+                context_function = get_variable_info if context == "variables" else get_input_info
+                value_from_ref = context_function(workflow_definition=workflow_definition, id=id, key=key)
+                if value_from_ref:
+                    left_value_data_type = value_from_ref.get("data_type", "string")
 
-
-def eval_conditional_expression(input, workflow_context, plugin_id=""):
-    conditions = input["value"].get("value", [])
-    expression_value = True
-    values = {}
-    for condition in conditions:
-        result = eval_inputs(
-            [
-                {
-                    "key": "left_value",
-                    "data_type": "string",
-                    "value": condition.get("left_value", None),
-                }
-            ],
-            workflow_context,
-            plugin_id,
-        )
-        values.update(**result)
-        right_value = condition.get("right_value", {})
-        if right_value:
-            result = eval_inputs(
+            result = self.eval_inputs(
                 [
                     {
-                        "key": "right_value",
-                        "data_type": "string",
-                        "value": condition.get("right_value", None),
+                        "key": "left_value",
+                        "data_type": left_value_data_type,
+                        "value": condition.get("left_value", None),
                     }
                 ],
                 workflow_context,
                 plugin_id,
             )
             values.update(**result)
-        
-        condition_value = condition.get("condition", None)
-        operand = condition.get("operand", None)
-
-        evaluation = compare_values(
-            {"value": values["left_value"], "data_type": "string"}, 
-            condition_value, 
-            {"value": values["right_value"], "data_type": ""} if right_value else None, 
+            right_value = condition.get("right_value", {})
+            if right_value:
+                result = self.eval_inputs(
+                    [
+                        {
+                            "key": "right_value",
+                            "data_type": "string",
+                            "value": condition.get("right_value", None),
+                        }
+                    ],
+                    workflow_context,
+                    plugin_id,
+                )
+                values.update(**result)
             
-        )
-        expression_value = (
-            (expression_value and evaluation)
-            if operand == "and"
-            else (expression_value or evaluation)
-        )
-    return expression_value
+            condition_value = condition.get("condition", None)
+            operand = condition.get("operand", None)
+
+            evaluation = compare_values(
+                {"value": values["left_value"], "data_type": "string"}, 
+                condition_value, 
+                {"value": values["right_value"], "data_type": ""} if right_value else None, 
+                
+            )
+            expression_value = (
+                (expression_value and evaluation)
+                if operand == "and"
+                else (expression_value or evaluation)
+            )
+        return expression_value
 
 
 def compare_values(left_value, condition, right_value):

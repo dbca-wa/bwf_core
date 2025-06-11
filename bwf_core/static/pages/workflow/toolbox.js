@@ -97,7 +97,8 @@ var workflow_toolbox = {
 
     const label = existingRoute?.label || "";
     const action = existingRoute?.action || "";
-    const condition = existingRoute?.condition || {};
+    
+    const condition = existingRoute?.condition || "";
     _.var.condition = condition;
 
     const template = document.querySelector("#component-routing-template");

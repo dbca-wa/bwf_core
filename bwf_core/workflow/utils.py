@@ -30,3 +30,28 @@ def set_workflow_active_version(version: WorkflowVersion):
         new_workflow_definition['variables'] = current_definition['variables']
         workflow.set_json_definition(new_workflow_definition)
     return version
+
+
+def get_variable_info(workflow_definition, id=None, key=None):
+    if not workflow_definition or not workflow_definition.get('variables'):
+        return None
+    variables = workflow_definition['variables']
+    if id:
+        return variables.get(id, None)
+    elif key:
+        for variable in variables.values():
+            if variable.get('key') == key:
+                return variable
+    return None
+
+def get_input_info(workflow_definition, id=None, key=None):
+    if not workflow_definition or not workflow_definition.get('inputs'):
+        return None
+    inputs = workflow_definition['inputs']
+    if id:
+        return inputs.get(id, None)
+    elif key:
+        for input_item in inputs.values():
+            if input_item.get('key') == key:
+                return input_item
+    return None

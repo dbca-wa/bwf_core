@@ -336,6 +336,7 @@ class WorkflowComponentInstanceFactory:
                                      plugin_id=component['plugin_id'],
                                      version_number=component['version_number'],
                                      config=component['config'],
+                                     workflow_instance=workflow_instance,
                                      conditions=component['conditions'])
 
         input_values = {}
