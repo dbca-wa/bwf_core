@@ -207,7 +207,7 @@ class ValueSelector {
             tag: "div",
             content: markup(
               "button",
-              [{ tag: "i", class: "bi bi-plus" }, "Add field value"],
+              [{ tag: "i", class: "bi bi-plus" }, `Add <strong>${_.input.name}</strong> item`],
               {
                 class: "btn btn-primary btn-sm mb-4",
               }
@@ -415,7 +415,10 @@ class ValueSelector {
     multiAddItemClick: function (event) {
       const selector = event.data;
       const { input, component } = selector;
-      const { value } = input;
+      const { value, json_value } = input;
+
+      const { structure } = json_value ?? {};
+
       const valueArray = value || [];
       const newValue = {};
       for (const structure_key in structure) {
@@ -504,9 +507,12 @@ class ValueSelector {
         _.renderAjaxSelect();
       }
     }
-    _.$editButton.show();
-
-    _.$editButton.off("click").on("click", _, _.handlers.editButtonClick);
+    if (isAjax) {
+      _.$editButton.remove();
+    } else {
+      _.$editButton.show();
+      _.$editButton.off("click").on("click", _, _.handlers.editButtonClick);
+    }
 
     if (!isEdition) {
       _.$editButton.hide();
@@ -820,7 +826,7 @@ class ValueSelector {
     const { value } = input.value || { value: [] };
     $(container).show();
     _.tmpValue = [];
-    if (value.length === 0) {
+    if (value?.length === 0) {
       _.renderConditionRow($(container).find(".conditions-block"), {
         left_value: null,
         condition: "equals",
@@ -900,7 +906,6 @@ class ValueSelector {
         if (syntax === BWF_SYNTAX.text) {
           selector.editor.setOption("lint", false);
           selector.editor.setOption("gutters", []);
-
         } else {
           selector.editor.setOption("lint", true);
           selector.editor.setOption("gutters", ["CodeMirror-lint-markers"]);

@@ -15,6 +15,11 @@ class BasePlugin:
         self.context = context
 
         # output
+    def workflow_instance_id(self):
+        return self.workflow_instance.id
+
+    def component_instance_id(self):
+        return self.component.id
 
     def set_plugin_component(self, executableComponent):
         # self.component = executableComponent
