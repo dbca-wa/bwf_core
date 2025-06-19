@@ -44,6 +44,10 @@ class BasePlugin:
             self.on_complete()
         else:
             self.on_failure(message)
+    
+    def set_on_awaiting_action(self):
+        self.component.set_status_awaiting_action()
+
 
     def call_next_node(self, override_route=None):
         from bwf_core.tasks import register_workflow_step

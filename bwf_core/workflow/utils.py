@@ -32,26 +32,17 @@ def set_workflow_active_version(version: WorkflowVersion):
     return version
 
 
-def get_variable_info(workflow_definition, id=None, key=None):
-    if not workflow_definition or not workflow_definition.get('variables'):
-        return None
-    variables = workflow_definition['variables']
+def get_value_from_context(workflow_definition, context, id=None, key=None):
+    if not workflow_definition or not context:
+        raise ValueError("Workflow definition and context must be provided.")
+    if context not in workflow_definition:
+        raise ValueError(f"Context '{context}' not found in dict provided.")
+    values = workflow_definition[context]
     if id:
-        return variables.get(id, None)
+        return values.get(id, None)
     elif key:
-        for variable in variables.values():
-            if variable.get('key') == key:
-                return variable
+        for value_key, value_input in values.items():
+            if value_key == key:
+                return value_input
     return None
 
-def get_input_info(workflow_definition, id=None, key=None):
-    if not workflow_definition or not workflow_definition.get('inputs'):
-        return None
-    inputs = workflow_definition['inputs']
-    if id:
-        return inputs.get(id, None)
-    elif key:
-        for input_item in inputs.values():
-            if input_item.get('key') == key:
-                return input_item
-    return None

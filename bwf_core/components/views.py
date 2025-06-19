@@ -172,7 +172,7 @@ class WorkflowComponentViewset(ViewSet):
                 if index == -1:
                     raise Exception("Route not found")
                 component['routing'].pop(index)
-            elif new_index:
+            elif new_index is not None:
                 affected_route = routing.pop(index)
                 routing.insert(new_index, affected_route)
             else:

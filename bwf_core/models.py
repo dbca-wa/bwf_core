@@ -171,6 +171,10 @@ class WorkFlowInstance(models.Model):
 
     def get_json_definition(self):
         return self.workflow_version.get_json_definition()
+    
+    @property
+    def is_active(self):
+        return self.status in [WorkflowStatusEnum.PENDING, WorkflowStatusEnum.RUNNING, WorkflowStatusEnum.AWAITING_ACTION]
 
     # Current task
     # start task
@@ -196,7 +200,7 @@ class WorkFlowInstance(models.Model):
 
 
 class ComponentInstance(models.Model):
-    component_id = models.CharField(max_length=100)
+    component_id = models.CharField(max_length=100) # ID in the json definition
     workflow = models.ForeignKey(WorkFlowInstance, on_delete=models.CASCADE, related_name="child_actions")
     parent_node = models.ForeignKey(to="ComponentInstance", on_delete=models.CASCADE, related_name="children_nodes", null=True, blank=True)
     component_definition = models.JSONField(null=True, blank=True)
@@ -215,6 +219,14 @@ class ComponentInstance(models.Model):
     
     def __str__(self):
         return f"ID: {self.component_id}, Plugin: {self.plugin_id} V:{self.plugin_version} "
+    
+    @property
+    def is_active(self):
+        return self.status in [WorkflowStatusEnum.PENDING, WorkflowStatusEnum.RUNNING, WorkflowStatusEnum.AWAITING_ACTION]
+    
+    @property
+    def is_awaiting_action(self):
+        return self.status == WorkflowStatusEnum.AWAITING_ACTION
 
     def set_status_completed(self):
         from bwf_core.workflow.action_log import tasks as action_log_tasks
@@ -276,10 +288,10 @@ class WorkflowInstanceFactory:
             'local': {},
         }
 
-        for key  in local_variables:
+        for key in local_variables:
             variable = local_variables[key]
             context[variable['context']][key] = variable.get("value", None)
-            context[variable['context']][variable['name']] = variable.get("value", None)
+            context[variable['context']][variable['key']] = variable.get("value", None)
 
         for key in input_values:
             input = input_values[key]
@@ -297,7 +309,7 @@ class WorkflowInstanceFactory:
         json_default = input_value.get("default_value", None) # TODO: get default type for data type
         json_value = input_value.get("value", {})
 
-        if param_value is None and input_value['required'] == True and (json_default is None or json_default['value'] is None):
+        if param_value is None and input_value['required'] == True and (json_default is None or json_default.get('value') is None):
             raise ValueError(f"Required input {input_value.key} is missing")
         if param_value is None:
             return json_default['value']

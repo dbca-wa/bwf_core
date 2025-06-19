@@ -207,7 +207,10 @@ class ValueSelector {
             tag: "div",
             content: markup(
               "button",
-              [{ tag: "i", class: "bi bi-plus" }, `Add <strong>${_.input.name}</strong> item`],
+              [
+                { tag: "i", class: "bi bi-plus" },
+                `Add <strong>${_.input.name}</strong> item`,
+              ],
               {
                 class: "btn btn-primary btn-sm mb-4",
               }
@@ -366,7 +369,7 @@ class ValueSelector {
           selector.hideContentEdition();
 
           selector.saveValue({
-            value: selector.tansformValue(selectedValue),
+            value: selector.tansformValue(selectedValue, editor_syntax),
             is_expression: true,
             value_ref: null,
             is_condition: false,
@@ -452,6 +455,8 @@ class ValueSelector {
     },
     multiItemRemoveClick: function (event) {
       const selector = event.data;
+      const { input } = selector;
+
       const key = $(this).data("key");
       const id = $(this).data("id");
       const field_id = $(this).data("field-id");
@@ -826,7 +831,7 @@ class ValueSelector {
     const { value } = input.value || { value: [] };
     $(container).show();
     _.tmpValue = [];
-    if (value?.length === 0) {
+    if (!value || value?.length === 0) {
       _.renderConditionRow($(container).find(".conditions-block"), {
         left_value: null,
         condition: "equals",
@@ -923,7 +928,7 @@ class ValueSelector {
 
         if (_.validateValueEntered(enteredValue, editor_syntax)) {
           _.saveValue({
-            value: _.tansformValue(enteredValue),
+            value: _.tansformValue(enteredValue, editor_syntax),
             is_expression: true,
             editor_syntax,
             value_ref: null,
@@ -1260,16 +1265,20 @@ class ValueSelector {
 
     return isValid;
   }
-  tansformValue(value) {
+  tansformValue(value, syntax) {
     const _ = this;
     const { input } = _;
     const { data_type } = input;
-    if (data_type === "object" || data_type === "array") {
-      try {
-        return JSON.stringify(JSON.parse(value));
-      } catch (error) {
-        return null;
+    if (syntax === BWF_SYNTAX.javascript) {
+      if (data_type === "object" || data_type === "array") {
+        try {
+          return JSON.stringify(JSON.parse(value));
+        } catch (error) {
+          return null;
+        }
       }
+    } else if (syntax === BWF_SYNTAX.text) {
+      return `${value}`;
     }
     return value;
   }
@@ -1376,6 +1385,7 @@ class ValueSelector {
         .find(item.selector)
         .valueSelector({
           valueOnly: true,
+          useOutputFields: true,
           parent: _,
           input: {
             name: item.name,

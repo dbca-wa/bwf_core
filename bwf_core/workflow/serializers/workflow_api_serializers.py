@@ -27,3 +27,10 @@ class WorkflowInstanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkFlowInstance
         exclude = ['variables']
+
+
+class ComponentAsyncResponseSerializer(serializers.Serializer):
+    workflow_instance_id = serializers.IntegerField()
+    component_instance_id = serializers.IntegerField()
+    plugin_object_id = serializers.CharField(max_length=255)
+    form_data = serializers.JSONField(required=False, allow_null=True)

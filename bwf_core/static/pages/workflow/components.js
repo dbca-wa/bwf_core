@@ -160,7 +160,8 @@ var workflow_components = {
     }
     $(`#node_${component.id}.diagram-node-parent`).draggable({
       handle: ".node-handle:first",
-      containment: "#components-flow", scroll: false
+      containment: "#components-flow",
+      scroll: false,
     });
   },
   renderFirstLine: function (component) {
@@ -309,7 +310,7 @@ var workflow_components = {
       for (let path in paths) {
         _.updateLines(paths[path]);
       }
-      component_utils.render.positionOuterBranchLines(component)
+      component_utils.render.positionOuterBranchLines(component);
     }
   },
   appendComponentToDiagram: function (component, container, appendPosition) {
@@ -379,7 +380,7 @@ var workflow_components = {
 
   appendComponent: function (component, container, appendPosition) {
     const _ = workflow_components;
-    _.container
+    _.container;
     if (_.is_diagram) {
       _.appendComponentToDiagram(component, container, appendPosition);
       _.updateLines();
@@ -396,7 +397,6 @@ var workflow_components = {
       if (nodeLowerBound > lowerBound) {
         
       } */
-
 
       return;
     }
@@ -703,8 +703,7 @@ var workflow_components = {
           let index = 0;
           $(`.list-group.routes > div`).each((i, item) => {
             const routeInList = $(item).data("route");
-            if (chosen_route === routeInList) return;
-            index++;
+            if (chosen_route === routeInList) index = i;
           });
           const data = {
             id: id,
