@@ -120,7 +120,7 @@ def is_default_route(routing):
 """
 
 
-def calculate_next_node(node, workflow_context):
+def calculate_next_node(node, workflow_context, plugin_id=None, workflow_config={}):
     routing = node.get("routing", None)
     name = node.get("name", None)
     logger.info(f"Evaluating next route for component {name}.")
@@ -168,9 +168,11 @@ def calculate_next_node(node, workflow_context):
                 raise Exception(f"Error evaluating expression {expression}: {e}")
         elif condition.get("is_condition", False):
             result = eval_conditional_expression(
-                condition, workflow_context
+                condition, workflow_context, plugin_id=plugin_id, workflow_config=workflow_config
             )
-
+            if result:
+                logger.info(f"Route #{i+1} {route['route']} is_condition evaluated to True")
+                return route.get("route")
         else:
             if default_route is None:
                 logger.info(
@@ -224,7 +226,7 @@ def parse_evaluated_expression(result, data_type):
     elif data_type == ["float", "double"]:
         return float(result)
     elif data_type in ["bool", "boolean"]:
-        return bool(result)
+        return ast.literal_eval(result)
     elif data_type == "list":
         return list(ast.literal_eval(result))
         # return list(result)

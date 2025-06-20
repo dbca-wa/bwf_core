@@ -29,16 +29,19 @@ class ComponentDto:
         self.workflow_context = workflow_context
         self.workflow_instance = workflow_instance
 
-    def get_inputs(self):
+    def get_inputs(self, workflow_config={}):
+        from bwf_core.workflow.utils import get_workflow_config
         if not self.inputs:
+            workflow_config = get_workflow_config(self.workflow_instance.get_json_definition(), node_config=self.config)
             self.inputs = eval_inputs(
-                self.config["inputs"], self.workflow_context, plugin_id=self.plugin_id
+                self.config["inputs"], self.workflow_context, plugin_id=self.plugin_id, workflow_config=workflow_config
             )
         return self.inputs
 
 
-def eval_inputs(component_inputs, workflow_context={}, plugin_id=""):
+def eval_inputs(component_inputs, workflow_context={}, plugin_id="", workflow_config={}):
     from bwf_core.components.utils import evaluate_expression
+    from bwf_core.controller.controller import BWFPluginController
 
     inputs_evaluated = {}
     for input in component_inputs:
@@ -58,7 +61,7 @@ def eval_inputs(component_inputs, workflow_context={}, plugin_id=""):
                         for field in fields:
                             fields_list.append(fields[field])
                         new_input["value"].append(
-                            eval_inputs(fields_list, workflow_context, plugin_id)
+                            eval_inputs(fields_list, workflow_context, plugin_id, workflow_config)
                         )
             elif input.get("value").get("is_expression"):
                 expression = input["value"].get("value", "")
@@ -67,7 +70,7 @@ def eval_inputs(component_inputs, workflow_context={}, plugin_id=""):
                 )
             elif input.get("value").get("is_condition", False):
                 new_input["value"] = eval_conditional_expression(
-                    input.get("value", []), workflow_context, plugin_id
+                    input.get("value", []), workflow_context, plugin_id, workflow_config
                 )
             elif input.get("value").get("value_ref"):
                 value_ref = input["value"]["value_ref"]
@@ -91,8 +94,8 @@ def eval_inputs(component_inputs, workflow_context={}, plugin_id=""):
     return inputs_evaluated
 
 
-def eval_conditional_expression(input, workflow_context, plugin_id=""):
-    from bwf_core.workflow.utils import get_value_from_context
+def eval_conditional_expression(input, workflow_context, plugin_id="", workflow_config={}):
+    from bwf_core.workflow.utils import get_context_item
 
     conditions = input.get("value", [])
     expression_value = True
@@ -105,11 +108,10 @@ def eval_conditional_expression(input, workflow_context, plugin_id=""):
             value_ref = left_value.get("value_ref", {})
             id = value_ref.get("id", None)
             key = value_ref.get("key", None)
-            context = value_ref.get("context", None)
-            # TODO: Urgent. Get the type of this value. 
-            value_from_ref = get_value_from_context(workflow_definition=workflow_context, context=context, id=id, key=key)
-            if value_from_ref:
-                left_value_data_type = value_from_ref.get("data_type", "string")
+            context = value_ref.get("context", None)            
+            context_item = get_context_item(workflow_config=workflow_config, context=context, id=id, key=key)
+            if context_item:
+                left_value_data_type = context_item.get("data_type", "string")
 
         result = eval_inputs(
             [
@@ -121,6 +123,7 @@ def eval_conditional_expression(input, workflow_context, plugin_id=""):
             ],
             workflow_context,
             plugin_id,
+            workflow_config=workflow_config,
         )
         values.update(**result)
         right_value = condition.get("right_value", {})
@@ -135,6 +138,7 @@ def eval_conditional_expression(input, workflow_context, plugin_id=""):
                 ],
                 workflow_context,
                 plugin_id,
+                workflow_config=workflow_config,
             )
             values.update(**result)
         
@@ -142,9 +146,9 @@ def eval_conditional_expression(input, workflow_context, plugin_id=""):
         operand = condition.get("operand", None)
 
         evaluation = compare_values(
-            {"value": values["left_value"], "data_type": "string"}, 
+            {"value": values["left_value"], "data_type": left_value_data_type}, 
             condition_value, 
-            {"value": values["right_value"], "data_type": ""} if right_value else None, 
+            {"value": values["right_value"], "data_type": "string"} if right_value else None, 
             
         )
         expression_value = (
@@ -176,7 +180,7 @@ def compare_values(left_value, condition, right_value):
         elif condition == COND_IS_NOT_NONE:
             return left_value_val is not None
     if condition == COND_EQUAL_TO:
-        return left_value == parse_evaluated_expression(
+        return left_value_val == parse_evaluated_expression(
             right_value_val, first_value_data_type
         )
     elif condition == COND_NOT_EQUAL_TO:
