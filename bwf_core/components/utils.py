@@ -221,7 +221,7 @@ def parse_evaluated_expression(result, data_type):
     """
     Parse the evaluated expression result based on the data type.
     """
-    if data_type == ["int", "integer", "number"]:
+    if data_type in ["int", "integer", "number"]:
         return int(result)
     elif data_type == ["float", "double"]:
         return float(result)
@@ -233,6 +233,8 @@ def parse_evaluated_expression(result, data_type):
     elif data_type == "dict":
         return dict(result)
     elif data_type == "array" or data_type == "object":
+        if isinstance(result, (list, dict)):
+            return result
         return ast.literal_eval(result)
     else:
         return result

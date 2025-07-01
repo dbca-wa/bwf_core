@@ -49,3 +49,9 @@ urlpatterns = [
 
     path("api/", include(router.urls)),
 ]
+
+
+if "bwf_forms" in conf.settings.INSTALLED_APPS:
+    urlpatterns.append(
+        path('forms/', include("bwf_forms.urls"))
+    )

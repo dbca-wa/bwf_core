@@ -1,0 +1,42 @@
+{
+  "id": "assign_multi_variables",
+  "name": "Assign Multiple Variable Values",
+  "description": "Assign multiple values to variables.",
+  "author": "BWF Components",
+  "editable": false,
+  "icon_class": "bi bi-layers-fill",
+  "icon_image_src": "icon.png",
+  "node_type":"node",
+  "base_input": [
+    {
+      "key": "variables",
+      "label": "Variables",
+      "type": "array",
+      "value": "",
+      "required": false,
+      "value_rules": {
+        "dynamic": true,
+        "structure": {
+          "local_variable_key": {
+            "key": "local_variable_key",
+            "label": "Name",
+            "type": "string",
+            "value": "",
+            "required": true,
+            "value_rules": {
+              "variable_only": true
+            }
+          },
+          "value": {
+            "key": "value",
+            "label": "Value",
+            "type": "string",
+            "value": "",
+            "required": true
+          }
+        }
+      }
+    }
+  ],
+  "base_output": null
+}

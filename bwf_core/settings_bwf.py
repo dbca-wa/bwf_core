@@ -7,6 +7,7 @@ from django.apps import apps
 import decouple
 import os
 from collections import OrderedDict
+from pathlib import Path
 
 
 # Project paths
@@ -40,10 +41,10 @@ if os.path.exists(BASE_PLUGIN_ROUTE) is False:
 FLOW_NODES_ROUTE = os.path.join(BASE_DIR, "bwf_core", "core_plugins")
 
 BWF_PLUGINS_APPS = [
-    "bwf_components.bwf_forms",
+    # "bwf_forms",
 ]
 PLUGIN_ROUTES = [BASE_PLUGIN_ROUTE, FLOW_NODES_ROUTE]
-
+PLUGIN_TEMPLATE_ROUTES = []
 for route in PLUGIN_ROUTES:
     is_bwf_componments = route == BASE_PLUGIN_ROUTE
     if not os.path.exists(route) or not os.path.isdir(route):
@@ -61,6 +62,12 @@ for route in PLUGIN_ROUTES:
                             "/", "."
                         )
                     )
+                    # Plugin template path
+                    if os.path.exists(os.path.join(plugin_path, "templates")):
+                        plugin_template_path = os.path.join(
+                            plugin_path, "templates"
+                        )
+                        PLUGIN_TEMPLATE_ROUTES.append(plugin_template_path)
                 else:
                     BWF_PLUGINS_APPS.append(
                         f"bwf_core{plugin_path.split('bwf_core')[1]}".replace("/", ".")
@@ -89,14 +96,14 @@ settings.HAS_UPDATED_APPS = True
 if not hasattr(settings, "TEMPLATES") or len(settings.TEMPLATES) == 0:
     raise ImproperlyConfigured("TEMPLATES setting is required in settings.py")
 
-BWF_CORE_TEMPLATES_DIR = os.path.join(BASE_DIR, "bwf_core", "templates")
-BWF_COMPONENTS_TEMPLATES_DIR = os.path.join(BASE_DIR, "bwf_components", "templates")
-if BWF_CORE_TEMPLATES_DIR not in settings.TEMPLATES[0]["DIRS"]:
-    # Add the templates directory to the TEMPLATES setting
-    settings.TEMPLATES[0]["DIRS"] += [BWF_CORE_TEMPLATES_DIR]
-if BWF_COMPONENTS_TEMPLATES_DIR not in settings.TEMPLATES[0]["DIRS"]:
-    # Add the bwf_components templates directory to the TEMPLATES setting
-    settings.TEMPLATES[0]["DIRS"] += [BWF_COMPONENTS_TEMPLATES_DIR]
+BWF_TEMPLATE_PATHS = [os.path.join(BASE_DIR, "bwf_components", "templates"),
+                    os.path.join(BASE_DIR, "bwf_forms", "templates"),
+                    os.path.join(BASE_DIR, "bwf_forms", "templates"),]
+
+for plugin_template_path in PLUGIN_TEMPLATE_ROUTES + BWF_TEMPLATE_PATHS:
+    if plugin_template_path not in settings.TEMPLATES[0]["DIRS"]:
+        settings.TEMPLATES[0]["DIRS"] += [Path(plugin_template_path)]
+
 """
    End of loading templates directories for BWF core and components.
 
@@ -108,7 +115,7 @@ if not hasattr(settings, "STATICFILES_DIRS"):
 BWF_COMPONENTS_STATIC_DIRS = os.path.join(
     BASE_DIR, "bwf_components", "plugins", "*", "static"
 )
-BWF_FORMS_STATIC_DIR = os.path.join(BASE_DIR, "bwf_components", "bwf_forms", "static")
+BWF_FORMS_STATIC_DIR = os.path.join(BASE_DIR, "bwf_forms", "static")
 
 if not BWF_FORMS_STATIC_DIR in settings.STATICFILES_DIRS:
     # Add the bwf_forms static files directory to the STATICFILES_DIRS setting
@@ -120,4 +127,12 @@ if not BWF_COMPONENTS_STATIC_DIRS in settings.STATICFILES_DIRS:
 """
    End of loading static files directories for BWF components and plugins.
 """
-print(settings.STATICFILES_DIRS)
+
+if os.path.exists(os.path.join(BASE_DIR, "bwf_components", "bwf_components_context_processors.py")):
+    settings.TEMPLATES[0]["OPTIONS"]["context_processors"] += [
+        "bwf_components.bwf_components_context_processors.variables",
+    ]
+
+
+if os.path.exists(os.path.join(BASE_DIR, "bwf_forms", "settings_forms.py")):
+    from bwf_forms import settings_forms

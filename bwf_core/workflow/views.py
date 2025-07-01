@@ -93,7 +93,7 @@ class WorkflowViewset(ModelViewSet):
         )
         workflows = Workflow.objects.all().prefetch_related(
             Prefetch("versions", queryset=wf_versions_queryset)
-        )
+        ).order_by("created_at", "name")
 
         if search != "":
             workflows = workflows.filter(name__icontains=search)
