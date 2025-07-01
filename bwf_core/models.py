@@ -107,6 +107,9 @@ class Workflow(models.Model):
     
     def get_active_version(self):
         return self.versions.filter(is_active=True).first()
+    
+    def is_short_lived(self):
+        return self.workflow_type == WorkflowTypesEnum.SHORT_LIVED
 
     def __str__(self):
         return f"{self.name} - {self.version_number}"

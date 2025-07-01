@@ -70,7 +70,13 @@ def register_workflow_step(
                 f"Component instance could not be created. Step: {step} {step_component}"
             )
             raise Exception("Component instance could not be created")
-        # register in queue
+
+        workflow = workflow_instance.workflow_version.workflow
+        if workflow.is_short_lived():
+            logger.info(f"Starting component {component_instance.component_id} - Plugin {component_instance.plugin_id} - workflow {workflow.name}")
+            start_pending_component_in_thread(component_instance)
+        else:
+            logger.info(f"Registered component {component_instance.component_id} - Plugin {component_instance.plugin_id} - workflow {workflow.name}")
         return workflow_instance
     except Exception as e:
         logger.error(e)
@@ -290,3 +296,15 @@ def initiate_fallback_component_action(current_component: ComponentInstance):
             output.get("message", "Error while executing component")
         )
         return None
+
+
+def start_pending_component_in_thread(current_component: ComponentInstance):
+    from threading import Thread
+
+    thread = Thread(
+        target=start_pending_component,
+        args=(current_component,),
+        daemon=True,
+    )
+    thread.start()
+    return thread
