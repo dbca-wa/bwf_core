@@ -249,20 +249,31 @@ var workflow_toolbox = {
   },
   renderRoutingCondition: function (element, route) {
     if (!element || !route) return;
+
     const { markup } = utils;
-    const { value, is_expression, value_ref } = route.condition || {};
+    const { value, is_expression, is_condition, value_ref } = route.condition || {};
 
     if (value_ref) {
       element.empty();
       const { context: ref_context, key: ref_key } = value_ref;
       element.html(markup("code", `${ref_context} - ${ref_key}`));
     } else {
+      const text = is_expression
+        ? " Expression"
+        : is_condition
+        ? " Condition value"
+        : "";
+      const iconClass = is_expression
+        ? "bi bi-braces"
+        : is_condition
+        ? "bi bi-patch-check"
+        : "";
       element.empty();
       element.html(
-        is_expression
+        is_expression || is_condition
           ? markup(
               "code",
-              [{ tag: "i", class: "bi bi-braces" }, " Expression"],
+              [{ tag: "i", class: iconClass }, text],
               { class: "text-center" }
             )
           : value || ""

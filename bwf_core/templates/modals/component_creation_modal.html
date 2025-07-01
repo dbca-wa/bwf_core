@@ -21,13 +21,27 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <div class="modal-body">
-        <form id="components-form">
-          <p class="my-2">
-            Select a component definition to create a new component.
-          </p>
+      <form id="components-form">
+        <div class="modal-body">
+          <div class="row my-2">
+            <div class="col-8">
+              <p class="">
+                Select a component definition to create a new component.
+              </p>
+            </div>
+            <div class="col-4">
+              <div class="">
+                <input
+                  type="text"
+                  class="form-control"
+                  id="plugin-search-box"
+                  placeholder="Search plugins..."
+                />
+              </div>
+            </div>
+          </div>
           <div class="row" id="definitions"></div>
-          
+
           <hr class="my-2" />
           <div class="mb-3">
             <label for="component-name" class="form-label">Node Name</label>
@@ -41,202 +55,24 @@
             <label class="form-label">Insert before?</label>
             <div id="components-list"></div>
           </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary close-button">
-          Close
-        </button>
-        <button type="button" class="btn btn-primary create-component-button">
-          Create Component
-        </button>
-      </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary close-button">
+            Close
+          </button>
+          <button type="submit" class="btn btn-primary create-component-button">
+            Create Component
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
 
+<script src="/static/pages/workflow/component_creation.js"></script>
 <script>
-  new_component_data = {
-    selectedComponent: {
-      data: null,
-      path: null,
-      parentId: null,
-      isEntry: false,
-    },
-
-    validate: function (data) {
-      const {} = data;
-
-      return true;
-    },
-  };
   $(() => {
-    $("#component-creation-modal").on("show.bs.modal", function (e) {
-      const _ = workflow_components;
-      $(`#components-list`).empty();
-      $("#definitions").empty();
-
-      _.fetchPluginDefinitions().then((data) => {
-        const { markup } = utils;
-        const _ = workflow_components;
-        _.var.definitions = data;
-        data.forEach((d, index) => {
-          $("#definitions").append(
-            markup(
-              "div",
-              [
-                {
-                  tag: "input",
-                  class: "list-group-item-check pe-none",
-                  type: "radio",
-                  name: "definition-radio",
-                  id: `listGroupCheckableRadios${index}`,
-                  value: d.id,
-                },
-
-                {
-                  tag: "label",
-                  content: [
-                    {
-                      tag: "i",
-                      class: [d.icon_class ?? "bi bi-gear", "me-2"].join(" "),
-                    },
-                    d.name,
-                    {
-                      tag: "span",
-                      content: d.description,
-                      class: "d-block small text-muted",
-                    },
-                  ],
-                  class: "list-group-item rounded-3 py-1 my-1",
-                  for: `listGroupCheckableRadios${index}`,
-                },
-              ],
-              { class: "col-6" }
-            )
-          );
-          $("#definitions input[type='radio']").on("change", function (event) {
-            const componentId = $("#definitions input:checked").val();
-            const component = workflow_components.var.definitions.find(
-              (definition) => definition.id == componentId
-            );
-            if (component) {
-              $("#component-name").val(component.name);
-            }
-          });
-        });
-      });
-      const { markup } = utils;
-      const {data: component } = new_component_data.selectedComponent
-
-      if (component) {
-        const { name, plugin_id } = component;
-        $("#component-creation-modal .modal-title span").html(`after ${name}`);
-        $("#component-route").show();
-      } 
-
-      const hasComponents = component ?  component.routing.length > 0 : false;
-      if (hasComponents) {
-        const selectComponents = markup(
-          "select",
-          [
-            {
-              tag: "option",
-              value: "",
-              content: " -- None -- ",
-              disabled: false,
-              selected: true,
-            },
-            ...component.routing.map((c) => {
-              const node = component_utils.findSingleComponentInTree(c.route);
-              return {node, c}
-            }).filter(x=> x.node).map(({node, c}) => {
-              return {
-                tag: "option",
-                value: node.id,
-                content: `${node.name} (${node.plugin_id})`,
-              };
-            }),
-          ],
-          { class: "form-select" }
-        );
-        $(`#components-list`).append(selectComponents);
-      } else {
-        $("#component-route").hide();
-      }
-    });
-
-    $("#component-creation-modal").on("hidden.bs.modal", function (e) {
-      $("#definitions input[type='radio']").prop("checked", false);
-      $("#component-name").val("");
-      new_component_data.selectedComponent.data = null;
-      new_component_data.selectedComponent.path = null;
-      new_component_data.selectedComponent.parentId = null;
-      new_component_data.selectedComponent.isEntry = false;
-    });
-
-    $("#component-creation-modal .close-button").on("click", function () {
-      $("#component-creation-modal").modal("hide");
-    });
-    $("#component-creation-modal .create-component-button").on("click", () => {
-      $("#components-form").submit();
-    });
-  });
-
-  $("#components-form").on("submit", function (e) {
-    e.preventDefault();
-
-    const _ = workflow_components;
-    const value = $("#definitions input:checked").val();
-    const insertBefore = $("#components-list select").val() ?? null;
-    const hasComponents = _.var.components.length > 0;
-    const {
-        data: component,
-        path,
-        parentId,
-        isEntry,
-      } = new_component_data.selectedComponent;
-
-    if (hasComponents && !component && !isEntry) {
-      alert("Please select a component to insert after.");
-      return;
-    }
-    if (value) {
-      $(".create-component-button").prop("disabled", true);
-      const definition = _.pluginDefinitions.find((d) => d.id == value);
-      const name = $("#component-name").val() ?? definition.name;
-
-      const data = {
-        plugin_id: definition.id,
-        index: 0,
-        name: name,
-        route: component?.id
-          ? component.id
-          : null,
-        parent_id: parentId,
-        insert_before: insertBefore,
-        path: path,
-        is_entry: isEntry,
-      };
-      _.api
-        .addComponent(data)
-        .then((data) => {
-          const refreshInputsFlag = !!data.refresh_inputs
-          if (refreshInputsFlag) {
-            workflow_inputs.api.refreshInputs();
-          }
-
-          $(".create-component-button").prop("disabled", false);
-          $("#component-creation-modal").modal("hide");
-          
-        })
-        .catch((error) => {
-          $(".create-component-button").prop("disabled", false);
-          alert("An error occurred while creating the component.");
-        });
-    } else {
-      alert("Please select a component definition.");
-    }
+    component_creation.init();
   });
 </script>
 

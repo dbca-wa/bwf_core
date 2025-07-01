@@ -19,6 +19,7 @@ from bwf_core.models import Workflow, WorkflowVersion
 from bwf_core.workflow.serializers import workflow_serializers
 from bwf_core.workflow.tasks import (
     validate_workflow_required_fields,
+    validate_workflow_routing_configuration,
     add_workflow_input_field,
 )
 from bwf_core.tasks import start_workflow
@@ -91,9 +92,11 @@ class WorkflowViewset(ModelViewSet):
             )
             .order_by("is_active", "-updated_at")
         )
-        workflows = Workflow.objects.all().prefetch_related(
-            Prefetch("versions", queryset=wf_versions_queryset)
-        ).order_by("created_at", "name")
+        workflows = (
+            Workflow.objects.all()
+            .prefetch_related(Prefetch("versions", queryset=wf_versions_queryset))
+            .order_by("created_at", "name")
+        )
 
         if search != "":
             workflows = workflows.filter(name__icontains=search)
@@ -202,6 +205,9 @@ class WorkflowVersionViewset(ModelViewSet):
             errors = validate_workflow_required_fields(
                 version.get_json_definition().get("workflow", {})
             )
+            errors += validate_workflow_routing_configuration(
+                version.get_json_definition()
+            )
             if len(errors):
                 return JsonResponse(
                     {
@@ -218,6 +224,26 @@ class WorkflowVersionViewset(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return JsonResponse({"success": True, "message": "Active version changed"})
+
+    @action(detail=True, methods=["POST"])
+    def discard_workflow_version(self, request, *args, **kwargs):
+        version_id = kwargs.get("pk")
+        workflow_id = request.query_params.get("workflow_id", None)
+        version = get_object_or_404(
+            WorkflowVersion, id=version_id, workflow__id=workflow_id
+        )
+
+        if version.is_active:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Cannot discard an active version. Please set another version as active first.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        version.deactivate_version()
+        return JsonResponse({"success": True, "message": "Version deactivated"})
 
     @action(detail=True, methods=["POST"])
     def extract_workflow_mapping(self, request, *args, **kwargs):

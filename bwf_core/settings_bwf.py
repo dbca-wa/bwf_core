@@ -41,7 +41,7 @@ if os.path.exists(BASE_PLUGIN_ROUTE) is False:
 FLOW_NODES_ROUTE = os.path.join(BASE_DIR, "bwf_core", "core_plugins")
 
 BWF_PLUGINS_APPS = [
-    # "bwf_forms",
+    "bwf_forms",
 ]
 PLUGIN_ROUTES = [BASE_PLUGIN_ROUTE, FLOW_NODES_ROUTE]
 PLUGIN_TEMPLATE_ROUTES = []

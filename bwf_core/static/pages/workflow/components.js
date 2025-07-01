@@ -466,7 +466,7 @@ var workflow_components = {
       .find(".add-next-component, .component-route.component-out")
       ?.on("click", component, function (event) {
         if (!workflow_components.isEdition) return;
-        const { selectedComponent } = new_component_data;
+        const { selectedComponent } = component_creation;
         selectedComponent.data = event.data;
         selectedComponent.path = event.data?.parent_info?.node_path;
         selectedComponent.parentId = parent_id;
@@ -619,7 +619,12 @@ var workflow_components = {
       clone.querySelector("div").setAttribute("data-route", routePath);
       $(`.list-group.routes`).append(clone);
       // clone.querySelector(".route-action").innerHTML = action;
-      $(`#${elementId} .route-label .value`).html(label ?? " -- ");
+      const labelElement = $(`#${elementId} .route-label .value`)
+      if (!label) {
+        labelElement.addClass("text-muted").html(" -- ");
+      } else {
+        labelElement.removeClass("text-muted").html(label);
+      }
 
       workflow_toolbox.renderRoutingCondition(
         $(`#${elementId} .route-conditions .value`),
@@ -1225,12 +1230,12 @@ var workflow_components = {
     },
   },
 
-  fetchPluginDefinitions: function () {
+  fetchPluginDefinitions: function (workflow_id, searchTerm = "") {
     const promise = new Promise((resolve, reject) => {
       const _ = workflow_components;
       $.ajax({
         // url: "/bwf/api/component-definitions/",
-        url: "/bwf/api/plugin-definitions/",
+        url: `/bwf/api/plugin-definitions/?workflow_id=${workflow_id}&search=${searchTerm}`,
         type: "GET",
         success: function (data) {
           _.pluginDefinitions = data;
