@@ -12,21 +12,20 @@
     <link rel="stylesheet" href="/static/common/css/side-out-panel/slide-out-panel.min.css"/>
     <link rel="stylesheet" href="/static/common/css/select2-bootstrap-5-theme.css"/>
     <link rel="stylesheet" href="/static/common/css/select2.min.css"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/lint/lint.min.css" integrity="sha512-jP1+o6s94WQS9boYeDP3Azh8ihI5BxGgBZNjkABhx05MqH5WuDzfzSnoPxGxVzWi/gxxVHZHvWkdRM6SMy5B0Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="/static/common/css/codemirror/lint.min.css"/>
 {% endblock %}
     
 {% block extra_js %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js" integrity="sha512-8RnEqURPUc5aqFEN04aQEiPlSAdE0jlFS/9iGgUyNtwFnSKCXhmB6ZTNl7LnDtDWKabJIASzXrzD0K+LYexU9g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
+<script src="/static/common/js/codemirror/js/codemirror.min.js" ></script>
 <script src="/static/common/js/side-out-panel/slide-out-panel.min.js" ></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jshint/2.13.6/jshint.min.js" integrity="sha512-MCUpdWtSMK1rm+4sWFpfFuz4UTpXEud5p236Otyw1Ea4kdVyNxy+eMHR76u7xfY5DlpDmOzgEhgDq1ZGLHqkCA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/hint/show-hint.min.js" integrity="sha512-yhmeAerubMLaGAsyS7sE8Oqub6GeTkBDQpkXo2JKHgg7JOCudQvcbDQc5rPxdl7MqcDusTJzSy+ODlyzAwETfQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/hint/javascript-hint.min.js" integrity="sha512-omIxBxPdObb7b3giwJtPBiB86Mey/ds7qyKFcRiaLQgDxoSR+UgCYEFO7jRZzPOCZAICabGCraEhOSa71U1zFA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/hint/css-hint.min.js" integrity="sha512-1BD3lo262s+DtDFoeD8+ssEL1zVJU8SHWWMtUyxfLqMV/jQDEnyQlS/CL3mD1kkLSv2hhYq1sdcA/zAPDz4JVA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/lint/css-lint.min.js" integrity="sha512-uvP6cZWrrQc4b+sluLwMcjWPDC/2oJMGAmCGJYqYbC/uBR74PAd/GRZ4nMoTfczKoRZOHkUbwHHugQBYVQQM4A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/lint/lint.min.js" integrity="sha512-fzIkwQa9H8rjoDzpZ9sMOYhgaYwh9nKALWbE1m+7wpiry9PN5OyNcZ9LySotjEysolveRyv2C9pVJ+DbEuKtmQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/lint/javascript-lint.min.js" integrity="sha512-8kwyIAPFqkeXy+ZFifnFBF57n5pSsXBBWuy9ME1hPCku0evC+UFNnWZOJlITFe/OMSxGi/oWaccjZ07L6YXzJA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/lint/json-lint.min.js" integrity="sha512-40xVcCik6TlUiZadnRc6ZM0BN65s7F+C3K7eBqGRf8dmjKApjzoiT/GB1GJmdICOZbXjJCiTBbVlsIvFs8A/+Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="/static/common/js/jshint/jshint.min.js" ></script>
+<script src="/static/common/js/codemirror/js/show-hint.min.js" ></script>
+<script src="/static/common/js/codemirror/js/javascript-hint.min.js" ></script>
+<script src="/static/common/js/codemirror/js/css-hint.min.js" ></script>
+<script src="/static/common/js/codemirror/js/css-lint.min.js" ></script>
+<script src="/static/common/js/codemirror/js/lint.min.js" ></script>
+<script src="/static/common/js/codemirror/js/javascript-lint.min.js" ></script>
+<script src="/static/common/js/codemirror/js/json-lint.min.js" ></script>
 <script src="/static/common/js/codemirror/addon/matchbrackets.min.js" ></script>
 <script src="/static/common/js/codemirror/addon/placeholder.min.js" ></script>
 <script src="/static/common/js/codemirror/mode/python.min.js" ></script>
@@ -34,7 +33,7 @@
 <script src="/static/common/js/codemirror/mode/htmlmixed.min.js" ></script>
 <script src="/static/common/js/codemirror/addon/anyword-hint.min.js"></script>
 <script src="/static/common/js/codemirror/addon/show-hint.min.js"></script>
-<script src="https://code.jquery.com/ui/1.14.0/jquery-ui.min.js" integrity="sha256-Fb0zP4jE3JHqu+IBB9YktLcSjI1Zc6J2b6gTjB0LpoM=" crossorigin="anonymous"></script>
+<script src="/static/common/js/jquery-ui.min.js"></script>
 <script src="/static/js/bwf_utils.js?ver={{ GIT_COMMIT_HASH }}"></script>
 <script src="/static/js/data_events.js?ver={{ GIT_COMMIT_HASH }}"></script>
 <script src="/static/js/table.js?ver={{ GIT_COMMIT_HASH }}"></script>
