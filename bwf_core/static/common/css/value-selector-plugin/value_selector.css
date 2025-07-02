@@ -10,7 +10,7 @@ Definitions
 /*  */
 .workflow-center {
   justify-items: center;
-  display: block;
+  display: grid;
 }
 
 .component-node {
@@ -67,11 +67,12 @@ border: 2px solid #0d6efd; */
 }
 
 .diagram-node-parent {
-  display: block;
+  display: grid;
   justify-items: center;
   margin-bottom: 5em;
   position: relative;
   min-width: 90px;
+  width: fit-content;
 }
 .diagram-node-parent > .diagram-node {
   width: 4.5em;
@@ -146,8 +147,6 @@ border: 2px solid #0d6efd; */
 .diagram-node-parent .component-label:hover {
   border-width: 2px;
 }
-.diagram-node-buttons {
-}
 
 .diagram-node-buttons .node-move,
 .diagram-node-buttons .node-remove,
@@ -176,8 +175,7 @@ border: 2px solid #0d6efd; */
   height: 0px;
 }
 
-.component-in {
-}
+
 .component-out {
   border-width: 1px;
   border-style: solid;
@@ -201,8 +199,7 @@ border: 2px solid #0d6efd; */
 .component-out:hover {
   border-color: #4076c6;
 }
-.component-node .component-in {
-}
+
 .component-node .component-out {
   height: 12px;
   width: 12px;
@@ -361,8 +358,6 @@ border: 2px solid #0d6efd; */
 
 .context-menu.ui-menu.ui-widget.ui-widget-content ul {
   padding: 2px;
-}
-.context-menu.ui-menu > li.ui-menu-item {
 }
 
 .context-menu.ui-menu > li.ui-menu-item > div {
