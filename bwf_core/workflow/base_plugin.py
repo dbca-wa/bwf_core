@@ -15,6 +15,11 @@ class BasePlugin:
         self.context = context
 
         # output
+    def workflow_instance_id(self):
+        return self.workflow_instance.id
+
+    def component_instance_id(self):
+        return self.component.id
 
     def set_plugin_component(self, executableComponent):
         # self.component = executableComponent
@@ -39,10 +44,15 @@ class BasePlugin:
             self.on_complete()
         else:
             self.on_failure(message)
+    
+    def set_on_awaiting_action(self):
+        self.component.set_status_awaiting_action()
+
 
     def call_next_node(self, override_route=None):
         from bwf_core.tasks import register_workflow_step
         from bwf_core.components.tasks import find_component_in_tree
+        from bwf_core.workflow.utils import get_workflow_config
 
         workflow_definition = self.workflow_instance.get_json_definition()
         current_definition = find_component_in_tree(workflow_definition, self.component.component_id)
@@ -52,7 +62,9 @@ class BasePlugin:
         output = self.component.output if self.component.output else {}
         input_params = self.workflow_instance.variables
         input_params['output'] = output.get("data", {})
-        next_component_id = override_route if override_route else calculate_next_node(current_definition, input_params)
+
+        workflow_config = get_workflow_config(workflow_definition, node_config=current_definition.get("config", {}))
+        next_component_id = override_route if override_route else calculate_next_node(current_definition, input_params, plugin_id=self.component.plugin_id, workflow_config=workflow_config)
         if next_component_id:
             register_workflow_step(self.workflow_instance,
                                    step=next_component_id,
@@ -205,6 +217,7 @@ class BranchPlugin(BasePlugin):
     def call_next_node(self, override_route=None):
         from bwf_core.tasks import register_workflow_step
         from bwf_core.components.tasks import find_component_in_tree
+        from bwf_core.workflow.utils import get_workflow_config
 
         workflow_definition = self.workflow_instance.get_json_definition()
         current_definition = find_component_in_tree(workflow_definition, self.component.component_id)
@@ -214,7 +227,9 @@ class BranchPlugin(BasePlugin):
         output = self.component.output if self.component.output else {}
         input_params = self.workflow_instance.variables
         input_params['output'] = output.get("data", {})
-        next_component_id = override_route if override_route else calculate_next_node(current_definition, input_params)
+        
+        workflow_config = get_workflow_config(workflow_definition, node_config=current_definition.get("config", {}))
+        next_component_id = override_route if override_route else calculate_next_node(current_definition, input_params, plugin_id=self.component.plugin_id, workflow_config=workflow_config)
         output = self.component.output if self.component.output else {}
         if next_component_id:
             register_workflow_step(self.workflow_instance, 

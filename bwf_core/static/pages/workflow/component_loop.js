@@ -37,7 +37,7 @@ var component_loop = {
         function (event) {
           if (!workflow_components.isEdition) return;
 
-          const { selectedComponent } = new_component_data;
+          const { selectedComponent } = component_creation;
           selectedComponent.data = null;
           selectedComponent.path = $(this).data("path");
           selectedComponent.parentId = $(this).data("parent-id");

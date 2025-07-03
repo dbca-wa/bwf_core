@@ -17,7 +17,7 @@ from bwf_core.models import (
     ComponentStepStatusEnum,
 )
 from bwf_core.workflow.serializers import workflow_api_serializers
-from bwf_core.tasks import start_workflow
+from bwf_core.tasks import start_workflow, process_async_response, validate_plugin_object
 
 
 # Create your views here.
@@ -25,10 +25,8 @@ class HomeView(View):
     template_name = "dashboard/main.html"
 
     def get(self, request, *args, **kwargs):
-        
-        context = {
-            
-        }
+
+        context = {}
 
         return render(request, self.template_name, context=context)
 
@@ -62,6 +60,7 @@ class WorkflowView(View):
         }
 
         return render(request, self.template_name, context=context)
+
 
 class WorkflowViewVersions(View):
     template_name = "dashboard/workflow/workflow_detail_versions.html"
@@ -191,3 +190,59 @@ class WorkflowAPIViewSet(ViewSet):
                 print(str(e))
                 return JsonResponse({"message": "error"})
         return JsonResponse({"message": "No pending instances found"}, status=404)
+
+    @action(detail=True, methods=["POST"])
+    def form_submission(self, request, pk=None):
+        """
+        Process the async response for a given workflow instance.
+        """
+        workflow_instance_id = pk
+        workflow_instance = get_object_or_404(WorkFlowInstance, pk=workflow_instance_id)
+        serializer = workflow_api_serializers.ComponentAsyncResponseSerializer(
+            data=request.data
+        )
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+        if not workflow_instance.is_active:
+            return Response({"error": "Workflow instance is not active."}, status=400)
+        
+        component_instance_id = serializer.validated_data.get("component_instance_id")
+        plugin_object_id = serializer.validated_data.get("plugin_object_id")
+
+        component_instance = workflow_instance.child_actions.filter(
+            pk=component_instance_id,
+        ).first()
+
+        if not component_instance:
+            return Response({"error": "Component instance not found."}, status=404)
+
+        if (
+            not component_instance.is_active
+            or not component_instance.is_awaiting_action
+        ):
+            return Response(
+                {"error": "Component instance is not enabled to be actioned"},
+                status=400,
+            )
+        try:
+            if not validate_plugin_object(workflow_instance.id, component_instance.id, plugin_object_id):
+                return Response(
+                    {"error": "Invalid plugin object ID."}, status=400
+                )
+            
+            process_async_response(
+                workflow_instance.id,
+                component_instance.id,
+                data=serializer.validated_data.get("form_data", {}),
+                plugin_object_id=plugin_object_id,
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to process async response: {str(e)}"}, status=500
+            )
+
+        return Response(
+            {"message": "Async response processed successfully"},
+            status=200,
+        )

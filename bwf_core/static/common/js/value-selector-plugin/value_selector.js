@@ -41,7 +41,6 @@ class ValueSelector {
     _.input = input;
     _.parentInput = parent;
     _.isEdition = isEdition;
-    _.editor_syntax = editor_syntax;
     _.useOutputFields = useOutputFields || false;
     _.isRouting = isRouting || false;
     _.portal = portal;
@@ -59,8 +58,8 @@ class ValueSelector {
       value_rules: value_rules,
       is_expression: !!is_expression,
       is_condition: !!is_condition,
-      showEditor: !!is_expression,
-      editor_syntax: editor_syntax,
+      showEditor: !!is_expression || !!is_condition,
+      editor_syntax: editor_syntax || BWF_SYNTAX.javascript,
       onSave: onSave,
       onCancel: onCancel,
     };
@@ -160,6 +159,11 @@ class ValueSelector {
       _.$resetButton.hide();
       _.$editButton.hide();
 
+      if (_.popover) {
+        _.popover.dispose();
+        _.popover = null;
+      }
+
       const selectElement = markup(
         "select",
         [
@@ -203,7 +207,10 @@ class ValueSelector {
             tag: "div",
             content: markup(
               "button",
-              [{ tag: "i", class: "bi bi-plus" }, "Add field value"],
+              [
+                { tag: "i", class: "bi bi-plus" },
+                `Add <strong>${_.input.name}</strong> item`,
+              ],
               {
                 class: "btn btn-primary btn-sm mb-4",
               }
@@ -225,26 +232,7 @@ class ValueSelector {
         _.renderMultiValueInput(item);
       }
 
-      $(add_button)
-        .find("button")
-        .on("click", _, function (event) {
-          const selector = event.data;
-          const { input, component } = selector;
-          const { value } = input;
-          const valueArray = value || [];
-          const newValue = {};
-          for (const structure_key in structure) {
-            newValue[structure_key] = {
-              ...structure[structure_key],
-              id: `${component.id}__${
-                input.key
-              }__${structure_key}__${new Date().getTime()}`,
-            };
-          }
-          selector.renderMultiValueInput(newValue);
-          valueArray.push(newValue);
-          selector.saveValue(valueArray);
-        });
+      $(add_button).find("button").on("click", _, _.handlers.multiAddItemClick);
     } else {
       _.renderValueEditorBlock();
     }
@@ -324,23 +312,165 @@ class ValueSelector {
     selector.$content.find(".fields > .single-field:last").addClass("mb-1");
     selector.$content
       .find(".fields button.value-item-remove")
-      .on("click", selector, function (event) {
-        const selector = event.data;
-        const key = $(this).data("key");
-        const id = $(this).data("id");
-        const field_id = $(this).data("field-id");
-        try {
-          const value = selector.input.value.filter((v) => v[key].id !== id);
-          selector.saveValue(value);
-          input.value = value;
-          $(`.${field_id}`).remove();
-          workflow_components.updateLines();
-        } catch (error) {
-          console.error(error);
-        }
-      });
+      .on("click", selector, selector.handlers.multiItemRemoveClick);
   }
 
+  handlers = {
+    contentFieldClick: function (event) {
+      const _ = event.data;
+      const { input } = _;
+      const { value } = input.value ?? {};
+      const { value_rules } = input?.json_value ?? {};
+
+      const { ajax } = value_rules || {};
+      const isAjax = ajax && !!ajax.url;
+
+      if (!value && _.initials.showEditor) {
+        _.initials.showEditor = false;
+        if (!_.popover && !isAjax) {
+          _.renderVariablesMenuPopover();
+        }
+        return;
+      }
+      if (isAjax && !_.initials.showEditor) {
+        if (value) {
+          _.$content.addClass("value-selector");
+          _.$resetButton.show();
+          _.$editButton.show();
+          if (_.select2) {
+            _.select2.select2("open");
+          } else {
+            _.renderAjaxSelect();
+            _.select2.select2("open");
+          }
+        }
+      }
+      if (!_.popover && (_.initials.showEditor || _.initials.is_condition)) {
+        _.onContentEditionRendered();
+      }
+    },
+    editorSaveButtonClick: function (event) {
+      const selector = event.data;
+      const { input } = selector;
+      const { data_type } = input;
+
+      const selectedValue = selector.editor?.getValue();
+      const editor_syntax = selector.portal.find("#editor-syntax").val();
+
+      if (selector.validateValueEntered(selectedValue, editor_syntax)) {
+        if (data_type === "boolean") {
+          selector.saveValue({
+            value: selector.tmpValue,
+            is_expression: false,
+            is_condition: true,
+            value_ref: null,
+          });
+        } else {
+          selector.hideContentEdition();
+
+          selector.saveValue({
+            value: selector.tansformValue(selectedValue, editor_syntax),
+            is_expression: true,
+            value_ref: null,
+            is_condition: false,
+            editor_syntax: editor_syntax,
+          });
+        }
+      } else {
+        if (data_type === "boolean") {
+          utils.toast.showError("Please check the condition values.", "");
+        } else {
+          utils.toast.showError(
+            "Please check the value.",
+            "Invalid value entered"
+          );
+        }
+      }
+    },
+    closeEditorButtonClick: function (event) {
+      const selector = event.data;
+      const { value } = selector.input.value ?? {};
+      selector.editor?.setValue(
+        typeof (value?.value ?? {}) === "string"
+          ? value
+          : JSON.stringify(value?.value ?? "")
+      );
+      selector.hideContentEdition();
+    },
+    clearEditorButtonClick: function (event) {
+      const selector = event.data;
+      selector.saveValue({
+        value: null,
+        is_expression: false,
+        value_ref: null,
+      });
+    },
+    conditionAddClick: function (event) {
+      const { selector, conditionsBlock } = event.data;
+      if (!selector.isEdition) return;
+      selector.renderConditionRow(conditionsBlock, {
+        left_value: null,
+        condition: "equals",
+        right_value: null,
+        operand: "and",
+      });
+    },
+    multiAddItemClick: function (event) {
+      const selector = event.data;
+      const { input, component } = selector;
+      const { value, json_value } = input;
+
+      const { structure } = json_value ?? {};
+
+      const valueArray = value || [];
+      const newValue = {};
+      for (const structure_key in structure) {
+        newValue[structure_key] = {
+          ...structure[structure_key],
+          id: `${component.id}__${
+            input.key
+          }__${structure_key}__${new Date().getTime()}`,
+        };
+      }
+      selector.renderMultiValueInput(newValue);
+      valueArray.push(newValue);
+      selector.saveValue(valueArray);
+    },
+    editButtonClick: function (event) {
+      const selector = event.data;
+      selector.initials.showEditor = true;
+      if (selector.popover) {
+        selector.popover?.dispose();
+        selector.popover = null;
+      }
+      selector.onContentEditionRendered();
+    },
+    resetButtonClick: function (event) {
+      const selector = event.data;
+      selector.saveValue({
+        value: null,
+        is_expression: false,
+        value_ref: null,
+      });
+    },
+    multiItemRemoveClick: function (event) {
+      const selector = event.data;
+      const { input } = selector;
+
+      const key = $(this).data("key");
+      const id = $(this).data("id");
+      const field_id = $(this).data("field-id");
+      try {
+        const value = selector.input.value.filter((v) => v[key].id !== id);
+        selector.saveValue(value);
+        input.value = value;
+        $(`.${field_id}`).remove();
+        workflow_components.updateLines();
+      } catch (error) {
+        console.error(error);
+      }
+    },
+  };
 
   onPopoverOpen() {
     const _ = this;
@@ -371,14 +501,7 @@ class ValueSelector {
     const { ajax } = value_rules || {};
     const isAjax = ajax && !!ajax.url;
 
-    _.$resetButton.off("click").on("click", _, function (event) {
-      const selector = event.data;
-      selector.saveValue({
-        value: null,
-        is_expression: false,
-        value_ref: null,
-      });
-    });
+    _.$resetButton.off("click").on("click", _, _.handlers.resetButtonClick);
     if (value) {
       _.$resetButton.show();
     } else {
@@ -389,17 +512,12 @@ class ValueSelector {
         _.renderAjaxSelect();
       }
     }
-    _.$editButton.show();
-
-    _.$editButton.off("click").on("click", _, function (event) {
-      const selector = event.data;
-      _.initials.showEditor = true;
-      if (selector.popover) {
-        selector.popover?.dispose();
-        selector.popover = null;
-      }
-      selector.onContentEditionRendered();
-    });
+    if (isAjax) {
+      _.$editButton.remove();
+    } else {
+      _.$editButton.show();
+      _.$editButton.off("click").on("click", _, _.handlers.editButtonClick);
+    }
 
     if (!isEdition) {
       _.$editButton.hide();
@@ -408,34 +526,7 @@ class ValueSelector {
 
     if (!isAjax) _.$content.addClass("value-selector");
 
-    _.$content.off("click").on("click", _, function (event) {
-      const selector = event.data;
-      const { value } = selector.input.value ?? {};
-
-      if (!value && _.initials.showEditor) {
-        _.initials.showEditor = false;
-        if (!selector.popover && !isAjax) {
-          selector.renderVariablesMenuPopover();
-        }
-        return;
-      }
-      if (isAjax && !_.initials.showEditor) {
-        if (value) {
-          _.$content.addClass("value-selector");
-          _.$resetButton.show();
-          _.$editButton.show();
-          if (selector.select2) {
-            selector.select2.select2("open");
-          } else {
-            selector.renderAjaxSelect();
-            selector.select2.select2("open");
-          }
-        }
-      }
-      if (!selector.popover && _.initials.showEditor) {
-        selector.onContentEditionRendered();
-      }
-    });
+    _.$content.off("click").on("click", _, _.handlers.contentFieldClick);
 
     if (!_.initials.showEditor && !ajax) {
       _.renderVariablesMenuPopover();
@@ -552,57 +643,14 @@ class ValueSelector {
       .find(".context-menu")
       .attr("id", `context-menu-${component.id}-${input.key}`);
 
-    _.$saveButton.on("click", _, function (event) {
-      const selector = event.data;
-      const selectedValue = selector.editor?.getValue();
+    _.$saveButton.on("click", _, _.handlers.editorSaveButtonClick);
 
-      if (selector.validateValueEntered(selectedValue)) {
-        if (data_type === "boolean") {
-          selector.saveValue({
-            value: selector.tmpValue,
-            is_expression: false,
-            is_condition: true,
-            value_ref: null,
-          });
-        } else {
-          selector.hideContentEdition();
-
-          selector.saveValue({
-            value: selector.tansformValue(selectedValue),
-            is_expression: true,
-            value_ref: null,
-          });
-        }
-      } else {
-        if (data_type === "boolean") {
-          utils.toast.showError("Please check the condition values.", "");
-        } else {
-          utils.toast.showError(
-            "Please check the value.",
-            "Invalid value entered"
-          );
-        }
-      }
-    });
-
-    editorBlockContent.find(".btn-close").on("click", _, function (event) {
-      const selector = event.data;
-      const { value } = selector.input.value ?? {};
-      selector.editor?.setValue(
-        typeof (value?.value ?? {}) === "string"
-          ? value
-          : JSON.stringify(value?.value ?? "")
-      );
-      selector.hideContentEdition();
-    });
-    editorBlockContent.find(".btn-clear").on("click", _, function (event) {
-      const selector = event.data;
-      selector.saveValue({
-        value: null,
-        is_expression: false,
-        value_ref: null,
-      });
-    });
+    editorBlockContent
+      .find(".btn-close")
+      .on("click", _, _.handlers.closeEditorButtonClick);
+    editorBlockContent
+      .find(".btn-clear")
+      .on("click", _, _.handlers.clearEditorButtonClick);
 
     if (_.initials.showEditor) {
       _.portal.empty().append(editorBlockContent);
@@ -780,10 +828,10 @@ class ValueSelector {
   setUpConditionsEditor(container) {
     const _ = this;
     const { input } = _;
-    const { value } = input.value || [];
+    const { value } = input.value || { value: [] };
     $(container).show();
     _.tmpValue = [];
-    if (value.length === 0) {
+    if (!value || value?.length === 0) {
       _.renderConditionRow($(container).find(".conditions-block"), {
         left_value: null,
         condition: "equals",
@@ -793,29 +841,21 @@ class ValueSelector {
     } else {
       for (let i = 0; i < value.length; i++) {
         const condition = value[i];
-        _.renderConditionRow(
-          $(container).find(".conditions-block"),
-          condition
-        );
+        _.renderConditionRow($(container).find(".conditions-block"), condition);
       }
     }
 
     $(container).find(".btn-add-condition").attr("data-");
+    if (!_.isEdition) $(container).find(".btn-add-condition").remove();
+
     const conditionsBlock = $(container).find(".conditions-block");
     $(container)
       .find(".btn-add-condition")
-      .on("click", { selector: _, conditionsBlock }, function (event) {
-        const { selector, conditionsBlock } = event.data;
-        selector.renderConditionRow(
-          conditionsBlock,
-          {
-            left_value: null,
-            condition: "equals",
-            right_value: null,
-            operand: "and",
-          }
-        );
-      });
+      .on(
+        "click",
+        { selector: _, conditionsBlock },
+        _.handlers.conditionAddClick
+      );
   }
 
   setUpEditor(element) {
@@ -823,6 +863,7 @@ class ValueSelector {
     const { input } = _;
     const { value, value_ref } = input.value ?? {};
     const { data_type } = input;
+    const syntax = _.initials.editor_syntax;
 
     _.editor = CodeMirror.fromTextArea(element, {
       doc: "Start document",
@@ -835,8 +876,9 @@ class ValueSelector {
       matchBrackets: true,
       autoCloseBrackets: true,
       lineWrapping: true,
-      lint: true,
       gutters: ["CodeMirror-lint-markers"],
+      mode: syntax,
+      lint: true,
     });
     if (value) {
       _.editor.setValue(
@@ -849,20 +891,30 @@ class ValueSelector {
       );
     }
 
+    _.portal.find("#editor-syntax").show();
     if (!["array", "object"].includes(data_type)) {
-      _.portal.find("#editor-syntax").hide();
+      // _.portal.find("#editor-syntax").hide();
+      _.editor.setOption("mode", BWF_SYNTAX.template);
+      _.portal.find("#editor-syntax option[value='javascript']").remove();
     } else {
-      _.portal.find("#editor-syntax").show();
-      const syntax = input.editor_syntax || BWF_SYNTAX.javascript;
+      _.portal.find("#editor-syntax option[value='text']").remove();
       _.portal.find("#editor-syntax").val(syntax);
     }
 
     _.portal.find("#editor-syntax").on("change", _, function (event) {
       const selector = event.data;
       const syntax = event.target.value;
+
       if (selector.editor) {
         // TODO
         selector.editor.setOption("mode", syntax);
+        if (syntax === BWF_SYNTAX.text) {
+          selector.editor.setOption("lint", false);
+          selector.editor.setOption("gutters", []);
+        } else {
+          selector.editor.setOption("lint", true);
+          selector.editor.setOption("gutters", ["CodeMirror-lint-markers"]);
+        }
       }
       selector.editor_syntax = syntax;
       // selector.updateValue(selector.input.value, selector.input.json_value);
@@ -872,11 +924,13 @@ class ValueSelector {
       "Ctrl-Space": "autocomplete",
       "Ctrl-Enter": function (cm) {
         const enteredValue = cm.getValue();
-        const currentSyntax = $("#editor-syntax").val();
-        if (_.validateValueEntered(enteredValue, currentSyntax)) {
+        const editor_syntax = $("#editor-syntax").val();
+
+        if (_.validateValueEntered(enteredValue, editor_syntax)) {
           _.saveValue({
-            value: _.tansformValue(enteredValue),
+            value: _.tansformValue(enteredValue, editor_syntax),
             is_expression: true,
+            editor_syntax,
             value_ref: null,
           });
           _.hideContentEdition();
@@ -961,6 +1015,9 @@ class ValueSelector {
                 parentValue[i][key].value = value;
                 parentValue[i][key].is_expression = value.is_expression;
                 parentValue[i][key].value_ref = value.value_ref;
+                parentValue[i][key].editor_syntax = value.is_expression
+                  ? value.editor_syntax
+                  : null;
                 break;
               }
             }
@@ -1037,6 +1094,8 @@ class ValueSelector {
     }
 
     if ((value_rules && value_rules.variable_only) || options) {
+      _.$content.removeClass("value-selector");
+
       if (!value.value) _.$content.addClass(invalidClassName);
 
       _.$resetButton.hide();
@@ -1098,7 +1157,7 @@ class ValueSelector {
       } else {
         _.$content.addClass("value-selector");
         _.$content.html(
-          (value.is_expression || value.is_condition)
+          value.is_expression || value.is_condition
             ? markup(
                 "div",
                 [{ tag: "i", class: "bi bi-braces" }, " Expression"],
@@ -1109,15 +1168,21 @@ class ValueSelector {
       }
     } else {
       _.$content.empty();
-      const text = value.is_expression ? " Expression" : value.is_condition ? " Condition value" : "";
-      const iconClass = value.is_expression ? "bi bi-braces" : value.is_condition ? "bi bi-patch-check" : "";
+      const text = value.is_expression
+        ? " Expression"
+        : value.is_condition
+        ? " Condition value"
+        : "";
+      const iconClass = value.is_expression
+        ? "bi bi-braces"
+        : value.is_condition
+        ? "bi bi-patch-check"
+        : "";
       _.$content.html(
-        (value.is_expression || value.is_condition)
-          ? markup(
-              "div",
-              [{ tag: "i", class: iconClass }, text],
-              { class: "text-center" }
-            )
+        value.is_expression || value.is_condition
+          ? markup("div", [{ tag: "i", class: iconClass }, text], {
+              class: "text-center",
+            })
           : value.value || ""
       );
     }
@@ -1200,16 +1265,20 @@ class ValueSelector {
 
     return isValid;
   }
-  tansformValue(value) {
+  tansformValue(value, syntax) {
     const _ = this;
     const { input } = _;
     const { data_type } = input;
-    if (data_type === "object" || data_type === "array") {
-      try {
-        return JSON.stringify(JSON.parse(value));
-      } catch (error) {
-        return null;
+    if (syntax === BWF_SYNTAX.javascript) {
+      if (data_type === "object" || data_type === "array") {
+        try {
+          return JSON.stringify(JSON.parse(value));
+        } catch (error) {
+          return null;
+        }
       }
+    } else if (syntax === BWF_SYNTAX.text) {
+      return `${value}`;
     }
     return value;
   }
@@ -1287,8 +1356,11 @@ class ValueSelector {
     $(row).prepend(
       markup("div", includeOperand ? operandElement : "", { class: "col-2" })
     );
-    if (_.isEdition)
+    if (_.isEdition) {
       $(row).append(markup("div", removeButton, { class: "col-1" }));
+    } else {
+      $(row).find(".operand-select, .condition-select").attr("disabled", true);
+    }
     container.append(row);
     const items = [
       {
@@ -1313,6 +1385,7 @@ class ValueSelector {
         .find(item.selector)
         .valueSelector({
           valueOnly: true,
+          useOutputFields: true,
           parent: _,
           input: {
             name: item.name,
@@ -1424,6 +1497,26 @@ selector_condition_utils = {
       $(`#${rowId}`).find(".right-element").hide();
     } else {
       $(`#${rowId}`).find(".right-element").show();
+      if ("type_of" === value) {
+        const selector = $(`#${rowId}`)
+          .find(".right-element")
+          .valueSelector("getSelector");
+        if (selector) {
+          selector.input.json_value = {
+            type: "string",
+            options: [
+              { value: "string", label: "String" },
+              { value: "number", label: "Number" },
+              { value: "boolean", label: "Boolean" },
+              { value: "array", label: "Array" },
+              { value: "object", label: "Object" },
+            ],
+          };
+
+          selector.updateHtml();
+          selector.render(selector.value);
+        }
+      }
     }
   },
   removeRow: function (selector, rowId) {

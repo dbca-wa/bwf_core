@@ -17,9 +17,11 @@
       </h4>
     </div>
     <div class="d-flex">
+      {% if active_version %}
       <span class="text-secondary ms-2">
         Version number: {{active_version.version_number}}</span
       >
+      {% endif %}
       <div class="d-flex ms-3">
         {% if active_version.is_active %}
         <div><span class="badge bg-success">Active</span></div>
@@ -46,6 +48,10 @@
         <div class="col-12">
           {% if active_version %} 
             {% include "dashboard/workflow/workflow_diagram.html" with workflow=workflow version=active_version visualization=True %}
+          {% else %}
+            <div class="alert alert-warning" role="alert">
+              There is no active version for this workflow. Browse the Version History to enable or create a new version.
+            </div>
           {% endif %}
         </div>
       </div>

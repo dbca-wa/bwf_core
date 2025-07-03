@@ -184,6 +184,12 @@ def add_predefined_workflow_inputs(workflow_definition, plugin_id, component_id=
     new_inputs = []
     if workflow_inputs:
         for input_item in workflow_inputs:
+            default_value = input_item.get("default_value", {})
+            if not isinstance(default_value, dict):
+                default_value = {
+                    "value": default_value,
+                    "data_type": input_item.get("data_type", "string"),
+                }
             new_input = add_workflow_input_field(
                 workflow_definition,
                 key=input_item.get("key"),
@@ -191,7 +197,7 @@ def add_predefined_workflow_inputs(workflow_definition, plugin_id, component_id=
                     "label": input_item.get("label"),
                     "description": input_item.get("description", ""),
                     "data_type": input_item.get("data_type"),
-                    "default_value": input_item.get("default_value"),
+                    "default_value": default_value,
                     "required": input_item.get("required", False),
                 },
                 parent_component=component_id,
