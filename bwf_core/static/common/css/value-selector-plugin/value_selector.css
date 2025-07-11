@@ -10,7 +10,7 @@ Definitions
 /*  */
 .workflow-center {
   justify-items: center;
-  display: grid;
+  /* display: grid; */
 }
 
 .component-node {
@@ -67,7 +67,7 @@ border: 2px solid #0d6efd; */
 }
 
 .diagram-node-parent {
-  display: grid;
+  /* display: grid; */
   justify-items: center;
   margin-bottom: 5em;
   position: relative;

@@ -9,6 +9,8 @@ var workflow_dashboard = {
     search: "",
     url: "/api/list_historical_records/",
     data: [],
+    sort_column: "updated_at",
+    sort_order: "desc",
 
     location: "",
   },
@@ -31,15 +33,20 @@ var workflow_dashboard = {
     const _ = workflow_dashboard;
     _.dt = $("#tb_workflows").DataTable({
       serverSide: true,
-
+      order: [[2, "desc"]],
       language: utils.datatable.common.language,
       ajax: function (data, callback, settings) {
+        const sort = data.order && data.order.length > 0 ? data.order[0] : null;
         if (!_.var.hasInit) {
           _.var.hasInit = true;
         } else {
           _.var.page = data && data.start ? data.start / data.length + 1 : 1;
           _.var.page_size = data?.length;
           _.var.search = data?.search?.value;
+          if (sort) {
+            _.var.sort_column = sort?.name || "updated_at";
+            _.var.sort_order = sort?.dir || "desc";
+          }
         }
 
         _.get_datatable_data(
@@ -47,6 +54,8 @@ var workflow_dashboard = {
             page: _.var.page,
             page_size: _.var.page_size,
             search: _.var.search,
+            sort_column: _.var.sort_column,
+            sort_order: _.var.sort_order,
             draw: data?.draw,
           },
           function (response) {
@@ -70,10 +79,14 @@ var workflow_dashboard = {
       columns: [
         {
           title: "Workflow",
-          data: "workflow",
+          data: "name",
+          name: "name",
+          sortable: true,
           render: function (data, type, row) {
             const { markup } = utils;
-            const createdAt = moment(row.created_at).format("DD MMM YYYY HH:mm:ss a");
+            const createdAt = moment(row.created_at).format(
+              "DD MMM YYYY HH:mm:ss a"
+            );
 
             return markup(
               "div",
@@ -89,7 +102,11 @@ var workflow_dashboard = {
                   content: row.description,
                   class: "description",
                 },
-                {tag: "span", content: createdAt, class: "text-muted description"}
+                {
+                  tag: "span",
+                  content: createdAt,
+                  class: "text-muted description",
+                },
               ],
               {
                 class: "row-workflow",
@@ -101,6 +118,7 @@ var workflow_dashboard = {
         {
           title: "Type",
           data: "workflow_type",
+          sortable: false,
           render: function (data, type, row) {
             const { markup } = utils;
             const isShortLived = row.workflow_type === "SHORT_LIVED";
@@ -124,6 +142,8 @@ var workflow_dashboard = {
         {
           title: "Last update",
           data: "updated_at",
+          name: "updated_at",
+          sortable: true,
           render: function (data, type, row) {
             const { markup } = utils;
             const updatedAt = row.updated_at
@@ -131,11 +151,29 @@ var workflow_dashboard = {
               : "";
             return markup(
               "div",
-              [{ tag: "span", content: updatedAt, class: "updated" }],
+              [{ tag: "span", content: updatedAt, class: "" }],
               { class: "dates" }
             );
           },
         },
+        {
+          // created_at
+          title: "Created at",
+          data: "created_at",
+          name: "created_at",
+          sortable: true,
+          render: function (data, type, row) {
+            const { markup } = utils;
+            const createdAt = row.created_at
+              ? moment(data).format("DD MMM YYYY HH:mm:ss a")
+              : "";
+            return markup(
+              "div",
+              [{ tag: "span", content: createdAt, class: "" }],
+              { class: "dates" }
+            );
+          },
+        }
       ],
     });
 
@@ -153,6 +191,8 @@ var workflow_dashboard = {
       page: params?.page ?? _.var.page,
       page_size: params?.page_size ?? _.var.page_size,
       search: params?.search ?? "",
+      sort_column: params?.sort_column ?? _.var.sort_column,
+      sort_order: params?.sort_order ?? _.var.sort_order,
     };
     const queryParams = utils.make_query_params(_params);
     history.replaceState(null, null, "?" + queryParams.toString());

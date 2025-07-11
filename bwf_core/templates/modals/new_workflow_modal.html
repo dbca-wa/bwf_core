@@ -23,7 +23,7 @@
       </div>
       <div class="modal-body">
         <form id="workflow-form">
-          <div class="mb-3">
+          <div class="mb-3 field">
             <label for="input-workflow-name" class="form-label">Title</label>
             <input
               type="text"
@@ -33,7 +33,7 @@
               required
             />
           </div>
-          <div class="mb-3">
+          <div class="mb-3 field">
             <label for="input-workflow-name" class="form-label"
               >Workflow type</label
             >
@@ -48,7 +48,7 @@
             </select>
           </div>
 
-          <div class="mb-3">
+          <div class="mb-3 field">
             <label for="input-workflow-description" class="form-label"
               >Description</label
             >
@@ -75,6 +75,22 @@
 
 <script>
   new_workflow_data = {
+    vars: {
+      is_new: true,
+      workflow_id: null,
+      workflow: null,
+      form: null,
+    },
+    setUpNewForm: function () {
+      this.vars.is_new = true;
+      this.vars.workflow = null;
+      this.vars.workflow_id = null;
+    },
+    setUpEditionForm: function (workflow_id, workflow) {
+      this.vars.is_new = false;
+      this.vars.workflow_id = workflow_id;
+      this.vars.workflow = workflow;
+    },
     validate: function (data) {
       const { name, description, type } = data;
       if (!name || name.length < 3) {
@@ -88,10 +104,95 @@
 
       return true;
     },
+
+    updateWorkflow: function (workflow_id) {
+      const _ = bwf_workflow;
+      const name = $("#input-workflow-name").val();
+      const description = $("#input-workflow-description").val() ?? "";
+      const type = $("#input-workflow-type").val();
+
+      if (!new_workflow_data.validate({ name, description, type })) {
+        $(".create-workflow-button").prop("disabled", false);
+        return;
+      }
+
+      const updateData = {
+        name,
+        description,
+      };
+
+      _.api
+        .updateWorkflow(workflow_id, updateData)
+        .then((response) => {
+          const eventVariablesChange = new CustomEvent(EVENT_WORKFLOW_INFO_CHANGE, {
+            detail: { name, description, type },
+            bubbles: true,
+
+          });
+          new_workflow_data.vars.form[0].dispatchEvent(eventVariablesChange);
+          $(".create-workflow-button").prop("disabled", false);
+          $("#workflow-creation-modal").modal("hide");
+        })
+        .catch((error) => {
+          $(".create-workflow-button").prop("disabled", false);
+          alert(
+            "An error occurred while updating the workflow. Please try again."
+          );
+        });
+    },
+    createWorkflow: function () {
+      const _ = bwf_workflow;
+      const name = $("#input-workflow-name").val();
+      const description = $("#input-workflow-description").val() ?? "";
+      const type = $("#input-workflow-type").val();
+
+      if (!new_workflow_data.validate({ name, description, type })) {
+        $(".create-workflow-button").prop("disabled", false);
+        return;
+      }
+      const data = {
+        name,
+        workflow_type: type,
+        description,
+      };
+      _.api
+        .createWorkflow(data)
+        .then((response) => {
+          _.navigate.toVersionEdition(response.workflow.id, response.id);
+          $(".create-workflow-button").prop("disabled", false);
+          $("#workflow-creation-modal").modal("hide");
+        })
+        .catch((error) => {
+          $(".create-workflow-button").prop("disabled", false);
+          alert(
+            "An error occurred while creating the workflow. Please try again."
+          );
+        });
+    },
   };
   $(() => {
+    new_workflow_data.vars.form = $("#workflow-form");
     $("#workflow-creation-modal").on("shown.bs.modal", function (e) {
+      const isNew = new_workflow_data.vars.is_new;
       $("#input-workflow-name").focus();
+      if (!isNew) {
+        const workflow = new_workflow_data.vars.workflow;
+        $("#input-workflow-name").val(workflow.name);
+        $("#input-workflow-description").val(workflow.description);
+        $("#input-workflow-type").val(workflow.type);
+        $("#input-workflow-type").attr("disabled", true);
+        $("#workflow-creation-modal .create-workflow-button").text(
+          "Update Workflow"
+        );
+      } else {
+        $("#input-workflow-name").val("");
+        $("#input-workflow-description").val("");
+        $("#input-workflow-type").val("SHORT_LIVED");
+        $("#input-workflow-type").attr("disabled", false);
+        $("#workflow-creation-modal .create-workflow-button").text(
+          "Create Workflow"
+        );
+      }
     });
 
     $("#workflow-creation-modal").on("hidden.bs.modal", function (e) {
@@ -112,31 +213,12 @@
 
     const _ = bwf_workflow;
     $(".create-workflow-button").prop("disabled", true);
-    const name = $("#input-workflow-name").val();
-    const description = $("#input-workflow-description").val() ?? "";
-    const type = $("#input-workflow-type").val();
 
-    if (!new_workflow_data.validate({ name, description, type })) {
-      $(".create-workflow-button").prop("disabled", false);
-      return;
+    if (new_workflow_data.vars.is_new) {
+      new_workflow_data.createWorkflow();
+    } else {
+      const workflow_id = new_workflow_data.vars.workflow_id;
+      new_workflow_data.updateWorkflow(workflow_id);
     }
-    const data = {
-      name,
-      workflow_type: type,
-      description,
-    };
-    _.api
-      .createWorkflow(data)
-      .then((response) => {
-        _.navigate.toVersionEdition(response.workflow.id, response.id);
-        $(".create-workflow-button").prop("disabled", false);
-        $("#workflow-creation-modal").modal("hide");
-      })
-      .catch((error) => {
-        $(".create-workflow-button").prop("disabled", false);
-        alert(
-          "An error occurred while creating the workflow. Please try again."
-        );
-      });
   });
 </script>

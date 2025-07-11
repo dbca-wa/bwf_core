@@ -106,6 +106,8 @@ class Workflow(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    is_disabled = models.BooleanField(default=False)
+    disabled_at = models.DateTimeField(null=True, blank=True)
 
     def set_json_definition(self, definition):
         with open(self.workflow_file.path, "w") as json_file:
@@ -441,6 +443,13 @@ class WorkflowComponentInstanceFactory:
         parent_node_instance=None,
         input_params={},
     ):
+        """
+        Create a component instance for the given component in the workflow instance.
+        :param workflow_instance: The workflow instance to register the step in.
+        :param component: The component definition from the workflow JSON.
+        :param parent_node_instance: The parent node instance, if any.
+        :param input_params (dict): Input parameters to be passed to the component.
+        """
         if parent_node_instance:
             input_params.update({"local": parent_node_instance.get_node_context()})
 

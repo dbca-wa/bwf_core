@@ -72,14 +72,29 @@ class WorkflowViewset(ModelViewSet):
 
     def update(self, request, *args, **kwargs):
 
-        return super().update(request, *args, **kwargs)
+        # update version Name
+        workflow_id = kwargs.get("pk")
+        workflow = get_object_or_404(
+            Workflow, id=workflow_id
+        )
+        serializer = self.get_serializer(workflow, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        workflow.name = serializer.validated_data.get("name", workflow.name)
+        workflow.description = serializer.validated_data.get("description", workflow.description)
+        workflow.save()
+
+        return Response(serializer.data)
 
     def list(self, request, *args, **kwargs):
 
         page_param = request.GET.get("page", "1")
         page_size_param = request.GET.get("page_size", "10")
+        sort_column = request.GET.get("sort_column", "updated_at")
+        sort_order = request.GET.get("sort_order", "desc")
 
         search = request.GET.get("search", "")
+        order_by_val = f"{'-' if sort_order == 'desc' else ''}{sort_column}"
         wf_versions_queryset = (
             WorkflowVersion.objects.filter(is_disabled=False)
             .filter(Q(is_edition=True) | Q(is_active=True))
@@ -95,7 +110,7 @@ class WorkflowViewset(ModelViewSet):
         workflows = (
             Workflow.objects.all()
             .prefetch_related(Prefetch("versions", queryset=wf_versions_queryset))
-            .order_by("created_at", "name")
+            .order_by(order_by_val)
         )
 
         if search != "":
@@ -192,7 +207,19 @@ class WorkflowVersionViewset(ModelViewSet):
 
     def update(self, request, *args, **kwargs):
 
-        return super().update(request, *args, **kwargs)
+        # update version Name
+        version_id = kwargs.get("pk")
+        workflow_id = request.query_params.get("workflow_id", None)
+        version = get_object_or_404(
+            WorkflowVersion, id=version_id, workflow__id=workflow_id
+        )
+        serializer = self.get_serializer(version, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        version.name = serializer.validated_data.get("name", version.name)
+        version.save()
+
+        return Response(serializer.data)
 
     @action(detail=True, methods=["POST"])
     def mark_workflow_active_version(self, request, *args, **kwargs):
@@ -202,6 +229,24 @@ class WorkflowVersionViewset(ModelViewSet):
             WorkflowVersion, id=version_id, workflow__id=workflow_id
         )
         try:
+            if version.is_disabled:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "Cannot set an inactive version as active.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        
+            if version.is_active:
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "message": "This version is already active.",
+                    },
+                    status=status.HTTP_200_OK,
+                )
+            
             errors = validate_workflow_required_fields(
                 version.get_json_definition().get("workflow", {})
             )
@@ -229,8 +274,9 @@ class WorkflowVersionViewset(ModelViewSet):
     def discard_workflow_version(self, request, *args, **kwargs):
         version_id = kwargs.get("pk")
         workflow_id = request.query_params.get("workflow_id", None)
+        version_number = request.query_params.get("version_number", None)
         version = get_object_or_404(
-            WorkflowVersion, id=version_id, workflow__id=workflow_id
+            WorkflowVersion, id=version_id, workflow__id=workflow_id, version_number=version_number
         )
 
         if version.is_active:

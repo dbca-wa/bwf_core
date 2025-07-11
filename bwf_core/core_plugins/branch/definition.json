@@ -17,5 +17,11 @@
       "value": ""
     }
   ],
-  "base_output": null
+  "base_output": [
+    {
+      "key": "condition_result",
+      "label": "Condition Result",
+      "type": "boolean"
+    }
+  ]
 }

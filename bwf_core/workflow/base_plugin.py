@@ -5,7 +5,10 @@ from bwf_core.components.utils import calculate_next_node
 
 
 logger = logging.getLogger(__name__)
-
+"""
+Base class for all plugins in the workflow engine. 
+It provides the basic structure and methods that all plugins require to function within a workflow.
+"""
 class BasePlugin:
     
     def __init__(self, component_instance:ComponentInstance, workflow_instance: WorkFlowInstance, context={}):
@@ -14,16 +17,11 @@ class BasePlugin:
         self.workflow_instance = workflow_instance
         self.context = context
 
-        # output
     def workflow_instance_id(self):
         return self.workflow_instance.id
 
     def component_instance_id(self):
         return self.component.id
-
-    def set_plugin_component(self, executableComponent):
-        # self.component = executableComponent
-        pass
     
     def execute(self):
         raise Exception("Need to implement the execute method")
@@ -127,7 +125,7 @@ class BasePlugin:
                 self.component.set_status_pending()
                 self.workflow_instance.set_status_running()
                 sleep(retry_interval / 1000)  # Convert milliseconds to seconds
-                self.execute()
+                # self.execute()
                 return
             else:
                 self.component.set_status_error(error)

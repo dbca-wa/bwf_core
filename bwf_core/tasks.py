@@ -15,7 +15,18 @@ import time
 logger = logging.getLogger(__name__)
 
 
+
+'''
+This module contains functions to manage workflow instances, including starting workflows,
+registering workflow steps, starting components, and processing async responses.
+'''
+
+
+
 def start_workflow(workflow_id, payload={}):
+    """
+    Start a workflow instance with the given workflow ID and payload.
+    """
     instance = None
     try:
         workflow = Workflow.objects.get(id=workflow_id)
@@ -52,6 +63,14 @@ def register_workflow_step(
     additional_inputs={},
     parent_node_instance=None,
 ):
+    """
+    Register a workflow step by creating a component instance for the given step (component ID). 
+    This component ID should exist within the workflow definition.
+    :param workflow_instance: The workflow instance to register the step in.
+    :param step: The ID of the step (component) to register.
+    :param additional_inputs: Optional, usually are the outputs of the previously executed node.
+    :param parent_node_instance: The parent node instance, if any.
+    """
     try:
         definition = workflow_instance.get_json_definition()
         step_component = find_component_in_tree(definition, step)
@@ -61,10 +80,11 @@ def register_workflow_step(
             return
         # Merge workflow variables with additional inputs
         input_params = workflow_instance.variables | additional_inputs
-
+        
         component_instance = WorkflowComponentInstanceFactory.create_component_instance(
             workflow_instance, step_component, parent_node_instance, input_params
         )
+
         if component_instance is None:
             workflow_instance.set_status_error(
                 f"Component instance could not be created. Step: {step} {step_component}"
