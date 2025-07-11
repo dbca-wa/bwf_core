@@ -70,7 +70,7 @@ class WorkflowViewVersions(View):
 
         workflow = get_object_or_404(Workflow, pk=workflow_id)
         versions = (
-            workflow.versions.all()
+            workflow.versions.all().exclude(is_disabled=True)
             .only(
                 "workflow_id",
                 "version_number",
@@ -81,9 +81,6 @@ class WorkflowViewVersions(View):
             .order_by("is_active", "-updated_at")
         )
         active_version = versions.filter(is_active=True).first()
-        versions = (
-            versions.exclude(pk=active_version.pk) if active_version else versions
-        )
         context = {
             "workflow": workflow,
             "active_version": active_version,

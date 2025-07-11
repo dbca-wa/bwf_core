@@ -108,7 +108,7 @@ var workflow_components = {
     // $("#toolbox .new-line button").trigger("click")
     // $(`#node_${components[3].id}`).find(".component-out")?.trigger("click");
     // $(`#node_${components[0].id}`).find(".diagram-node")?.trigger("click")
-    // setTimeout(() => { 
+    // setTimeout(() => {
     //   $($(".value-selector-edit")[3]).trigger("click");
     //  }, 300);
     // $(`#node_${components[2].id}`).find(".diagram-node")?.trigger("click")
@@ -328,21 +328,30 @@ var workflow_components = {
     component.diagram = { elementId: elementId };
     clone.querySelector(".diagram-node-parent").setAttribute("id", elementId);
     clone.querySelector(".diagram-node").setAttribute("data-component-id", id);
+    $("#component-creation-modal").modal("hide");
 
+    let position = {
+      top: component.ui?.x || "0px",
+      left: component.ui?.y || "0px",
+    }
     if (appendPosition && appendPosition.container) {
-      const { position, container: appendContainer } = appendPosition;
-      if (position === "before") {
+      const { position: location, container: appendContainer } = appendPosition;
+      position.top = appendPosition.container.css("top")
+      position.left = appendPosition.container.css("left")
+
+      if (location === "before") {
         appendContainer.prepend(clone);
-      } else if (position === "after") {
+      } else if (location === "after") {
         appendContainer.after(clone);
-      } else if (position === "append") {
+        position.top = parseFloat(position.top.replace("px", "")) + appendContainer.outerHeight();
+
+      } else if (location === "append") {
         appendContainer.after(clone);
       }
     } else {
       container.append(clone);
     }
 
-    const position = { top: component.ui?.x, left: component.ui?.y };
     $(`#${elementId}`).css("top", position.top);
     $(`#${elementId}`).css("left", position.left);
 
@@ -384,19 +393,6 @@ var workflow_components = {
     if (_.is_diagram) {
       _.appendComponentToDiagram(component, container, appendPosition);
       _.updateLines();
-      /* // check node position inside container
-      const node = $(`#node_${component.id}`);
-      debugger
-      _.container.position()
-      const {top} = node.position()
-      const {top: containerTop} = _.container.position()
-      
-      const lowerBound = containerTop + _.container.height();
-      const nodeLowerBound = top + node.height();
-
-      if (nodeLowerBound > lowerBound) {
-        
-      } */
 
       return;
     }
@@ -619,7 +615,7 @@ var workflow_components = {
       clone.querySelector("div").setAttribute("data-route", routePath);
       $(`.list-group.routes`).append(clone);
       // clone.querySelector(".route-action").innerHTML = action;
-      const labelElement = $(`#${elementId} .route-label .value`)
+      const labelElement = $(`#${elementId} .route-label .value`);
       if (!label) {
         labelElement.addClass("text-muted").html(" -- ");
       } else {
@@ -1078,6 +1074,7 @@ var workflow_components = {
             }
             if (parentNode) {
               if (parentNode.config.branch) {
+                component_utils.render.renderBranchLines(parentNode);
                 component_utils.render.renderOuterBranchLines(parentNode);
               }
             }
@@ -1124,7 +1121,9 @@ var workflow_components = {
               }
             }
             _.updateLines();
+            $(`#node_${data.id}`).trigger("dragstop");
             $(`#node_${data.id}`).find(".diagram-node").trigger("click");
+
             resolve(data);
           },
           error: function (error) {
@@ -1272,6 +1271,15 @@ var workflow_components = {
     component_utils.removeComponentDiagram(component);
     $(`#node_${component.id}`).off("drag.line_out");
     $(`#node_${component.id}`).off("drag.line_in");
+    let parentNode = null;
+    if (component.parent_info && component.parent_info.parent_id) {
+      parentNode = component_utils.findSingleComponentInTree(
+        component.parent_info.parent_id
+      );
+      if(parentNode && !nodes_affected.find(n => n.id === parentNode.id)) {
+        nodes_affected.push(parentNode);
+      }
+    }
 
     for (let i = 0; i < nodes_affected.length; i++) {
       const node_affected = component_utils.findSingleComponentInTree(
@@ -1289,6 +1297,10 @@ var workflow_components = {
         (route) => route.source
       );
       _.renderRoutingLine(node_affected);
+      if (node_affected.config.branch) {
+        component_utils.render.renderBranchLines(node_affected);
+        component_utils.render.renderOuterBranchLines(node_affected);
+      }
 
       console.log("node_affected", node_affected["name"]);
     }

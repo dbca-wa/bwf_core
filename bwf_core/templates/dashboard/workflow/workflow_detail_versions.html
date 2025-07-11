@@ -46,7 +46,7 @@
         </li>
       </ul>
       <div class="row p-2">
-        <div class="col-12">
+        <div class="col-10">
           <div
             id="versions-container"
             class="row gap-1 py-md-2 align-items-center justify-content-center width-md-30"
@@ -60,7 +60,7 @@
                 {% for version in versions %}
 
                 <div class="row mb-2 pb-2">
-                  <div class="col-12">
+                  <div class="col-10">
                     <a
                       href="{% url 'workflow-edition' workflow.id version.id %}"
                       >#{{ version.version_number }} - {{ version.version_name}} </a
@@ -69,7 +69,33 @@
                       >{{ version.updated_at }}</span
                     >
                     {% if version.is_edition %}
-                    <span class="badge bg-primary">Draft</span>
+                    <span class="badge bg-primary">In edition</span>
+                    {% elif version.is_active %}
+                    <span class="badge bg-success">Current version</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Past version</span>
+                    {% endif %}
+                  </div>
+                  <div class="col-2">
+                    {% if version.is_edition %}
+
+                    <div class="dropdown">
+                      <a
+                        class="btn btn-sm btn-outline-primary dropdown-toggle"
+                        href="#"
+                        id="dropdown_{{ version.id }}"
+                        role="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                      >
+                      Options
+                      </a>
+
+                      <ul class="dropdown-menu">
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item action-deactivate text-danger" href="#" data-version-number="{{ version.version_number }}" data-version-object-id="{{ version.id }}">Deactivate version</a></li>
+                      </ul>
+                    </div>
                     {% endif %}
                   </div>
                 </div>
@@ -82,6 +108,8 @@
     </div>
   </div>
 </div>
+<script src="/static/pages/workflow/workflow.js"></script>
+
 
 <script>
   $(() => {
@@ -92,26 +120,26 @@
       const url = `${window.location.origin}/${versionFile}`;
       window.open(url, "_blank").focus();
     });
-    $("#btn-create-version").on("click", function () {
-      if ($(this).attr("disabled")) return;
-      $(this).attr("disabled", true);
-      const api_data = {
-        version_id,
-        workflow_id,
-        name: `Untitled`,
-      };
+
+    $(".action-deactivate").on("click", function (e) {
+      e.preventDefault();
+      const versionNumber = $(this).data("version-number");
+      const version_object_id = $(this).data("version-object-id");
+      const dropdownButton = $(`#dropdown_${version_object_id}`);
+      if (!confirm("Are you sure you want to deactivate this version?")) {
+        return;
+      }
+      dropdownButton.attr("disabled", true);
       bwf_workflow.api
-        .createWorkflowVersion(api_data)
+        .deactivateWorkflowVersion(version_object_id, versionNumber, workflow_id)
         .then((response) => {
-          $(this).attr("disabled", false);
-          bwf_workflow.navigate.toVersionEdition(
-            response.workflow.id,
-            response.id
-          );
+          $(`.version-row[data-version-number="${versionNumber}"]`).remove();
+          location.reload();
         })
         .catch((error) => {
+          dropdownButton.attr("disabled", false);
           console.error(error);
-          $(this).attr("disabled", false);
+          alert("Failed to deactivate the version.");
         });
     });
   });

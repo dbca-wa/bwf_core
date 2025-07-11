@@ -50,6 +50,27 @@ var bwf_workflow = {
         });
 
       },
+      updateWorkflow: function (workflow_id, data) {
+        const _ = bwf_workflow;
+        
+        return new Promise((resolve, reject) => {
+          $.ajax({
+            url: `${_.var.base_url}${workflow_id}/`,
+            type: "PATCH",
+            headers: { "X-CSRFToken": $("#csrf_token").val() },
+            contentType: "application/json",
+            data: JSON.stringify({ ...data }),
+            success: function (response) {
+              resolve(response);
+            },
+            error: function (error) {
+              alert("Error creating workflow");
+              reject(error);
+            },
+          });
+        });
+
+      },
       createWorkflowVersion: function (data) {
         const _ = bwf_workflow;
         
@@ -76,6 +97,44 @@ var bwf_workflow = {
         return new Promise((resolve, reject) => {
           $.ajax({
             url: `${_.var.base_versions_url}${version_id}/mark_workflow_active_version/?workflow_id=${workflow_id}`,
+            type: "POST",
+            headers: { "X-CSRFToken": $("#csrf_token").val() },
+            success: function (response) {
+              resolve(response);
+            },
+            error: function (error) {
+              alert("Error marking version as current");
+              reject(error);
+            },
+          });
+        });
+      },
+      updateWorkflowVersionData: function (version_id, workflow_id, data) {
+        const _ = bwf_workflow;
+        
+        return new Promise((resolve, reject) => {
+          $.ajax({
+            url: `${_.var.base_versions_url}${version_id}/?workflow_id=${workflow_id}`,
+            type: "PUT",
+            headers: { "X-CSRFToken": $("#csrf_token").val() },
+            contentType: "application/json",
+            data: JSON.stringify({ ...data }),
+            success: function (response) {
+              resolve(response);
+            },
+            error: function (error) {
+              alert("Error updating workflow version");
+              reject(error);
+            },
+          });
+        });
+      },
+      deactivateWorkflowVersion: function (version_id, version_number, workflow_id) {
+        const _ = bwf_workflow;
+        
+        return new Promise((resolve, reject) => {
+          $.ajax({
+            url: `${_.var.base_versions_url}${version_id}/discard_workflow_version/?workflow_id=${workflow_id}&version_number=${version_number}`,
             type: "POST",
             headers: { "X-CSRFToken": $("#csrf_token").val() },
             success: function (response) {

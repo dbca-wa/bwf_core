@@ -1,9 +1,8 @@
-
-from bwf_core.workflow.base_plugin import BasePlugin
+from bwf_core.workflow.base_plugin import BranchPlugin
 from bwf_core.components.tasks import find_component_in_tree
 
 
-def execute(plugin:BasePlugin):
+def execute(plugin:BranchPlugin):
     inputs = plugin.collect_context_data()
     component_input = inputs['input']
     condition = component_input.get("condition", False)
@@ -20,10 +19,14 @@ def execute(plugin:BasePlugin):
         if value.get('conditions', {}).get("is_entry", False):
             entry_point = value
             break
+
+    output_data = {
+        'condition_result': condition,
+    }
     if entry_point is None:
-        plugin.set_output(True)
+        plugin.set_output(True, data=output_data)
         return
-    plugin.set_output(True, data={
-        'next_component_id': entry_point['id'],
-    })
+
+    output_data['next_component_id'] = entry_point['id']
+    plugin.set_output(True, data=output_data)
     return True

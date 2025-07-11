@@ -455,8 +455,8 @@ class PluginsCatalogueView(ListAPIView):
                     cached_value,
                     timeout=60 * 60,  # Cache for 1 hour
                 )
-            plugin_type = cached_value.get("workflow_type", None)
+            plugin_type = cached_value.get("workflow_type", '')
 
-        plugins = BWFPluginController.filter_plugins(is_long_lived=plugin_type == WorkflowTypesEnum.LONG_LIVED.lower(), search=search_term)
+        plugins = BWFPluginController.filter_plugins(is_long_lived=plugin_type.lower() == WorkflowTypesEnum.LONG_LIVED.lower(), search=search_term)
 
         return Response(serializers.PluginDefinitionSerializer(plugins, many=True).data)

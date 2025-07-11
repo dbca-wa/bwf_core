@@ -23,6 +23,8 @@
 
 <script>
   $(() => {
+    new_workflow_data.setUpNewForm();
+
     workflow_dashboard.init();
     $("#add-workflow").on("click", function () {
       $("#workflow-creation-modal").modal("show");
